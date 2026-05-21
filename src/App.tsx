@@ -10,10 +10,13 @@ import ARViewer from "./components/ARViewer";
 import VendorDashboard from "./vendor/VendorDashboard";
 import RiderDashboard from "./rider/RiderDashboard";
 import { MenuItem, CartItem, Order, GroceryItem } from "./types";
+import LoginPortal from "./components/LoginPortal";
+import AdminPortalPanel from "./components/AdminPortalPanel";
 
 export default function App() {
   // Global States
   const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
+  const [showLogin, setShowLogin] = useState(false);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -218,6 +221,7 @@ export default function App() {
         onCartToggle={() => setCurrentView("checkout")}
         currentAddress={customerAddress}
         foodiePoints={loyaltyPoints}
+        onOpenLogin={() => setShowLogin(true)}
       />
 
       <main className="flex-1 mt-6">
@@ -279,15 +283,7 @@ export default function App() {
 
         {userRole === "rider" && <RiderDashboard />}
 
-        {userRole === "admin" && (
-          <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-            <span className="text-3xl">🗳️</span>
-            <h2 className="text-xl font-black text-gray-900 mt-2">FoodieNepal Admin Hub Overview</h2>
-            <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-              Promotional controls, transaction settlements, and commission monitoring scales. Switches available roles above to test riders or kitchens!
-            </p>
-          </div>
-        )}
+        {userRole === "admin" && <AdminPortalPanel />}
       </main>
 
       {/* Floating Grounded GIS Chatbot for Customers */}
@@ -314,6 +310,19 @@ export default function App() {
           item={activeARItem}
           onClose={() => setActiveARItem(null)}
           onAddToCartDirect={(item) => handleAddToCart(item, selectedRestaurantId, "Momo House")}
+        />
+      )}
+
+      {showLogin && (
+        <LoginPortal
+          onLoginSuccess={(role) => {
+            setUserRole(role);
+            if (role === "customer") {
+              setCurrentView("home");
+            }
+            setShowLogin(false);
+          }}
+          onCancel={() => setShowLogin(false)}
         />
       )}
     </div>

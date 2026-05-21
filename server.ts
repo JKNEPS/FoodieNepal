@@ -385,8 +385,8 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
   "rest_4": [
     {
       id: "item_401",
-      name: "Sasto Veg Dal Bhat Thali",
-      price: 130, // Most affordable under 150
+      name: "Classic Veg Dal Bhat Thali",
+      price: 130, // Great local choice
       description: "Simple household Nepali Dal Bhat. Daily hand-milled rice, cream yellow lentils, seasonal mixed curry, radish-cucumber pickle and papad.",
       category: "Nepali",
       image: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=400",
@@ -436,8 +436,8 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
   "rest_6": [
     {
       id: "item_601",
-      name: "Sasto Buff Chowmein",
-      price: 110, // Sasto!
+      name: "Classic Buff Chowmein",
+      price: 110, // Popular choice!
       description: "Nepali wok-fired yellow wheat noodles tossed with sautéed buffalo meat strips, cabbage, carrot, green onions, and dark soy.",
       category: "Chowmein",
       image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
@@ -449,7 +449,7 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
     {
       id: "item_602",
       name: "Mix Veg Chowmein Extra Spice",
-      price: 95, // Sasto!
+      price: 95, // Popular choice!
       description: "Street-style hot chowmein loaded with shredded fresh local vegetables, extra green chilies and direct spices.",
       category: "Chowmein",
       image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
@@ -500,8 +500,8 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
   "rest_10": [
     {
       id: "item_1001",
-      name: "Sasto Basantapur Spicy Chatpat",
-      price: 50, // Sabse sasto!
+      name: "Spicy Basantapur Chatpat",
+      price: 50, // Best seller!
       description: "Crunchy puffed rice (Bhuja) mixed in raw green chilies, boiled potato, onion, dry noodles, toasted coriander seeds, mustard oil and tangy lemon.",
       category: "Street Food",
       image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&q=80&w=400",
@@ -616,9 +616,9 @@ async function askGeminiMaps(prompt: string, lat: number, lng: number) {
   }
 
   try {
-    const basePrompt = `You are "FoodieNepal AI Assistant", a super friendly local food expert chatbot, dedicated to guiding users through affordable traditional cuisines (Momo, Thakali sets, Samay Baji, Sukuti, Sel Roti, Chowmein, etc.) in Kathmandu & Lalitpur, Nepal. Use Nepali-English mixed conversation (or warm Devanagari Devanagari if the user asks in Nepali). Today is ${new Date().toLocaleDateString()}.
+    const basePrompt = `You are "FoodieNepal AI Assistant", a super friendly local food expert chatbot, dedicated to guiding users through traditional cuisines (Momo, Thakali sets, Samay Baji, Sukuti, Sel Roti, Chowmein, etc.) in Kathmandu & Lalitpur, Nepal. Use Nepali-English mixed conversation (or warm Devanagari Devanagari if the user asks in Nepali). Today is ${new Date().toLocaleDateString()}.
       The user is physically located near: Latitude ${lat}, Longitude ${lng}. Keep recommendations highly geographical around this.
-      Suggest items from Kathmandu Basantapur, Thamel, Lalitpur Jhamsikhel or Pulchowk. Recommend budget meals (like Sabse Sasto dishes under Rs. 150), explain ingredients (e.g. beaten rice, buffalo buff meat, cumin seed gundruk), and help with order problems.
+      Suggest items from Kathmandu Basantapur, Thamel, Lalitpur Jhamsikhel or Pulchowk. Recommend delicious local favorites (like standard dishes under Rs. 150), explain ingredients (e.g. beaten rice, buffalo buff meat, cumin seed gundruk), and help with order problems.
       Always respond in Markdown. If any places or restaurant spots are found, output the links found in the grounding metadata.
       Prompt: ${prompt}`;
 
@@ -688,7 +688,7 @@ function getLocalFallbackChatbotResponse(query: string): string {
     return `### 🥣 Authentic Thakali & Dal Bhat Sets!
       Nothing beats a warm Nepali meal!
       - **Special Thakali Khana Set ( चिकन / Chicken)** at **Thakali Bhanchha Ghar (Rs. 320)**: Complete with basmati premium rice, slow cooked black mountain lentils (Kalo Dal), Gundruk wild sour leaf pickle, spinach, hand-pressed cow ghee, and spicy potato.
-      - **Sasto Veg Dal Bhat Thali** at **Dal-Bhat Kamalpokhari (Rs. 130)**: Highly affordable and perfect for low-budget household dining.
+      - **Classic Veg Dal Bhat Thali** at **Dal-Bhat Kamalpokhari (Rs. 130)**: Highly nutritious and perfect for daily warm dining.
       Would you like to try our special Thakali combo?`;
   }
   if (lowercase.includes("newari") || lowercase.includes("samay") || lowercase.includes("choila") || lowercase.includes("bara")) {
@@ -698,14 +698,14 @@ function getLocalFallbackChatbotResponse(query: string): string {
       - **Chatamari Supreme (Rs. 180)**: Famous thin rice flour crepe baked with egg and mince chicken top. 
       Perfect to order from Basantapur Durbar Squares!`;
   }
-  if (lowercase.includes("sasto") || lowercase.includes("cheap") || lowercase.includes("budget") || lowercase.includes("150")) {
-    return `### 💰 Sabse Sasto (Under Rs. 150) Nepali Meals!
-      FoodieNepal helps you eat cheap. Here are our top budget options:
-      1. **Sasto Basantapur Spicy Chatpat (Rs. 50)**: Mixed with raw mustard oil, crunchy puffed rice, and fresh lemon.
-      2. **Sasto Veg Dal Bhat Thali (Rs. 130)** at Dal-Bhat Kamalpokhari.
+  if (lowercase.includes("sasto") || lowercase.includes("cheap") || lowercase.includes("budget") || lowercase.includes("150") || lowercase.includes("value")) {
+    return `### 🍽️ Top Value (Under Rs. 150) Nepali Meals!
+      FoodieNepal helps you find incredible local specialties. Here are our top options under Rs. 150:
+      1. **Spicy Basantapur Chatpat (Rs. 50)**: Mixed with raw mustard oil, crunchy puffed rice, and fresh lemon.
+      2. **Classic Veg Dal Bhat Thali (Rs. 130)** at Dal-Bhat Kamalpokhari.
       3. **Golden Sweet Jerry (Rs. 60)**: Perfect warm breakfast.
-      4. **Sasto Buff Chowmein (Rs. 110)** at Lalitpur Chowmein Corner.
-      All of these deliver right to you for minor costs!`;
+      4. **Classic Buff Chowmein (Rs. 110)** at Lalitpur Chowmein Corner.
+      All of these deliver high-quality, authentic flavors right to your door!`;
   }
   if (lowercase.includes("status") || lowercase.includes("where") || lowercase.includes("order")) {
     const lastOrder = activeOrders[activeOrders.length - 1];
@@ -734,7 +734,7 @@ function getLocalFallbackChatbotResponse(query: string): string {
     - *"List some Thakali khana sets under Rs. 300?"*
     - *"Show me Samay Baji ingredients?"*
     - *"Where is my active placed order at?"*
-    - *"Suggest budget meals under Rs. 150 (Sabse Sasto)?"*
+    - *"Suggest top values under Rs. 150?"*
     
     I understand both English and Nepali (नेपाली Devanagari)! How can I help you today?`;
 }

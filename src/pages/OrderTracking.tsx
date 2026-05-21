@@ -109,7 +109,7 @@ export default function OrderTracking({
 
   // Vertical timeline helpers
   const stages: { status: Order["status"]; label: string; desc: string }[] = [
-    { status: "placed", label: "Diner Placed", desc: "Order details forwarded to the restaurant" },
+    { status: "placed", label: "Customer Placed", desc: "Order details forwarded to the restaurant" },
     { status: "confirmed", label: "Merchant Confirmed", desc: "Kitchen staff approved and locked items" },
     { status: "preparing", label: "Ghee Cooking", desc: "Fresh Himalayan spices tossing in wok" },
     { status: "ready", label: "Ready for Pickup", desc: "Order sealed and packed in hot insulation bag" },

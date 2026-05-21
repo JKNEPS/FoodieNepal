@@ -190,13 +190,13 @@ export default function Restaurant({
             </div>
             
             <p className="text-xs font-bold text-[#8B1A1A]">Cumulative Customer Score</p>
-            <p className="text-[10px] text-gray-500 font-mono uppercase mt-1">Based on {restaurant.reviewsCount} historic diners surveys</p>
+            <p className="text-[10px] text-gray-500 font-mono uppercase mt-1">Based on {restaurant.reviewsCount} historic customer surveys</p>
           </div>
 
           {/* User Reviews lists and comments */}
           <div className="bg-white border border-[#8B1A1A]/10 p-6 rounded-2xl space-y-6">
             <h3 className="font-serif italic font-bold text-[#8B1A1A] text-lg border-b border-[#8B1A1A]/5 pb-3">
-              Diners Experiences
+              Customer Experiences
             </h3>
 
             {/* Input review submit form */}
@@ -237,7 +237,7 @@ export default function Restaurant({
             {/* Render reviews listing */}
             <div className="space-y-4 pt-3 border-t border-gray-50 max-h-[250px] overflow-y-auto scrollbar-hide">
               {reviews.length === 0 ? (
-                <p className="text-center text-xs text-gray-400 font-semibold py-4">Be the very first diner to write a review!</p>
+                <p className="text-center text-xs text-gray-400 font-semibold py-4">Be the very first customer to write a review!</p>
               ) : (
                 reviews.map((rev) => (
                   <div key={rev.id} className="border-b border-gray-50 pb-3.5 space-y-1 text-xs">

@@ -47,7 +47,7 @@ export default function FoodCard({
         
         {item.price <= 150 && (
           <span className="bg-[#FF6B35] text-white text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded shadow-xs">
-            Sabse Sasto (Rs. {item.price})
+            Local Pick
           </span>
         )}
       </div>

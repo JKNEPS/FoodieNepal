@@ -8,6 +8,7 @@ interface NavbarProps {
   onCartToggle: () => void;
   foodiePoints: number;
   currentAddress: string;
+  onOpenLogin: () => void;
 }
 
 export default function Navbar({
@@ -16,7 +17,8 @@ export default function Navbar({
   cartCount,
   onCartToggle,
   foodiePoints,
-  currentAddress
+  currentAddress,
+  onOpenLogin
 }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#8B1A1A]/10 shadow-xs">
@@ -73,20 +75,24 @@ export default function Navbar({
               </button>
             )}
 
-            {/* Simulated Live Roles Picker for Testing App Frameworks */}
-            <div className="flex items-center bg-[#FFF8F0] p-1.5 rounded-xl border border-[#8B1A1A]/5">
-              <select
-                id="role-select"
-                value={currentRole}
-                onChange={(e) => onRoleChange(e.target.value as UserRole)}
-                className="bg-transparent text-xs font-bold text-gray-750 focus:outline-none cursor-pointer px-1 pr-6"
-              >
-                <option value="customer">🙋 DIner View</option>
-                <option value="vendor">🏪 Momo Kitchen</option>
-                <option value="rider">🏍️ Rider GPS</option>
-                <option value="admin">⚙️ Admin Room</option>
-              </select>
-            </div>
+            {/* Distinct Gateways Login Button */}
+            <button
+              onClick={currentRole !== "customer" ? () => onRoleChange("customer") : onOpenLogin}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              title={currentRole !== "customer" ? "Sign out as current role and return to customer view" : "Open secure portals"}
+            >
+              {currentRole !== "customer" ? (
+                <>
+                  <Shield className="w-3.5 h-3.5 text-[#FF6B35]" />
+                  <span>Log Out ({currentRole.toUpperCase()})</span>
+                </>
+              ) : (
+                <>
+                  <User className="w-3.5 h-3.5" />
+                  <span>Secure Portals</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

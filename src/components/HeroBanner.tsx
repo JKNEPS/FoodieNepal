@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Sparkles, SlidersHorizontal, Flame } from "lucide-react";
+import { Search, Sparkles, SlidersHorizontal, Flame, UtensilsCrossed } from "lucide-react";
 
 interface HeroBannerProps {
   onSearch: (query: string) => void;
@@ -16,7 +16,7 @@ export default function HeroBanner({
   const [isFocused, setIsFocused] = useState(false);
 
   // Common quick cuisines in Nepal
-  const quickSearches = ["Momo", "Thakali", "Newari", "Samay Baji", "Chowmein", "Sel Roti", "Sasto"];
+  const quickSearches = ["Momo", "Thakali", "Newari", "Samay Baji", "Chowmein", "Sel Roti"];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,17 +40,14 @@ export default function HeroBanner({
           <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/20 mb-4 animate-bounce">
             <Sparkles className="w-4 h-4 text-[#FFF8F0]" />
             <span className="text-[10px] font-bold tracking-[0.15em] text-[#FFF8F0] uppercase font-mono">
-              Himalyan local spices & ingredients
+              Local Foods For Foodie!
             </span>
           </div>
           
           <h1 className="text-4xl sm:text-5xl font-serif italic text-[#FFF8F0] tracking-tight mb-4 leading-tight">
-            Order Affordable <br className="hidden sm:inline" />
-            <span className="text-[#FF6B35] font-sans font-extrabold not-italic tracking-normal">Traditional Nepali Food</span>
+            Order Local & <br className="hidden sm:inline" />
+            <span className="text-[#FF6B35] font-sans font-extrabold not-italic tracking-normal">Traditional Nepali Foods</span>
           </h1>
-          <p className="text-sm sm:text-base text-gray-200 leading-relaxed font-medium mb-6">
-            Connecting Low-to-Middle Income families with beloved local street stalls, Thakali kitchens, and Basantapur Samay Baji corners. Sabse Sasto dishes under Rs. 150!
-          </p>
 
           {/* Saffron Autocomplete Autogenerate Search box */}
           <form onSubmit={handleSubmit} className="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-xl max-w-lg">
@@ -109,17 +106,25 @@ export default function HeroBanner({
 
         {/* Visual Steam Particle Food Banner Illustration */}
         <div className="relative flex items-center justify-center p-4">
-          <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden border-8 border-white/15 shadow-2xl relative bg-[#FFF8F0]/10 flex items-center justify-center">
-            <img
-              src="https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400"
-              alt="Momo Steamer"
-              className="object-cover w-full h-full scale-105"
-            />
-            {/* Overlay steam effect */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex flex-col justify-end p-4 text-left">
-              <div className="flex items-center gap-1 text-[#FF6B35] font-bold text-xs bg-white/95 backdrop-blur px-2.5 py-1 rounded-full w-max">
-                <Flame className="w-4 h-4 animate-bounce" />
-                <span>Hot Dumpling Season</span>
+          <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden border-8 border-white/15 shadow-2xl relative bg-[#FFF8F0] flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <div className="relative p-7 bg-[#8B1A1A] rounded-3xl text-white shadow-xl shadow-[#8B1A1A]/25 flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
+                <UtensilsCrossed className="w-12 h-12 sm:w-14 sm:h-14 animate-pulse text-[#FFF8F0]" />
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#FF6B35] rounded-full animate-ping border-2 border-white" />
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#FF6B35] rounded-full border-2 border-white" />
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-serif italic font-bold text-lg sm:text-xl text-[#8B1A1A] tracking-tight leading-none">
+                  Foodie<span className="text-[#FF6B35] font-sans font-extrabold not-italic">Nepal</span>
+                </span>
+                <span className="text-[10px] text-[#2D6A4F] font-mono tracking-widest font-black uppercase mt-1">Official Brand</span>
+              </div>
+            </div>
+            {/* Overlay steam effect indicators */}
+            <div className="absolute inset-x-0 bottom-4 flex justify-center pointer-events-none">
+              <div className="flex items-center gap-1 text-[#FF6B35] font-extrabold text-[10px] bg-white/95 backdrop-blur px-2.5 py-1 rounded-full w-max shadow-sm">
+                <Flame className="w-3.5 h-3.5 animate-bounce" />
+                <span>AUTHENTIC</span>
               </div>
             </div>
           </div>

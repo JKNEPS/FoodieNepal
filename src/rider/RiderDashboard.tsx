@@ -156,7 +156,7 @@ export default function RiderDashboard() {
                     <span className="text-[10px] bg-emerald-50 text-emerald-850 font-bold px-2 py-0.5 rounded border border-emerald-250">
                       Claimed Assignment
                     </span>
-                    <h2 className="font-extrabold text-sm text-gray-900 mt-1">Diner ID: {activeDelivery.id}</h2>
+                    <h2 className="font-extrabold text-sm text-gray-900 mt-1">Customer ID: {activeDelivery.id}</h2>
                   </div>
                   <span className="font-black text-[#8B1A1A] text-sm">Delivery Fee: Rs. {activeDelivery.deliveryFee}</span>
                 </div>
@@ -213,7 +213,7 @@ export default function RiderDashboard() {
                 <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                   <RefreshCw className="w-12 h-12 text-gray-300 mx-auto animate-spin-slow" />
                   <h3 className="font-bold text-gray-700 mt-3">No pending unassigned delivery packages</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Kitchen orders appear in real-time instantly as soon as diners submit checkouts!</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Kitchen orders appear in real-time instantly as soon as customers submit checkouts!</p>
                 </div>
               ) : (
                 <div className="space-y-3">
