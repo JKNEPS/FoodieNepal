@@ -9,6 +9,7 @@ interface LoginPortalProps {
 
 export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalProps) {
   const [activeTab, setActiveTab] = useState<UserRole>("customer");
+  const [successAnimRole, setSuccessAnimRole] = useState<UserRole | null>(null);
   
   // Customer Gmail Login States
   const [gmail, setGmail] = useState("");
@@ -77,7 +78,10 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
     setUserLoading(true);
     setTimeout(() => {
       setUserLoading(false);
-      onLoginSuccess("customer");
+      setSuccessAnimRole("customer");
+      setTimeout(() => {
+        onLoginSuccess("customer");
+      }, 1800);
     }, 500);
   };
 
@@ -98,7 +102,10 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
       setAdminLoading(false);
       // STRICT authorization rules requested under prompt instructions
       if (cleanUser === "Jenish_Obir_Bibash" && cleanPass === "Foodie*Nepal#Np") {
-        onLoginSuccess("admin");
+        setSuccessAnimRole("admin");
+        setTimeout(() => {
+          onLoginSuccess("admin");
+        }, 1800);
       } else {
         setErrorMessage("Access Denied: Incorrect Admin Username or Security Password.");
       }
@@ -121,7 +128,10 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
     setTimeout(() => {
       setUserLoading(false);
       if (cleanUser.toLowerCase() === "vendor" && cleanPass === "vendor") {
-        onLoginSuccess("vendor");
+        setSuccessAnimRole("vendor");
+        setTimeout(() => {
+          onLoginSuccess("vendor");
+        }, 1800);
       } else {
         setErrorMessage("Access Denied: Incorrect Merchant username or password. (Hint: use 'vendor' / 'vendor')");
       }
@@ -144,7 +154,10 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
     setTimeout(() => {
       setUserLoading(false);
       if (cleanUser === "Rider_Foodie_Nepal_Np" && cleanPass === "#Rider*Foodie_Nepal.Np") {
-        onLoginSuccess("rider");
+        setSuccessAnimRole("rider");
+        setTimeout(() => {
+          onLoginSuccess("rider");
+        }, 1800);
       } else {
         setErrorMessage("Access Denied: Incorrect Rider ID code or security password entry.");
       }
@@ -154,6 +167,31 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
       <div className="relative w-full max-w-4xl bg-[#FFF8F0] text-gray-950 rounded-3xl overflow-hidden shadow-2xl border border-[#8B1A1A]/10 grid md:grid-cols-12 min-h-[500px] max-h-[92vh] md:max-h-[640px] overflow-y-auto">
+        {successAnimRole && (
+          <div className="absolute inset-0 z-50 bg-[#8B1A1A] text-white flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 w-24 h-24 -m-4 bg-white/10 rounded-full animate-ping" />
+              <div className="absolute inset-0 w-20 h-20 -m-2 bg-white/10 rounded-full animate-pulse" />
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-xl relative z-10 animate-bounce">
+                <CheckCircle2 className="w-10 h-10 stroke-[3]" />
+              </div>
+            </div>
+            
+            <h3 className="text-3xl font-serif italic font-bold tracking-tight text-[#FFF8F0] mb-2 animate-pulse">
+              Successfully Logged In!
+            </h3>
+            <p className="text-xs text-orange-200 uppercase font-mono tracking-widest font-black">
+              {successAnimRole === "admin" ? "Enterprise Administrator Workspace" : 
+               successAnimRole === "vendor" ? "Momo Kitchen Merchant Board" :
+               successAnimRole === "rider" ? "Rider GPS Dispatch Board" :
+               "Welcome to Customer Portal Hub"}
+            </p>
+            <div className="mt-8 flex items-center gap-2 text-xs text-white/70 font-semibold bg-black/20 px-3.5 py-1.5 rounded-full border border-white/5">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-ping" />
+              <span>Hajur! Loading your custom dashboard...</span>
+            </div>
+          </div>
+        )}
         
         {/* Left Side: App branding & Tab selection */}
         <div className="md:col-span-5 bg-gradient-to-b from-[#8B1A1A] to-[#590C0C] text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">

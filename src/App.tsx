@@ -24,6 +24,7 @@ export default function App() {
   const [customerAddress, setCustomerAddress] = useState("Ward No. 3, Jhamsikhel Tole, Lalitpur, Kathmandu");
   const [loyaltyPoints, setLoyaltyPoints] = useState(120);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
 
   // Floating Overlay trigger states
   const [activeCookItem, setActiveCookItem] = useState<MenuItem | null>(null);
@@ -158,7 +159,11 @@ export default function App() {
       total: finalBill,
       paymentMethod,
       promoCode,
-      discountAmount
+      discountAmount,
+      subtotal,
+      deliveryFee: 40,
+      platformFee: 10,
+      tax: calculatedTax
     };
 
     try {
@@ -171,9 +176,12 @@ export default function App() {
       if (data.success) {
         setActiveOrder(data.order);
         setCart([]); // Clear cart
-        setCurrentView("tracking");
-        // Award substantial loyalty points upon buying!
         setLoyaltyPoints((pts) => pts + 25);
+        setOrderPlacedSuccess(true);
+        setTimeout(() => {
+          setOrderPlacedSuccess(false);
+          setCurrentView("tracking");
+        }, 2200);
       }
     } catch (err) {
       console.error(err);
@@ -324,6 +332,42 @@ export default function App() {
           }}
           onCancel={() => setShowLogin(false)}
         />
+      )}
+
+      {orderPlacedSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="bg-[#FFF8F0] border-2 border-[#8B1A1A] text-gray-950 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-orange-500 via-[#8B1A1A] to-emerald-500" />
+            
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner animate-bounce">
+              <svg className="w-10 h-10 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h3 className="text-xl font-serif italic font-extrabold text-[#8B1A1A] mb-1">
+              Order successfully placed !
+            </h3>
+            <p className="text-[10px] font-mono text-[#FF6B35] tracking-widest uppercase font-bold mb-4">
+              Nepalese Gastronomy Dispatch
+            </p>
+            <p className="text-xs text-gray-700 leading-relaxed max-w-xs mx-auto mb-6">
+              Hajur! Your high-fidelity culinary order has been safely locked in. Preparing standard delivery live maps...
+            </p>
+            
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 mb-5 text-[11px] text-gray-500">
+              <div className="flex items-center justify-between">
+                <span>Loyalty Multiplier:</span>
+                <span className="text-emerald-600 font-bold">+25 loyalty points secured</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400 font-medium">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-ping" />
+              <span>Redirecting to order tracking section...</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

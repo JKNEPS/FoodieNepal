@@ -860,8 +860,13 @@ app.get("/api/orders", (req, res) => {
 });
 
 app.post("/api/orders", (req, res) => {
-  const { restaurantId, restaurantName, items, subtotal, deliveryFee, platformFee, tax, total, address, paymentMethod } = req.body;
+  const { restaurantId, restaurantName, items, total, address, paymentMethod } = req.body;
   
+  const subtotal = req.body.subtotal || (items && items.reduce((acc: number, it: any) => acc + it.menuItem.price * it.quantity, 0)) || 0;
+  const deliveryFee = req.body.deliveryFee !== undefined ? req.body.deliveryFee : 40;
+  const platformFee = req.body.platformFee !== undefined ? req.body.platformFee : 10;
+  const tax = req.body.tax !== undefined ? req.body.tax : Math.round(subtotal * 0.05);
+
   const orderOtp = Math.floor(1000 + Math.random() * 9000).toString();
   const newOrder: Order = {
     id: `ord_${Math.floor(1000 + Math.random() * 9000)}`,
@@ -880,8 +885,11 @@ app.post("/api/orders", (req, res) => {
     deliveryOtp: orderOtp
   };
   
-  // Grant customer loyalty points
-  currentUser.foodiePoints += Math.floor(subtotal * 0.1);
+  // Grant customer loyalty points with zero NaN protection
+  const pointsToUpdate = Math.floor(subtotal * 0.1);
+  if (!isNaN(pointsToUpdate) && pointsToUpdate > 0) {
+    currentUser.foodiePoints += pointsToUpdate;
+  }
   activeOrders.unshift(newOrder);
   
   res.json({ success: true, order: newOrder });
