@@ -1,0 +1,6 @@
+{
+  "name": "FoodieNepal",
+  "description": "Premium Full-Stack Food Delivery app dedicated to promoting local Nepali restaurants & street food, with dynamic ingredient animations, 3D AR previews, and an AI chat assistant with real-time Google Maps grounding.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
