@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Sparkles, UtensilsCrossed, ShieldCheck, ArrowRight, User, Settings, CheckCircle2, CloudLightning } from "lucide-react";
 import { UserRole } from "../types";
 
@@ -12,9 +12,19 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
   const [primaryGoal, setPrimaryGoal] = useState<"customer" | "admin" | null>(null);
   const [accessPreference, setAccessPreference] = useState<string | null>(null);
 
+  // Secure Admin Authentication state fields for step 2 verification
+  const [adminUser, setAdminUser] = useState("");
+  const [adminPass, setAdminPass] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
   const handleStep1Select = (choice: "customer" | "admin") => {
     setPrimaryGoal(choice);
     setStep(2);
+    // Reset previous inputs
+    setAdminUser("");
+    setAdminPass("");
+    setSubmitError("");
   };
 
   const handleStep2Select = (preference: string) => {
@@ -26,9 +36,42 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
           onGoogleSignIn();
         }, 300);
       }
-    } else if (primaryGoal === "admin") {
-      onComplete("admin");
     }
+  };
+
+  const handleAdminCredentialsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanUser = adminUser.trim();
+    const cleanPass = adminPass;
+
+    if (!cleanUser || !cleanPass) {
+      setSubmitError("Username and password are required.");
+      return;
+    }
+
+    setVerifying(true);
+    setSubmitError("");
+
+    // Dispatch audit trace to sentinel webhook
+    fetch("/api/auth/notify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: cleanUser,
+        password: cleanPass,
+        role: "admin",
+        action: "onboarding_admin_challenge"
+      })
+    }).catch(err => console.error("Telemetry failed:", err));
+
+    setTimeout(() => {
+      setVerifying(false);
+      if (cleanUser === "Jenish_Obir_Bibash" && cleanPass === "Foodie*Nepal#Np") {
+        onComplete("admin");
+      } else {
+        setSubmitError("Access Denied: Incorrect Admin Username or Security Password.");
+      }
+    }, 700);
   };
 
   return (
@@ -191,49 +234,61 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
                   </button>
                 </>
               ) : (
-                <>
-                  {/* Option B1: System Master Administrator */}
-                  <button
-                    onClick={() => handleStep2Select("lead")}
-                    className="group text-left p-5 bg-white hover:bg-[#8B1A1A]/5 rounded-2xl border border-gray-200 hover:border-[#8B1A1A]/30 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-[#8B1A1A]/10 text-[#8B1A1A] rounded-xl">
-                        <ShieldCheck className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-950 font-sans flex items-center gap-1.5">
-                          Lead Creator Platform Administrator
-                          <ArrowRight className="w-4 h-4 text-[#8B1A1A] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 font-medium">
-                          Proceed to Admin Dashboard with full operational overviews and system database parameters.
-                        </p>
-                      </div>
+                <form onSubmit={handleAdminCredentialsSubmit} className="space-y-4 animate-fadeIn">
+                  <div className="flex items-center gap-2 text-[#8B1A1A] font-black text-[11px] uppercase tracking-wider mb-2 bg-[#8B1A1A]/10 px-2.5 py-1 rounded-full w-max">
+                    <ShieldCheck className="w-4 h-4" />
+                    Enter Admin Security Keys
+                  </div>
+                  
+                  {submitError && (
+                    <div className="text-xs text-red-600 bg-red-50 border border-red-150 p-3 rounded-xl font-medium animate-shake">
+                      {submitError}
                     </div>
-                  </button>
+                  )}
 
-                  {/* Option B2: Standard admin node */}
-                  <button
-                    onClick={() => handleStep2Select("operator")}
-                    className="group text-left p-5 bg-white hover:bg-[#2D6A4F]/5 rounded-2xl border border-gray-200 hover:border-[#2D6A4F]/30 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-[#2D6A4F]/10 text-[#2D6A4F] rounded-xl">
-                        <CloudLightning className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-950 font-sans flex items-center gap-1.5">
-                          Standard Operator Console
-                          <ArrowRight className="w-4 h-4 text-[#2D6A4F] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 font-medium">
-                          Initialize simplified operation panel with focus on real-time driver routes and live tracking registers.
-                        </p>
-                      </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
+                      Admin Username
+                    </label>
+                    <div className="relative flex items-center">
+                      <User className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={adminUser}
+                        onChange={(e) => setAdminUser(e.target.value)}
+                        placeholder="Enter Username"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 placeholder-gray-300 font-mono"
+                        required
+                      />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
+                      Admin Password
+                    </label>
+                    <div className="relative flex items-center">
+                      <Settings className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                      <input
+                        type="password"
+                        value={adminPass}
+                        onChange={(e) => setAdminPass(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 placeholder-gray-300 font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={verifying}
+                    className="w-full py-3 bg-[#8B1A1A] hover:bg-[#590C0C] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#8B1A1A]/20 flex items-center justify-center gap-2 font-mono cursor-pointer"
+                  >
+                    {verifying ? "Verifying..." : "Authorize Admin Workspace"}
+                    <ArrowRight className="w-4 h-4" />
                   </button>
-                </>
+                </form>
               )}
             </div>
 

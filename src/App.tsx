@@ -439,8 +439,15 @@ export default function App() {
         <LoginPortal
           onLoginSuccess={(role) => {
             setUserRole(role);
-            if (role === "customer") {
-              setCurrentView("home");
+            if (role === "admin") {
+              setPortalLock("admin");
+              localStorage.setItem("foodienepal_portal_lock", "admin");
+            } else if (role === "customer" || role === "vendor" || role === "rider") {
+              setPortalLock("customer");
+              localStorage.setItem("foodienepal_portal_lock", "customer");
+              if (role === "customer") {
+                setCurrentView("home");
+              }
             }
             setShowLogin(false);
           }}
