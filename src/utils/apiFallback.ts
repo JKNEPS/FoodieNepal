@@ -3,28 +3,28 @@ import { notifyUserSession, notifyOrderPlacement } from "./discord";
 
 // --- Correct High-Resolution Images for Nepalese Delicacies ---
 const IMAGES = {
-  momoSteam: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
-  momoJhol: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
-  momoVeg: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
-  momoFried: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400",
-  chhoila: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400",
-  samaybaji: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&q=80&w=400",
-  bara: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=400",
-  chatamari: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",  // Traditional Nepalese Pizza Pizza layout!
-  alubodi: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=400",
-  thakaliChicken: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
-  dhido: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
-  sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=400",
-  dalbhatVeg: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
-  dalbhatMutton: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
-  jerry: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=400",
-  selroti: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400", // Traditional Nepali Ring Bread Sel Roti!
-  chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=400",
-  chowmeinVeg: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
-  buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=400",
-  sekuwa: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400",
-  lassi: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=400",
-  chatpat: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400"
+  momoSteam: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=600",
+  momoJhol: "https://plus.unsplash.com/premium_photo-1669742928014-ba36511677c7?auto=format&fit=crop&q=80&w=600",
+  momoVeg: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=600",
+  momoFried: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=600",
+  chhoila: "https://images.unsplash.com/photo-1603360946369-fa9902792685?auto=format&fit=crop&q=80&w=600",
+  samaybaji: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
+  bara: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=600",
+  chatamari: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600",  // Traditional Nepalese Pizza Pizza layout!
+  alubodi: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
+  thakaliChicken: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=600",
+  dhido: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
+  sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
+  dalbhatVeg: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=600",
+  dalbhatMutton: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
+  jerry: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=600",
+  selroti: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=600", // Traditional Nepali Ring Bread Sel Roti!
+  chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600",
+  chowmeinVeg: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=600",
+  buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",
+  sekuwa: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600",
+  lassi: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=600",
+  chatpat: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=600"
 };
 
 // --- In-Memory Fallback Databases ---
@@ -733,8 +733,20 @@ export const initFetchInterceptor = () => {
             deliveryOtp: orderOtp
           };
 
-          // Increment foodie points
-          const pointsEarned = Math.floor((total - 50) * 0.1) || 12;
+          // Increment foodie points according to the price tiers specified:
+          // Up to 500 Rs gives 50 points, up to 1000 Rs gives 100 points, etc. (Math.ceil(price / 500) * 50 points per item quantity)
+          let pointsEarned = 0;
+          if (items && Array.isArray(items)) {
+            items.forEach((it: any) => {
+              const itemPrice = it.menuItem?.price || 0;
+              const quantity = it.quantity || 1;
+              const pointsPerItemUnit = Math.ceil(itemPrice / 500) * 50;
+              pointsEarned += (pointsPerItemUnit * quantity);
+            });
+          } else {
+            const refPrice = Math.max(1, total - 50);
+            pointsEarned = Math.ceil(refPrice / 500) * 50;
+          }
           currentUserDB.foodiePoints += pointsEarned;
           saveKey("foodienepal_current_user", currentUserDB);
 

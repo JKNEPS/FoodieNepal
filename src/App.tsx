@@ -29,9 +29,20 @@ export default function App() {
   });
   const [favorites, setFavorites] = useState<string[]>(["rest_1", "rest_4"]);
   const [customerAddress, setCustomerAddress] = useState(() => {
-    return localStorage.getItem("foodienepal_customer_address") || "Ward No. 3, Jhamsikhel, Pokhara, Nepal";
+    return localStorage.getItem("foodienepal_customer_address") || "Pokhara, Nepal";
   });
-  const [loyaltyPoints, setLoyaltyPoints] = useState(120);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(() => {
+    try {
+      const saved = localStorage.getItem("foodienepal_loyalty_points");
+      return saved ? parseInt(saved, 10) : 120;
+    } catch {
+      return 120;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("foodienepal_loyalty_points", loyaltyPoints.toString());
+  }, [loyaltyPoints]);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
 
@@ -210,7 +221,15 @@ export default function App() {
       if (data.success) {
         setActiveOrder(data.order);
         setCart([]); // Clear cart
-        setLoyaltyPoints((pts) => pts + 25);
+        
+        // Calculate precise points: Up to 500 Rs -> 50 pts, Up to 1000 Rs -> 100 pts, etc. per item
+        const earnedPoints = cart.reduce((acc, item) => {
+          const itemPrice = item.menuItem.price;
+          const pointsPerItemUnit = Math.ceil(itemPrice / 500) * 50;
+          return acc + (pointsPerItemUnit * item.quantity);
+        }, 0);
+        
+        setLoyaltyPoints((pts) => pts + earnedPoints);
         setOrderPlacedSuccess(true);
         setTimeout(() => {
           setOrderPlacedSuccess(false);

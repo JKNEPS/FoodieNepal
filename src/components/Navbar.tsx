@@ -47,7 +47,7 @@ export default function Navbar({
           <div className="hidden md:flex items-center space-x-2 bg-[#FFF8F0] px-4 py-2 rounded-full border border-[#8B1A1A]/5 max-w-sm truncate text-ellipsis">
             <MapPin className="w-4 h-4 text-[#FF6B35] flex-shrink-0" />
             <span className="text-xs font-semibold text-[#8B1A1A] truncate">
-              {currentAddress || "Locating your Basantapur spot..."}
+              {currentAddress && currentAddress.toLowerCase().includes("pokhara") ? "Pokhara, Nepal" : (currentAddress || "Pokhara, Nepal")}
             </span>
           </div>
 
