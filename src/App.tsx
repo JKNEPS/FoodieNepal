@@ -9,14 +9,29 @@ import IngredientAnimation from "./components/IngredientAnimation";
 import ARViewer from "./components/ARViewer";
 import VendorDashboard from "./vendor/VendorDashboard";
 import RiderDashboard from "./rider/RiderDashboard";
-import { MenuItem, CartItem, Order, GroceryItem } from "./types";
+import { MenuItem, CartItem, Order, GroceryItem, User } from "./types";
 import LoginPortal from "./components/LoginPortal";
 import AdminPortalPanel from "./components/AdminPortalPanel";
 import Footer from "./components/Footer";
+import OnboardingWizard from "./components/OnboardingWizard";
 
 export default function App() {
   // Global States
-  const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
+  const [portalLock, setPortalLock] = useState<"customer" | "admin" | null>(() => {
+    return (localStorage.getItem("foodienepal_portal_lock") as "customer" | "admin" | null) || null;
+  });
+  const [googleUser, setGoogleUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem("foodienepal_google_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">(() => {
+    return (localStorage.getItem("foodienepal_portal_lock") as any) || "customer";
+  });
   const [showLogin, setShowLogin] = useState(false);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
@@ -40,6 +55,33 @@ export default function App() {
       return 120;
     }
   });
+
+  const handleOnboardingComplete = (chosenRole: "customer" | "admin") => {
+    setPortalLock(chosenRole);
+    setUserRole(chosenRole);
+    localStorage.setItem("foodienepal_portal_lock", chosenRole);
+    if (chosenRole === "customer") {
+      setCurrentView("home");
+    }
+  };
+
+  const handleGoogleSuccess = (user: User) => {
+    setGoogleUser(user);
+    setLoyaltyPoints(user.foodiePoints || 100);
+    localStorage.setItem("foodienepal_google_user", JSON.stringify(user));
+  };
+
+  const handleGoogleSignOut = () => {
+    setGoogleUser(null);
+    localStorage.removeItem("foodienepal_google_user");
+  };
+
+  const handleResetPortal = () => {
+    setPortalLock(null);
+    setGoogleUser(null);
+    localStorage.removeItem("foodienepal_portal_lock");
+    localStorage.removeItem("foodienepal_google_user");
+  };
 
   useEffect(() => {
     localStorage.setItem("foodienepal_loyalty_points", loyaltyPoints.toString());
@@ -289,6 +331,10 @@ export default function App() {
         currentAddress={customerAddress}
         foodiePoints={loyaltyPoints}
         onOpenLogin={() => setShowLogin(true)}
+        portalLock={portalLock}
+        googleUser={googleUser}
+        onGoogleSignOut={handleGoogleSignOut}
+        onResetPortal={handleResetPortal}
       />
 
       <main className="flex-1 mt-6">
@@ -399,6 +445,15 @@ export default function App() {
             setShowLogin(false);
           }}
           onCancel={() => setShowLogin(false)}
+          onGoogleSuccess={handleGoogleSuccess}
+        />
+      )}
+
+      {/* ONBOARDING INITIAL ROLE GATEWAYS (ASK 2 QUESTIONS AT STARTUP) */}
+      {!portalLock && (
+        <OnboardingWizard
+          onComplete={handleOnboardingComplete}
+          onGoogleSignIn={() => setShowLogin(true)}
         />
       )}
 

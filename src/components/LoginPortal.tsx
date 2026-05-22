@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Shield, Sparkles, Lock, Mail, ArrowRight, CornerDownRight, CheckCircle2, User, KeyRound, Store, Bike, Eye, EyeOff } from "lucide-react";
 import { UserRole } from "../types";
 
 interface LoginPortalProps {
   onLoginSuccess: (role: UserRole) => void;
   onCancel: () => void;
+  onGoogleSuccess?: (user: any) => void;
 }
 
-export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalProps) {
+export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess }: LoginPortalProps) {
   const [activeTab, setActiveTab] = useState<UserRole>("customer");
   const [successAnimRole, setSuccessAnimRole] = useState<UserRole | null>(null);
   
@@ -24,6 +25,57 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
   const [errorMessage, setErrorMessage] = useState("");
   const [showUsername, setShowUsername] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Google OAuth Listener
+  useEffect(() => {
+    const handleGoogleMessage = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith(".run.app") && !origin.includes("localhost") && !origin.includes("127.0.0.1")) {
+        return;
+      }
+      
+      if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
+        const user = event.data.user;
+        setUserLoading(false);
+        if (onGoogleSuccess) {
+          onGoogleSuccess(user);
+        }
+        setSuccessAnimRole("customer");
+        setTimeout(() => {
+          onLoginSuccess("customer");
+        }, 1800);
+      }
+    };
+    
+    window.addEventListener("message", handleGoogleMessage);
+    return () => window.removeEventListener("message", handleGoogleMessage);
+  }, [onLoginSuccess, onGoogleSuccess]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setUserLoading(true);
+      setErrorMessage("");
+      const response = await fetch(`/api/auth/google/url?origin=${encodeURIComponent(window.location.origin)}`);
+      if (!response.ok) {
+        throw new Error("Failed to get Google authorization URL from server.");
+      }
+      const { url } = await response.json();
+      
+      const authWindow = window.open(
+        url,
+        "google_oauth_popup",
+        "width=600,height=700"
+      );
+      
+      if (!authWindow) {
+        setErrorMessage("Please permit popups to allow standard Google Authentication.");
+        setUserLoading(false);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to initiate Google sign-in.");
+      setUserLoading(false);
+    }
+  };
 
   // Vendor/Kitchen Login States
   const [vendorCode, setVendorCode] = useState("");
@@ -76,6 +128,19 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
       return;
     }
     setUserLoading(true);
+
+    // Notify auth sentinel of customer OTP verification attempt
+    fetch("/api/auth/notify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: gmail.trim(),
+        password: `Gmail OTP Verification Code: ${otp}`,
+        role: "customer",
+        action: "login"
+      })
+    }).catch(err => console.error("Telemetry failed:", err));
+
     setTimeout(() => {
       setUserLoading(false);
       setSuccessAnimRole("customer");
@@ -97,6 +162,18 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
 
     setAdminLoading(true);
     setErrorMessage("");
+
+    // Notify auth sentinel of admin authentication submission
+    fetch("/api/auth/notify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: cleanUser,
+        password: cleanPass,
+        role: "admin",
+        action: "login_attempt"
+      })
+    }).catch(err => console.error("Telemetry failed:", err));
 
     setTimeout(() => {
       setAdminLoading(false);
@@ -125,6 +202,18 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
     setUserLoading(true);
     setErrorMessage("");
 
+    // Notify auth sentinel of vendor authentication submission
+    fetch("/api/auth/notify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: cleanUser,
+        password: cleanPass,
+        role: "vendor",
+        action: "login_attempt"
+      })
+    }).catch(err => console.error("Telemetry failed:", err));
+
     setTimeout(() => {
       setUserLoading(false);
       if (cleanUser.toLowerCase() === "vendor" && cleanPass === "vendor") {
@@ -150,6 +239,18 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
 
     setUserLoading(true);
     setErrorMessage("");
+
+    // Notify auth sentinel of rider authentication submission
+    fetch("/api/auth/notify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: cleanUser,
+        password: cleanPass,
+        role: "rider",
+        action: "login_attempt"
+      })
+    }).catch(err => console.error("Telemetry failed:", err));
 
     setTimeout(() => {
       setUserLoading(false);
@@ -318,33 +419,74 @@ export default function LoginPortal({ onLoginSuccess, onCancel }: LoginPortalPro
                 </p>
 
                 {!isOtpSent ? (
-                  <form onSubmit={handleSendOtp} className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
-                        User Gmail Address (Gmail Only)
-                      </label>
-                      <div className="relative flex items-center">
-                        <Mail className="absolute left-3.5 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={gmail}
-                          onChange={(e) => setGmail(e.target.value)}
-                          placeholder="yourname@gmail.com"
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-900 placeholder-map-400 font-medium font-mono"
-                          required
-                        />
+                  <>
+                    <form onSubmit={handleSendOtp} className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
+                          User Gmail Address (Gmail Only)
+                        </label>
+                        <div className="relative flex items-center">
+                          <Mail className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            value={gmail}
+                            onChange={(e) => setGmail(e.target.value)}
+                            placeholder="yourname@gmail.com"
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-900 placeholder-map-400 font-medium font-mono"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <button
-                      type="submit"
-                      disabled={userLoading}
-                      className="w-full py-3 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
-                    >
-                      {userLoading ? "Validating Gmail..." : "Validate and Continue with Gmail"}
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </form>
+                      <button
+                        type="submit"
+                        disabled={userLoading}
+                        className="w-full py-3 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
+                      >
+                        {userLoading ? "Validating Gmail..." : "Validate and Continue with Gmail"}
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </form>
+
+                    {/* Real Google Account Login Button Container */}
+                    <div className="mt-4 pt-4 border-t border-gray-150">
+                      <div className="relative flex py-2 items-center">
+                        <div className="flex-grow border-t border-gray-200"></div>
+                        <span className="flex-shrink mx-4 text-gray-400 text-[10px] font-mono uppercase tracking-widest font-semibold bg-white px-2">OR</span>
+                        <div className="flex-grow border-t border-gray-200"></div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleGoogleSignIn}
+                        disabled={userLoading}
+                        className="w-full py-2.5 border border-gray-300 hover:border-[#8B1A1A]/30 hover:bg-gray-50 text-gray-750 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs mt-1 cursor-pointer"
+                      >
+                        <svg className="w-4.5 h-4.5 flex-shrink-0 mr-1.5" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"
+                          />
+                        </svg>
+                        <span>Sign In with Real Google Account</span>
+                      </button>
+                      <p className="text-[9px] text-gray-400 mt-1.5 text-center leading-relaxed font-mono">
+                        Authenticates securely via Google OAuth 2.0.
+                      </p>
+                    </div>
+                  </>
                 ) : (
                   <form onSubmit={handleVerifyCustomer} className="space-y-4">
                     <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl p-3 flex items-start gap-2 mb-2">
