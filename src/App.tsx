@@ -12,6 +12,7 @@ import RiderDashboard from "./rider/RiderDashboard";
 import { MenuItem, CartItem, Order, GroceryItem } from "./types";
 import LoginPortal from "./components/LoginPortal";
 import AdminPortalPanel from "./components/AdminPortalPanel";
+import Footer from "./components/Footer";
 
 export default function App() {
   // Global States
@@ -357,6 +358,9 @@ export default function App() {
 
         {userRole === "admin" && <AdminPortalPanel />}
       </main>
+
+      {/* Global Application Footer */}
+      <Footer />
 
       {/* Floating Grounded GIS Chatbot for Customers */}
       {userRole === "customer" && (

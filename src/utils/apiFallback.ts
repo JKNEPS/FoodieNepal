@@ -206,7 +206,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_1": [
     {
       id: "item_101",
-      name: "Steam Buff Momo",
+      name: "Buff Steamed MoMo (Juicy Dumplings with Spicy Sesame Dip)",
       price: 130,
       description: "Nepali style dumplings stuffed with spiced minced buffalo meat, steamed to perfection and served with rich tomato achar.",
       category: "Momo",
@@ -218,7 +218,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_102",
-      name: "Jhol Buff Momo",
+      name: "Buff Jhol MoMo (Dumplings Drowned in Tangy Sesame Soup)",
       price: 160,
       description: "Momo drowned in a cold/warm tangy sesame-based light soup flavored with hog plum (lapsi) and fresh spices.",
       category: "Momo",
@@ -229,7 +229,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_103",
-      name: "Veg Cheese Momo",
+      name: "Yak Cheese & Vegetable MoMo (Creamy Steamed Dumplings)",
       price: 140,
       description: "Dumplings stuffed with mixed fresh vegetables, paneer, and local yak cheese. Incredibly creamy.",
       category: "Momo",
@@ -241,7 +241,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_104",
-      name: "Nepali Buff C-Momo",
+      name: "Buff Chili C-MoMo (Wok-Tossed Spicy Pan-Fried Dumplings)",
       price: 180,
       description: "Fried momo tossed in a hot and spicy, tangy capsicum, onion, and chili sauce dressing.",
       category: "Momo",
@@ -252,7 +252,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_105",
-      name: "Chhoila Buff (Newari Style)",
+      name: "Buff Chhoila (Spiced Charcoal-Grilled Marinated Buffalo Meat Salad)",
       price: 220,
       description: "Spiced, grilled buffalo meat marinated in roasted mustard oil, fenugreek, green garlic, and toasted ginger.",
       category: "Newari",
@@ -265,7 +265,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_2": [
     {
       id: "item_201",
-      name: "Traditional Newari Samay Baji Set",
+      name: "Samay Baji Platter (Traditional Newari Multi-Dish Festive Feast Set)",
       price: 250,
       description: "An authentic Newari feast with beaten rice, spiced buffalo chhoila, roasted black soybeans, garlic-ginger potato salad, and black lentil baras.",
       category: "Newari",
@@ -277,7 +277,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_202",
-      name: "Bara with Egg & Minced Meat",
+      name: "Traditional Bara (Savory Lentil Pancake Topped with Meat & Egg)",
       price: 150,
       description: "Savory black lentil pancake fried on a cast iron pan, topped with a seasoned fried egg and spiced minced chicken.",
       category: "Newari",
@@ -288,7 +288,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_203",
-      name: "Chatamari Supreme (Nepali Pizza)",
+      name: "Supreme Chatamari (Crispy Rice Crepe 'Nepali Pizza' with Chicken & Egg)",
       price: 180,
       description: "Thin, crispy rice crêpe loaded with seasoned chicken, onion, tomato, fresh coriander, and egg.",
       category: "Newari",
@@ -300,7 +300,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_204",
-      name: "Alu Tama Bodi Soup",
+      name: "Alu Tama Bodi Soup (Classic Tangy Bamboo Shoot & Bean Curry)",
       price: 110,
       description: "Classic Newari sour curry soup made with fermented tender bamboo shoots, potatoes, and black-eyed beans.",
       category: "Newari",
@@ -313,7 +313,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_3": [
     {
       id: "item_301",
-      name: "Special Thakali Khana Set (Chicken)",
+      name: "Thakali Chicken Thali Set (Basmati Rice, Lentils, local Curry & Ghee Platter)",
       price: 320,
       description: "Traditional Himalayan combo of premium aromatic basmati rice, slow-cooked black mountain beans, organic local chicken curry, homemade ghee, wild leaf gundruk and fried crispy potato.",
       category: "Thakali",
@@ -325,7 +325,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_302",
-      name: "Lete Buckwheat Dhido Set",
+      name: "Lete Buckwheat Dhido (Nutritional Himalayan Hot Grain Mash cooking Platter)",
       price: 290,
       description: "Himalayan nutritional powerhouse: freshly-churned buckwheat (Kodo) porridge eaten with hot ghee, local pickle, dry Radish shoot (Gundruk), and local vegetable stew.",
       category: "Nepali",
@@ -337,7 +337,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_303",
-      name: "Thakali Buffalo Sukuti Sadeko",
+      name: "Buff Sukuti Sadeko (Spicy Crispy Charcoal Dry-Meat Jerky Salad)",
       price: 240,
       description: "Spicy, crispy air-fried dry buffalo beef strips tossed in red onion, tomato, fresh red chili, szechuan pepper (Timmur) and lime juice.",
       category: "Nepali",
@@ -350,7 +350,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_4": [
     {
       id: "item_401",
-      name: "Classic Veg Dal Bhat Thali",
+      name: "Classic Veg Dal Bhat Platter (Signature Nepali Household Rice & Lentils Set)",
       price: 130,
       description: "Simple household Nepali Dal Bhat. Daily hand-milled rice, cream yellow lentils, seasonal mixed curry, radish-cucumber pickle and papad.",
       category: "Nepali",
@@ -362,7 +362,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_402",
-      name: "Khasi ko Masu Dal Bhat Thali",
+      name: "Khasi Ko Masu Dal Bhat Set (Tender Himalayan Goat Mutton Curry Thali)",
       price: 360,
       description: "Premium thali with slow-simmered Nepali mountain goat (mutton) curry, cooked in a heavy brass pot with spices, ghee, basmati rice, lentils, and salad.",
       category: "Nepali",
@@ -375,7 +375,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_5": [
     {
       id: "item_501",
-      name: "Golden Sweet Jerry (2 Pcs)",
+      name: "Golden Sweet Jerry (Crispy Syrupy Cardamom Jalebi Spiral Fritters - 2 Pcs)",
       price: 60,
       description: "Deep-fried fermented rice flour spiral shapes, soaked in sugar cardamon syrup. Crunchy and syrupy.",
       category: "Street Food",
@@ -387,7 +387,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_502",
-      name: "Piped Sel Roti with Alu Achar",
+      name: "Traditional Ring Sel Roti (Crispy Rice Bread Served with Sesame Potato Salad)",
       price: 90,
       description: "A traditional ring-shaped crispy sweet rice bread, deep-fried in ghee, served with stone-ground sesame spiced potato salad (Alu ko Achar).",
       category: "Traditional",
@@ -401,7 +401,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_6": [
     {
       id: "item_601",
-      name: "Classic Buff Chowmein",
+      name: "Buff Chowmein (Delicious Spicy Nepali-Style Wok-Fired Buffalo Noodles)",
       price: 110,
       description: "Nepali wok-fired yellow wheat noodles tossed with sautéed buffalo meat strips, cabbage, carrot, green onions, and dark soy.",
       category: "Chowmein",
@@ -413,7 +413,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
     },
     {
       id: "item_602",
-      name: "Mix Veg Chowmein Extra Spice",
+      name: "Veg Chowmein Extra Spice (Street-Style Spicy Stir-Fried Vegetable Noodles)",
       price: 95,
       description: "Street-style hot chowmein loaded with shredded fresh local vegetables, extra green chilies and direct spices.",
       category: "Chowmein",
@@ -426,7 +426,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_7": [
     {
       id: "item_701",
-      name: "Butter Tea (Su-Chiya) & 2 Tingmo",
+      name: "Tibet Butter Tea Su-Chiya Set (Warm Salted Tea Served with 2 Steamed Tingmo Flower Buns)",
       price: 130,
       description: "Authentic Tibetan tea brewed with brick tea leaves, local yak butter, salt, served alongside two soft cloud-like steamed flower buns.",
       category: "Traditional",
@@ -439,7 +439,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_8": [
     {
       id: "item_801",
-      name: "Pork Sekuwa Set",
+      name: "Pork Sekuwa Platter (Dharane Charcoal-Grilled Spiced Meat Skewers with Beaten Rice)",
       price: 210,
       description: "Tender chunks of pork marinated in special Dharane-style mountain herbs, skewers-grilled over open natural charcoal, served with crispy baji.",
       category: "Traditional",
@@ -452,7 +452,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_9": [
     {
       id: "item_901",
-      name: "Boudha Sweet Lapsi Shaken Lassi",
+      name: "Sweet Lapsi Yogurt Lassi (Creamy Shaken Curd Infused with Wild Plum Pulp)",
       price: 110,
       description: "Rich curd blended with wild sweet-sour Nepalese Hog Plum fruit pulp and toasted almonds.",
       category: "Street Food",
@@ -465,7 +465,7 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
   "rest_10": [
     {
       id: "item_1001",
-      name: "Spicy Basantapur Chatpat",
+      name: "Spicy Basantapur Chatpate (Crunchy Puffed Rice Mixture Salad with Raw Lemon & Spices)",
       price: 50,
       description: "Crunchy puffed rice mixed in raw green chilies, boiled potatoes, chopped onions, and mustard oil.",
       category: "Street Food",
