@@ -688,25 +688,13 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                         <div className="relative flex items-center">
                           <User className="absolute left-3.5 w-4 h-4 text-gray-400" />
                           <input
-                            type={showUsername ? "text" : "password"}
+                            type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            placeholder="••••••••••••"
-                            className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 placeholder-gray-300 font-mono"
+                            placeholder="Enter Admin Username"
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 placeholder-gray-300 font-mono"
                             required
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowUsername(!showUsername)}
-                            className="absolute right-3.5 text-gray-400 hover:text-gray-650 p-1 rounded-lg focus:outline-none transition-colors animate-fadeIn"
-                            title={showUsername ? "Hide Username" : "Show Username"}
-                          >
-                            {showUsername ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
                         </div>
                       </div>
 
