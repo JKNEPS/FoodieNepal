@@ -422,6 +422,8 @@ export default function OrderTracking({
               restaurantLng={restCoords.lng}
               restaurantName={polledOrder.restaurantName}
               customerAddress={polledOrder.address}
+              customerLat={custCoords.lat}
+              customerLng={custCoords.lng}
             />
 
             {/* Rider profile info & simulated chat interface */}

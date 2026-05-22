@@ -74,9 +74,9 @@ const sampleRestaurants: Restaurant[] = [
     deliveryTimeCode: "20-30 min",
     deliveryFee: 40,
     minOrder: 100,
-    address: "Ward 3, Jhamsikhel, Lalitpur (Opposite British School)",
-    lat: 27.6801,
-    lng: 85.3122,
+    address: "Ward 3, Jhamsikhel, Pokhara, Nepal (Opposite British School)",
+    lat: 28.2096,
+    lng: 83.9856,
     openStatus: "Open",
     operatingHours: "10:30 AM - 10:00 PM",
     cuisineTypes: ["Momo", "Newari", "Street Food"],
@@ -592,15 +592,19 @@ setInterval(() => {
       order.riderId = "rider_1";
       order.riderName = "Niranjan Shrestha";
       order.riderPhone = "+977 9811223344";
-      order.riderLat = 27.6801;
-      order.riderLng = 85.3122;
+      const isPk = (order.address || "").toLowerCase().includes("pokhara");
+      order.riderLat = isPk ? 28.2096 : 27.6801;
+      order.riderLng = isPk ? 83.9856 : 85.3122;
     } else if (order.status === "picked_up") {
       order.status = "on_the_way";
     } else if (order.status === "on_the_way") {
-      // Simulate moving rider closer to Kathmandu center (27.7022, 85.3190) from rest_1 coordinates (27.6801, 85.3122)
+      // Simulate moving rider closer to customer's destination
+      const isPk = (order.address || "").toLowerCase().includes("pokhara");
+      const targetLat = isPk ? 28.2120 : 27.7022;
+      const targetLng = isPk ? 83.9820 : 85.3190;
       if (order.riderLat && order.riderLng) {
-        order.riderLat += (27.7022 - order.riderLat) * 0.35;
-        order.riderLng += (85.3190 - order.riderLng) * 0.35;
+        order.riderLat += (targetLat - order.riderLat) * 0.25;
+        order.riderLng += (targetLng - order.riderLng) * 0.25;
       }
     }
   });

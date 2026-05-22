@@ -10,6 +10,7 @@ interface CheckoutProps {
   onUpdateCartItemSpice: (id: string, spice: string) => void;
   onUpdateCartItemNote: (id: string, note: string) => void;
   customerAddress: string;
+  onChangeAddress: (addr: string) => void;
   onPlaceOrder: (paymentMethod: "cod" | "esewa" | "khalti" | "imepay", promoCode?: string, discountAmount?: number) => void;
 }
 
@@ -21,6 +22,7 @@ export default function Checkout({
   onUpdateCartItemSpice,
   onUpdateCartItemNote,
   customerAddress,
+  onChangeAddress,
   onPlaceOrder
 }: CheckoutProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "esewa" | "khalti" | "imepay">("cod");
@@ -29,6 +31,9 @@ export default function Checkout({
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [scheduling, setScheduling] = useState<"now" | "later">("now");
+
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [addressInput, setAddressInput] = useState(customerAddress);
 
   if (cartItems.length === 0) {
     return (
@@ -185,15 +190,63 @@ export default function Checkout({
 
           {/* Delivery Coordinates & Schedule Details */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
-            <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Delivery Coordinates</span>
-            
-            <div className="flex items-center gap-3 bg-[#FFF8F0]/30 p-3 rounded-xl border border-[#FF6B35]/10">
-              <MapPin className="w-5 h-5 text-[#FF6B35] flex-shrink-0" />
-              <div>
-                <h4 className="font-bold text-xs text-[#8B1A1A]">Dropoff Location spot</h4>
-                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-0.5">{customerAddress}</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Delivery Coordinates</span>
+              {!isEditingAddress && (
+                <button
+                  onClick={() => {
+                    setAddressInput(customerAddress);
+                    setIsEditingAddress(true);
+                  }}
+                  className="text-[10px] text-[#FF6B35] hover:text-[#2D6A4F] font-bold tracking-wider uppercase border border-[#FF6B35]/20 hover:border-[#2D6A4F]/30 px-2.5 py-1 rounded-lg transition-colors"
+                >
+                  ✎ Edit Spot
+                </button>
+              )}
             </div>
+            
+            {isEditingAddress ? (
+              <div className="space-y-3 bg-[#FFF8F0]/30 p-4 rounded-xl border border-[#FF6B35]/15">
+                <label className="block text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider">Type Your Current Location Address</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={addressInput}
+                    onChange={(e) => setAddressInput(e.target.value)}
+                    placeholder="E.g., Ward No. 3, Jhamsikhel, Pokhara, Nepal"
+                    className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35]"
+                  />
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    onClick={() => setIsEditingAddress(false)}
+                    className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 bg-gray-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      onChangeAddress(addressInput);
+                      setIsEditingAddress(false);
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-[#2D6A4F] hover:bg-[#1a3d2e] rounded-lg"
+                  >
+                    Save Address
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 bg-[#FFF8F0]/30 p-3 rounded-xl border border-[#FF6B35]/10">
+                <MapPin className="w-5 h-5 text-[#FF6B35] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-xs text-[#8B1A1A] flex items-center gap-1.5">
+                    <span>Dropoff Location Spot</span>
+                    <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-emerald-50 text-emerald-800 font-bold border border-emerald-100 rounded">GPS Locked</span>
+                  </h4>
+                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-0.5 break-words">{customerAddress}</p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3.5">
               <button

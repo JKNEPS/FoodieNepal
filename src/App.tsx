@@ -21,7 +21,7 @@ export default function App() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [favorites, setFavorites] = useState<string[]>(["rest_1", "rest_4"]);
-  const [customerAddress, setCustomerAddress] = useState("Ward No. 3, Jhamsikhel Tole, Lalitpur, Kathmandu");
+  const [customerAddress, setCustomerAddress] = useState("Ward No. 3, Jhamsikhel, Pokhara, Nepal");
   const [loyaltyPoints, setLoyaltyPoints] = useState(120);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
@@ -52,9 +52,8 @@ export default function App() {
   // Cart operations
   const handleAddToCart = (item: MenuItem, restId: string, restName: string) => {
     setCart((prev) => {
-      // Clean previous items from other restaurants to respect single-cart deliveries
-      const fromOtherRest = prev.some((cartIt) => cartIt.restaurantId !== restId);
-      const baseCart = fromOtherRest ? [] : prev;
+      // Support multi-restaurant items inside the cart together
+      const baseCart = prev;
 
       const existingIdx = baseCart.findIndex((cartIt) => cartIt.menuItem.id === item.id);
       if (existingIdx > -1) {
@@ -65,7 +64,7 @@ export default function App() {
       return [
         ...baseCart,
         {
-          id: `cart_${Date.now()}`,
+          id: `cart_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
           menuItem: item,
           quantity: 1,
           restaurantId: restId,
@@ -218,6 +217,11 @@ export default function App() {
     }
   };
 
+  const handleTrackOrder = (order: Order) => {
+    setActiveOrder(order);
+    setCurrentView("tracking");
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF8F0]/30 text-gray-800 flex flex-col font-sans">
       
@@ -248,6 +252,11 @@ export default function App() {
                 onCookAnimation={(item) => setActiveCookItem(item)}
                 onARPreview={(item) => setActiveARItem(item)}
                 onSelectGroceryItem={handleSelectGroceryItem}
+                customerAddress={customerAddress}
+                onChangeAddress={setCustomerAddress}
+                loyaltyPoints={loyaltyPoints}
+                onChangeLoyaltyPoints={setLoyaltyPoints}
+                onTrackOrder={handleTrackOrder}
               />
             )}
 
@@ -272,6 +281,7 @@ export default function App() {
                 onUpdateCartItemSpice={handleUpdateCartItemSpice}
                 onUpdateCartItemNote={handleUpdateCartItemNote}
                 customerAddress={customerAddress}
+                onChangeAddress={setCustomerAddress}
                 onPlaceOrder={handlePlaceOrder}
               />
             )}
