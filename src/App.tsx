@@ -19,9 +19,18 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("foodienepal_cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [favorites, setFavorites] = useState<string[]>(["rest_1", "rest_4"]);
-  const [customerAddress, setCustomerAddress] = useState("Ward No. 3, Jhamsikhel, Pokhara, Nepal");
+  const [customerAddress, setCustomerAddress] = useState(() => {
+    return localStorage.getItem("foodienepal_customer_address") || "Ward No. 3, Jhamsikhel, Pokhara, Nepal";
+  });
   const [loyaltyPoints, setLoyaltyPoints] = useState(120);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
@@ -30,10 +39,36 @@ export default function App() {
   const [activeCookItem, setActiveCookItem] = useState<MenuItem | null>(null);
   const [activeARItem, setActiveARItem] = useState<MenuItem | null>(null);
 
-  // Syncing cart contents or active activeOrder with localStorage for continuous state
+  // Syncing cart contents with localStorage for continuous state
   useEffect(() => {
     localStorage.setItem("foodienepal_cart", JSON.stringify(cart));
   }, [cart]);
+
+  // Syncing address changes with local storage and mock profile details
+  useEffect(() => {
+    localStorage.setItem("foodienepal_customer_address", customerAddress);
+    fetch("/api/auth/update-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: customerAddress })
+    }).catch(() => {});
+  }, [customerAddress]);
+
+  // Restore latest pending active order on startup
+  useEffect(() => {
+    fetch("/api/orders")
+      .then((res) => res.json())
+      .then((orders) => {
+        if (orders && orders.length > 0) {
+          const pending = orders.find((o: Order) => o.status !== "delivered" && o.status !== "cancelled");
+          if (pending) {
+            setActiveOrder(pending);
+            setCurrentView("tracking");
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Navbar Switcher trigger
   const handleRoleChange = (role: "customer" | "vendor" | "rider" | "admin") => {

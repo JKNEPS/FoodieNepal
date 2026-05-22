@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, MapPin, Bike, ArrowRight, ShieldCheck, Heart, Sparkles, Flame, Store, ShoppingBasket, Plus, Clock, History } from "lucide-react";
+import { Star, MapPin, Bike, Heart, Sparkles, Flame, Store, Plus, Clock } from "lucide-react";
 import HeroBanner from "../components/HeroBanner";
 import { Restaurant, MenuItem, GroceryItem, Order } from "../types";
 
@@ -18,6 +18,7 @@ interface HomeProps {
   onTrackOrder: (order: Order) => void;
 }
 
+// Correct high-resolution images for the loyalty prize hub
 const LOYALTY_EXCHANGE_ITEMS = [
   {
     id: "loyalty_momo",
@@ -26,7 +27,7 @@ const LOYALTY_EXCHANGE_ITEMS = [
     price: 0,
     description: "Points Special: Authentic mini plate of steamed dumplings seasoned to perfection.",
     category: "Momo",
-    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
+    image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
     spiceLevel: "Medium",
     isVeg: false,
     ingredients: []
@@ -38,7 +39,7 @@ const LOYALTY_EXCHANGE_ITEMS = [
     price: 0,
     description: "Points Special: Warm spiced ring bread served with a traditional cup of sweet milk tea.",
     category: "Traditional",
-    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=400",
+    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400", // Ring bread!
     spiceLevel: "Mild",
     isVeg: true,
     ingredients: []
@@ -50,10 +51,265 @@ const LOYALTY_EXCHANGE_ITEMS = [
     price: 0,
     description: "Points Special: Delightful thin crispy rice flour base topped with coriander and farm egg.",
     category: "Newari",
-    image: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=400",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400", // Crispy Flatbread!
     spiceLevel: "Medium",
     isVeg: false,
     ingredients: []
+  }
+];
+
+// Master high-fidelity Menu Varieties database (with fully corrected images)
+const ALL_MENU_ITEMS = [
+  {
+    id: "item_101",
+    name: "Steam Buff Momo",
+    price: 130,
+    description: "Nepali style dumplings stuffed with spiced minced buffalo meat, steamed to perfection.",
+    category: "Momo",
+    image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_1",
+    restaurantName: "Momo House & Newari Delicacy"
+  },
+  {
+    id: "item_102",
+    name: "Jhol Buff Momo",
+    price: 160,
+    description: "Momo drowned in a cold/warm tangy sesame-based light soup flavored with hog plum (lapsi).",
+    category: "Momo",
+    image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_1",
+    restaurantName: "Momo House & Newari Delicacy"
+  },
+  {
+    id: "item_103",
+    name: "Veg Cheese Momo",
+    price: 140,
+    description: "Dumplings stuffed with mixed fresh vegetables, paneer, and local yak cheese. Incredibly rich.",
+    category: "Momo",
+    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_1",
+    restaurantName: "Momo House & Newari Delicacy"
+  },
+  {
+    id: "item_104",
+    name: "Nepali Buff C-Momo",
+    price: 180,
+    description: "Fried momo tossed in a hot and spicy, tangy capsicum, onion, and chili sauce dressing.",
+    category: "Momo",
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_1",
+    restaurantName: "Momo House & Newari Delicacy"
+  },
+  {
+    id: "item_105",
+    name: "Chhoila Buff (Newari Style)",
+    price: 220,
+    description: "Spiced grilled meat salad marinated with roasted garlic, fenugreek, and mustard oil.",
+    category: "Newari",
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_1",
+    restaurantName: "Momo House & Newari Delicacy"
+  },
+  {
+    id: "item_201",
+    name: "Traditional Newari Samay Baji Set",
+    price: 250,
+    description: "An authentic Newari feast with beaten rice, spiced buffalo chhoila, roasted black soybeans, and baras.",
+    category: "Newari",
+    image: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_2",
+    restaurantName: "Basantapur Samay Baji Corner"
+  },
+  {
+    id: "item_202",
+    name: "Bara with Egg & Minced Meat",
+    price: 150,
+    description: "Savory black lentil pancake fried on a cast iron pan, topped with egg and seasoned meat.",
+    category: "Newari",
+    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_2",
+    restaurantName: "Basantapur Samay Baji Corner"
+  },
+  {
+    id: "item_203",
+    name: "Chatamari Supreme (Nepali Pizza)",
+    price: 180,
+    description: "Thin, crispy rice flour crepe loaded with seasoned chicken, onion, tomato, fresh coriander, and egg.",
+    category: "Newari",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400", // Corrected Supreme Egg Chatamari representation!
+    restaurantId: "rest_2",
+    restaurantName: "Basantapur Samay Baji Corner"
+  },
+  {
+    id: "item_204",
+    name: "Alu Tama Bodi Soup",
+    price: 110,
+    description: "Classic Newari soup curry made with fermented tender bamboo shoots, potatoes, and black-eyed peas.",
+    category: "Newari",
+    image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_2",
+    restaurantName: "Basantapur Samay Baji Corner"
+  },
+  {
+    id: "item_301",
+    name: "Special Thakali Khana Set (Chicken)",
+    price: 320,
+    description: "Aromatic basmati rice, slow-cooked yellow and black lentils, organic chicken curry, pure Himalayan ghee, and pickles.",
+    category: "Thakali",
+    image: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_3",
+    restaurantName: "Thakali Bhanchha Ghar"
+  },
+  {
+    id: "item_302",
+    name: "Lete Buckwheat Dhido Set",
+    price: 290,
+    description: "Himalayan nutritional powerhouse: buckwheat porridge served with clarifying ghee, Gundruk and local stew.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_3",
+    restaurantName: "Thakali Bhanchha Ghar"
+  },
+  {
+    id: "item_303",
+    name: "Thakali Buffalo Sukuti Sadeko",
+    price: 240,
+    description: "Spicy air-fried dry buffalo strips tossed with red onions, szechuan pepper (Timmur), and lemon.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_3",
+    restaurantName: "Thakali Bhanchha Ghar"
+  },
+  {
+    id: "item_401",
+    name: "Classic Veg Dal Bhat Thali",
+    price: 130,
+    description: "Simple household Nepali thali with yellow mountain lentils, mixed seasonal vegetables, and pickles.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_4",
+    restaurantName: "Dal-Bhat Kamalpokhari Express"
+  },
+  {
+    id: "item_402",
+    name: "Khasi ko Masu Dal Bhat Thali",
+    price: 360,
+    description: "Premium thali with slow-simmered local mountain mutton (goat) curry cooked in traditional heavy brass pots.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_4",
+    restaurantName: "Dal-Bhat Kamalpokhari Express"
+  },
+  {
+    id: "item_501",
+    name: "Golden Sweet Jerry (2 Pcs)",
+    price: 60,
+    description: "Deep-fried fermented rice flour spiral shapes, soaked in aromatic sugar cardamom syrup.",
+    category: "Street Food",
+    image: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_5",
+    restaurantName: "Basantapur Sweet & Selroti Pasal"
+  },
+  {
+    id: "item_502",
+    name: "Piped Sel Roti with Alu Achar",
+    price: 90,
+    description: "Traditional ring-shaped crispy sweet rice bread, deep-fried in ghee, served with sesame potato salad.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400", // Corrected Sel Roti Bread!
+    restaurantId: "rest_5",
+    restaurantName: "Basantapur Sweet & Selroti Pasal"
+  },
+  {
+    id: "item_601",
+    name: "Classic Buff Chowmein",
+    price: 110,
+    description: "Nepali wok-fired wheat noodles tossed with sautéed buffalo meat strips, cabbage, carrot, and soy.",
+    category: "Chowmein",
+    image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_6",
+    restaurantName: "Lalitpur Chowmein & Nepali Fast Food"
+  },
+  {
+    id: "item_602",
+    name: "Mix Veg Chowmein Extra Spice",
+    price: 95,
+    description: "Street-style hot chowmein loaded with shredded fresh local vegetables and extra green chilies.",
+    category: "Chowmein",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_6",
+    restaurantName: "Lalitpur Chowmein & Nepali Fast Food"
+  },
+  {
+    id: "item_701",
+    name: "Butter Tea (Su-Chiya) & 2 Tingmo",
+    price: 130,
+    description: "Authentic Tibetan tea brewed with yak butter and salt, served alongside two soft flower steamed buns.",
+    category: "Traditional",
+    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_7",
+    restaurantName: "Thamel Himalayan Tea & Tingmo"
+  },
+  {
+    id: "item_801",
+    name: "Pork Sekuwa Set",
+    price: 210,
+    description: "Tender chunks of pork marinated in Dharane-style mountain herbs, skewers-grilled over open natural charcoal.",
+    category: "Street Food",
+    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_8",
+    restaurantName: "Tripureshwor Sekuwa Corner"
+  },
+  {
+    id: "item_901",
+    name: "Boudha Sweet Lapsi Shaken Lassi",
+    price: 110,
+    description: "Rich curd blended with wild sweet-sour Nepalese Hog Plum fruit pulp and toasted almonds.",
+    category: "Street Food",
+    image: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_9",
+    restaurantName: "Boudha Butter Tea House"
+  },
+  {
+    id: "item_1001",
+    name: "Spicy Basantapur Chatpat",
+    price: 50,
+    description: "Crunchy puffed rice mixed in raw green chilies, boiled potatoes, chopped onions, and mustard oil.",
+    category: "Street Food",
+    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_10",
+    restaurantName: "Baneshwor Lassi & Chatpat Corner"
+  },
+  // Bakery Delicacies
+  {
+    id: "item_bak_1",
+    name: "Traditional Nepalese Butter Bun",
+    price: 75,
+    description: "Sweet, fluffy neighborhood bakery bun brushed with pure clarifying butter.",
+    category: "Bakery",
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_5",
+    restaurantName: "Basantapur Sweet & Selroti Pasal"
+  },
+  {
+    id: "item_bak_2",
+    name: "Himalayan Yak Cheese Croissant",
+    price: 155,
+    description: "Flaky golden croissant stuffed with melted local Himalayan mountain yak cheese cream.",
+    category: "Bakery",
+    image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_5",
+    restaurantName: "Basantapur Sweet & Selroti Pasal"
+  },
+  {
+    id: "item_bak_3",
+    name: "Kathmandu roasted Almond Cake slice",
+    price: 120,
+    description: "Moist sponge slice loaded with crunchy roasted almonds and local honey syrup toppings.",
+    category: "Bakery",
+    image: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&q=80&w=400",
+    restaurantId: "rest_5",
+    restaurantName: "Basantapur Sweet & Selroti Pasal"
   }
 ];
 
@@ -64,7 +320,6 @@ export default function Home({
   onAddToCartDirect,
   onCookAnimation,
   onARPreview,
-  onSelectGroceryItem,
   customerAddress,
   onChangeAddress,
   loyaltyPoints,
@@ -72,24 +327,27 @@ export default function Home({
   onTrackOrder
 }: HomeProps) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [groceries, setGroceries] = useState<GroceryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isVegOnly, setIsVegOnly] = useState(false);
-  const [activeTab, setActiveTab] = useState<"food" | "fresh" | "history">("food");
+  const [activeTab, setActiveTab] = useState<"food" | "history">("food");
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   const [redeemSuccess, setRedeemSuccess] = useState("");
-  
-  // Custom filter sliders
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
+
+  // Controlled address bar input state resolver
+  const [localAddress, setLocalAddress] = useState(customerAddress);
+
+  // Propagate outer customer address changes down
+  useEffect(() => {
+    setLocalAddress(customerAddress);
+  }, [customerAddress]);
 
   const fetchOrderHistory = () => {
     fetch("/api/orders")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          // Sort reverse chronologically
           setOrderHistory([...data].reverse());
         }
       })
@@ -100,9 +358,8 @@ export default function Home({
     if (loyaltyPoints < loyaltyItem.pointsRequired) {
       return;
     }
-    // Deduct points
     onChangeLoyaltyPoints((prev) => prev - loyaltyItem.pointsRequired);
-    // Add to cart with zero price directly
+    
     const convertedItem: MenuItem = {
       id: loyaltyItem.id,
       name: loyaltyItem.name,
@@ -115,25 +372,27 @@ export default function Home({
       ingredients: []
     };
     onAddToCartDirect(convertedItem, "points_exchange", "FoodiePoints Rewards Hub");
-    // Show success banner
     setRedeemSuccess(`Successfully redeemed "${loyaltyItem.name.replace("🎁 Points ", "")}"! Added directly to your Cart at Rs. 0.`);
     setTimeout(() => setRedeemSuccess(""), 4500);
   };
 
-  // Fetch Restaurants, Groceries, and Order History on load
+  // Listen to local fallback events for live status syncs
+  useEffect(() => {
+    const handleSync = () => {
+      fetchOrderHistory();
+    };
+    window.addEventListener("order_status_sync", handleSync);
+    return () => window.removeEventListener("order_status_sync", handleSync);
+  }, []);
+
   useEffect(() => {
     fetch("/api/restaurants")
       .then((res) => res.json())
       .then((data) => setRestaurants(data))
       .catch((err) => console.error(err));
 
-    fetch("/api/grocery")
-      .then((res) => res.json())
-      .then((data) => setGroceries(data))
-      .catch((err) => console.error(err));
-
     fetchOrderHistory();
-    const interval = setInterval(fetchOrderHistory, 10000);
+    const interval = setInterval(fetchOrderHistory, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -151,7 +410,7 @@ export default function Home({
     { name: "Bakery", icon: "🍪" }
   ];
 
-  // Filter restaurants based on query guidelines
+  // Filter restaurants based on query
   const filteredRestaurants = restaurants.filter((rest) => {
     const matchesSearch =
       rest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -167,9 +426,7 @@ export default function Home({
     return matchesSearch && matchesCategory && matchesRating;
   });
 
-  // Extract a list of all "Sabse Sasto" items under Rs. 150 for immediate ordering
-  const sastoMenuItems: { item: MenuItem; restaurantId: string; restaurantName: string }[] = [];
-  // Hardcoded mapping of items in server.ts
+  // Extract sasto budget dishes under Rs. 150
   const sampleSastoItems = [
     {
       restaurantId: "rest_1",
@@ -178,16 +435,12 @@ export default function Home({
         id: "item_101",
         name: "Steam Buff Momo",
         price: 130,
-        description: "Nepali style dumplings stuffed with spiced minced buffalo meat, steamed to perfection.",
+        description: "Nepali style dumplings stuffed with spiced minced buffalo meat.",
         category: "Momo",
         image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
         spiceLevel: "Medium" as const,
         isVeg: false,
-        ingredients: [
-          { name: "Maida Flour", icon: "🌾", xOffset: -120, yOffset: -80 },
-          { name: "Minced Buff/Chicken", icon: "🥩", xOffset: 120, yOffset: -80 },
-          { name: "Ginger-Garlic", icon: "🧄", xOffset: -150, yOffset: 120 }
-        ]
+        ingredients: []
       }
     },
     {
@@ -197,15 +450,12 @@ export default function Home({
         id: "item_401",
         name: "Classic Veg Dal Bhat Thali",
         price: 130,
-        description: "Delightful Nepali Dal Bhat. Daily hand-milled rice, cream yellow lentils, seasonal mixed curry, radish-cucumber pickle.",
+        description: "Delightful Nepali Dal Bhat. Daily hand-milled rice, yellow lenses, seasonal curry.",
         category: "Nepali",
-        image: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=400",
+        image: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
         spiceLevel: "Mild" as const,
         isVeg: true,
-        ingredients: [
-          { name: "Rice", icon: "🌾", xOffset: -100, yOffset: 100 },
-          { name: "Dal", icon: "🥣", xOffset: 50, yOffset: 150 }
-        ]
+        ingredients: []
       }
     },
     {
@@ -215,15 +465,12 @@ export default function Home({
         id: "item_502",
         name: "Piped Sel Roti with Alu Achar",
         price: 90,
-        description: "A traditional ring-shaped crispy sweet rice bread, deep-fried in ghee, served with sesame potato salad.",
+        description: "Traditional ring-shaped crispy sweet rice bread, deep-fried in ghee.",
         category: "Traditional",
-        image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400",
+        image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400", // Corrected Sel Roti Bread!
         spiceLevel: "Medium" as const,
         isVeg: true,
-        ingredients: [
-          { name: "Rice", icon: "🌾", xOffset: -100, yOffset: 100 },
-          { name: "Ghee", icon: "🧈", xOffset: 80, yOffset: -120 }
-        ]
+        ingredients: []
       }
     },
     {
@@ -235,28 +482,18 @@ export default function Home({
         price: 110,
         description: "Nepali wok-fired wheat noodles tossed with sautéed buffalo meat and dark soy.",
         category: "Chowmein",
-        image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
+        image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=400",
         spiceLevel: "Medium" as const,
         isVeg: false,
         ingredients: []
       }
-    },
-    {
-      restaurantId: "rest_10",
-      restaurantName: "Baneshwor Lassi & Chatpat Corner",
-      item: {
-        id: "item_1001",
-        name: "Spicy Basantapur Chatpat",
-        price: 50,
-        description: "Crunchy puffed rice mixed in raw green chilies, boiled potatoes, chopped onions, and mustard oil.",
-        category: "Street Food",
-        image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&q=80&w=400",
-        spiceLevel: "Spicy" as const,
-        isVeg: true,
-        ingredients: []
-      }
     }
   ];
+
+  // Varieties filtering based on chosen category icon list
+  const selectedVarieties = selectedCategory
+    ? ALL_MENU_ITEMS.filter((item) => item.category.toLowerCase() === selectedCategory.toLowerCase())
+    : [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
@@ -292,7 +529,7 @@ export default function Home({
               setSearchQuery("");
               setSelectedCategory(null);
             }}
-            className="text-xs font-bold text-[#8B1A1A] hover:underline"
+            className="text-xs font-bold text-[#8B1A1A] hover:underline cursor-pointer"
           >
             Reset All Filters
           </button>
@@ -315,25 +552,25 @@ export default function Home({
           <input
             type="text"
             placeholder="Search Pokhara address..."
-            defaultValue={customerAddress}
+            value={localAddress}
+            onChange={(e) => setLocalAddress(e.target.value)}
             id="gps-address-input-spot"
-            className="bg-gray-950 border border-gray-800 focus:border-[#FF6B35] px-4 py-2 rounded-2xl text-xs text-white placeholder-gray-500 focus:outline-none w-full md:w-64"
+            className="bg-gray-950 border border-gray-800 focus:border-[#FF6B35] px-4 py-2 rounded-2xl text-xs text-white placeholder-gray-500 focus:outline-none w-full md:w-64 font-medium"
           />
           <button
             onClick={() => {
-              const input = document.getElementById("gps-address-input-spot") as HTMLInputElement;
-              if (input && input.value.trim()) {
-                onChangeAddress(input.value.trim());
+              if (localAddress.trim()) {
+                onChangeAddress(localAddress.trim());
               }
             }}
-            className="px-4 py-2 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-bold rounded-2xl transition-all whitespace-nowrap active:scale-95 cursor-pointer"
+            className="px-4 py-2 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-bold rounded-2xl transition-all whitespace-nowrap active:scale-95 cursor-pointer shadow-sm"
           >
             Update Location Area
           </button>
         </div>
       </div>
 
-      {/* Tabs Layout Switcher */}
+      {/* Tabs Layout Switcher (Fresh Mandi Removed successfully) */}
       <div className="flex border-b border-gray-150 mb-8 overflow-x-auto scroller-hidden gap-1">
         <button
           onClick={() => setActiveTab("food")}
@@ -341,13 +578,6 @@ export default function Home({
         >
           <Store className="w-4 h-4" />
           <span>Nepali Food Menu & Feast Bazaar</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("fresh")}
-          className={`pb-3 px-6 text-sm font-serif italic font-bold border-b-22 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${activeTab === "fresh" ? "border-b-2 border-[#FF6B35] text-[#FF6B35]" : "border-b-2 border-transparent text-gray-455 hover:text-gray-900"}`}
-        >
-          <ShoppingBasket className="w-4 h-4" />
-          <span>Fresh Mandi & Organic Pantry</span>
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -375,11 +605,11 @@ export default function Home({
                   <span>🎁 Points Food Exchange Bazaar</span>
                 </h3>
                 <p className="text-xs text-gray-400 max-w-xl leading-relaxed mt-0.5">
-                  Redeem your foodie loyalty points here instantly for zero-price gourmet delicacies! Points are loaded automatically from orders.
+                  Redeem your accumulated foodie loyalty points here instantly for zero-price gourmet delicacies! Points are loaded automatically from orders.
                 </p>
               </div>
 
-              <div className="bg-gradient-to-r from-orange-500/20 to-[#8B1A1A]/30 px-5 py-3 rounded-2xl border border-orange-500/30 flex items-center gap-3.5 shadow-lg">
+              <div className="bg-gradient-to-r from-orange-500/20 to-[#8B1A1A]/30 px-5 py-3 rounded-2xl border border-orange-500/30 flex items-center gap-3.5 shadow-lg animate-fadeIn">
                 <span className="text-2xl animate-spin-slow">🌟</span>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#FFF8F0]/65 block font-bold">Your Available Points</span>
@@ -389,7 +619,7 @@ export default function Home({
             </div>
 
             {redeemSuccess && (
-              <div className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-fadeIn flex items-center gap-2">
+              <div className="bg-[#2D6A4F]/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-fadeIn flex items-center gap-2">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
                 <span>{redeemSuccess}</span>
               </div>
@@ -436,7 +666,7 @@ export default function Home({
             <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-xs ${selectedCategory === null ? "bg-[#8B1A1A] text-white border border-[#8B1A1A]" : "bg-white text-gray-750 hover:bg-gray-50 border border-[#8B1A1A]/10"}`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-xs cursor-pointer ${selectedCategory === null ? "bg-[#8B1A1A] text-white border border-[#8B1A1A]" : "bg-white text-gray-750 hover:bg-gray-55 border border-[#8B1A1A]/10"}`}
               >
                 🍴 All Foods
               </button>
@@ -444,7 +674,7 @@ export default function Home({
                 <button
                   key={cat.name}
                   onClick={() => setSelectedCategory(cat.name)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-xs ${selectedCategory === cat.name ? "bg-[#FF6B35] text-white border border-[#FF6B35]" : "bg-white text-gray-750 hover:bg-gray-50 border border-[#8B1A1A]/10"}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-xs cursor-pointer ${selectedCategory === cat.name ? "bg-[#FF6B35] text-white border border-[#FF6B35]" : "bg-white text-gray-750 hover:bg-gray-55 border border-[#8B1A1A]/10"}`}
                 >
                   <span className="text-lg">{cat.icon}</span>
                   <span>{cat.name}</span>
@@ -453,27 +683,101 @@ export default function Home({
             </div>
           </div>
 
-          {/* SABSE SASTO: BUDGET SECTION FOR LOW INCOME FAMILIES! (Under Rs 150) */}
+          {/* DYNAMIC CATEGORY DISH VARIETIES EXPLORER (The core Momo variety / Bakery variety / Newari variety grid) */}
+          {selectedCategory && (
+            <div className="bg-[#FFF8F0] p-6 rounded-3xl border-2 border-dashed border-[#FF6B35]/25 text-left animate-fadeIn">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <div>
+                  <h3 className="text-lg font-serif italic text-[#8B1A1A] font-bold">
+                    Select Delicious {selectedCategory} Varieties
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Order directly from different neighborhood kitchens making authentic {selectedCategory} meals.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-xs text-[#FF6B35] hover:underline font-bold"
+                >
+                  Clear Selection
+                </button>
+              </div>
+
+              {selectedVarieties.length === 0 ? (
+                <p className="text-xs text-gray-400 italic py-6 text-center">
+                  No registered {selectedCategory} varieties active right now. Please explore other cuisines.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {selectedVarieties.map((dish) => (
+                    <div key={dish.id} className="bg-white rounded-2xl border border-gray-150 p-3.5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
+                      <div>
+                        {/* Correct Image with Unsplash referPolicy */}
+                        <div className="relative rounded-xl overflow-hidden mb-3 aspect-video bg-gray-50">
+                          <img
+                            src={dish.image}
+                            alt={dish.name}
+                            className="object-cover w-full h-full filter brightness-95"
+                            referrerPolicy="no-referrer"
+                          />
+                          <span className="absolute bottom-2 right-2 bg-gradient-to-r from-[#8B1A1A] to-red-800 text-white font-mono text-xs font-black px-2.5 py-1 rounded-lg">
+                            Rs. {dish.price}
+                          </span>
+                        </div>
+
+                        <h4 className="font-extrabold text-[#8B1A1A] text-sm leading-snug">{dish.name}</h4>
+                        <span className="text-[10px] text-[#2D6A4F] font-bold block mt-0.5">🏪 {dish.restaurantName}</span>
+                        <p className="text-[10px] text-gray-500 leading-normal mt-1.5 font-medium">{dish.description}</p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5 mt-4">
+                        <button
+                          onClick={() => onCookAnimation(dish as any)}
+                          className="py-1.5 bg-orange-50 hover:bg-orange-100 text-[10px] text-[#FF6B35] font-extrabold rounded-lg transition-all cursor-pointer text-center"
+                        >
+                          Cook
+                        </button>
+                        <button
+                          onClick={() => onARPreview(dish as any)}
+                          className="py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[10px] text-emerald-800 font-extrabold rounded-lg transition-all cursor-pointer text-center"
+                        >
+                          AR Live
+                        </button>
+                        <button
+                          onClick={() => onAddToCartDirect(dish as any, dish.restaurantId, dish.restaurantName)}
+                          className="py-1.5 bg-[#FF6B35] hover:bg-[#8B1A1A] text-white text-[10px] text-center font-extrabold rounded-lg transition-all cursor-pointer pr-1"
+                        >
+                          + Choose
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SABSE SASTO: BUDGET SECTION FOR FAMILIES! (Under Rs 150) */}
           <div className="bg-gradient-to-r from-[#FFF8F0] to-[#FFE8D6] p-6 rounded-3xl border border-[#8B1A1A]/10 mb-12 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 text-left">
               <div>
                 <div className="flex items-center gap-2 text-[#FF6B35] font-black text-xs uppercase tracking-wider bg-white px-2.5 py-1 rounded-full w-max border border-orange-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                  Customer Choice Kitchen
+                  Nepalese Local Delicacies
                 </div>
                 <h2 className="text-2xl font-serif italic text-[#8B1A1A] mt-1 font-bold">Popular Dishes (Under Rs. 150)</h2>
-                <p className="text-xs text-gray-550 font-medium font-serif italic">Nutritious and delicious traditional dishes sourced from partner local stands.</p>
+                <p className="text-xs text-gray-550 font-medium font-serif italic">Delicious traditional dishes sourced from partner neighborhood kitchens.</p>
               </div>
               <span className="text-[10px] font-extrabold text-[#2D6A4F] font-mono tracking-widest uppercase bg-white px-3 py-1.5 rounded-xl border border-[#8B1A1A]/5">
-                ★ Direct Partner
+                ★ Best Sellers
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {sampleSastoItems.map((sasto) => (
-                <div key={sasto.item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3.5 hover:shadow-md transition-all flex flex-col justify-between text-left">
-                  <div className="relative rounded-xl overflow-hidden mb-2.5 aspect-video">
-                    <img src={sasto.item.image} alt={sasto.item.name} className="object-cover w-full h-full" />
+                <div key={sasto.item.id} className="bg-white rounded-2xl border border-gray-105 shadow-sm p-3.5 hover:shadow-md transition-all flex flex-col justify-between text-left">
+                  <div className="relative rounded-xl overflow-hidden mb-2.5 aspect-video bg-gray-50">
+                    <img src={sasto.item.image} alt={sasto.item.name} className="object-cover w-full h-full" referrerPolicy="no-referrer" />
                     <span className="absolute bottom-1 right-1 bg-[#2D6A4F] text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded leading-none">
                       Rs. {sasto.item.price}
                     </span>
@@ -485,13 +789,13 @@ export default function Home({
                   <div className="grid grid-cols-2 gap-1.5 mt-3">
                     <button
                       onClick={() => onCookAnimation(sasto.item as any)}
-                      className="py-1 px-1 bg-gray-50 hover:bg-orange-50 text-[10px] text-center font-bold text-[#FF6B35] rounded-lg border border-gray-100"
+                      className="py-1 px-1 bg-gray-50 hover:bg-orange-50 text-[10px] text-center font-bold text-[#FF6B35] rounded-lg border border-gray-100 cursor-pointer"
                     >
                       Cook
                     </button>
                     <button
                       onClick={() => onAddToCartDirect(sasto.item as any, sasto.restaurantId, sasto.restaurantName)}
-                      className="py-1 px-1 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-[10px] text-center font-bold rounded-lg"
+                      className="py-1 px-1 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-[10px] text-center font-bold rounded-lg cursor-pointer animate-fadeIn"
                     >
                       + Add
                     </button>
@@ -501,12 +805,12 @@ export default function Home({
             </div>
           </div>
 
-          {/* MAIN RESTAURANTS SECTION */}
+          {/* MAIN FEATURED RESTAURANTS SECTION */}
           <div>
             <div className="flex items-center justify-between mb-6 text-left">
               <div>
                 <h2 className="text-2xl font-serif italic text-[#8B1A1A] font-bold">Featured Local Restaurants</h2>
-                <p className="text-xs text-gray-550 font-medium">Fresh warm dishes directly from neighborhood standard kitchens</p>
+                <p className="text-xs text-gray-550 font-medium font-sans">Fresh warm dishes directly from Kathmandu and Pokhara standard kitchens</p>
               </div>
               <span className="text-xs text-[#FF6B35] font-extrabold hidden sm:inline">Showing {filteredRestaurants.length} places</span>
             </div>
@@ -528,7 +832,7 @@ export default function Home({
                     <div>
                       {/* Banner Wrapper */}
                       <div className="relative h-44 bg-gray-100">
-                        <img src={rest.banner} alt={rest.name} className="object-cover w-full h-full group-hover:scale-101 transition-all" />
+                        <img src={rest.banner} alt={rest.name} className="object-cover w-full h-full group-hover:scale-101 transition-all" referrerPolicy="no-referrer" />
                         
                         {/* Favorite Heart toggle */}
                         <button
@@ -536,7 +840,7 @@ export default function Home({
                             e.stopPropagation();
                             onToggleFavorite(rest.id);
                           }}
-                          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-full text-rose-500 hover:bg-white hover:scale-110 active:scale-95 transition-all shadow-md border border-[#8B1A1A]/10"
+                          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-full text-rose-500 hover:bg-white hover:scale-110 active:scale-95 transition-all shadow-md border border-[#8B1A1A]/10 cursor-pointer"
                         >
                           <Heart className={`w-4 h-4 ${favorites.includes(rest.id) ? "fill-current" : ""}`} />
                         </button>
@@ -549,7 +853,7 @@ export default function Home({
                       {/* Info details */}
                       <div className="p-5">
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <h3 className="font-bold text-gray-900 group-hover:text-[#FF6B35] transition-colors text-base truncate flex-1">
+                          <h3 className="font-bold text-gray-900 group-hover:text-[#FF6B35] transition-colors text-base truncate flex-1 leading-tight">
                             {rest.name}
                           </h3>
                           <span className="bg-[#2D6A4F]/10 text-[#2D6A4F] font-black text-xs px-2 py-0.5 rounded flex items-center gap-1">
@@ -558,7 +862,7 @@ export default function Home({
                           </span>
                         </div>
 
-                        <p className="text-xs text-gray-550 font-medium mb-3 truncate">{rest.address}</p>
+                        <p className="text-xs text-gray-550 font-medium mb-3 truncate font-sans">{rest.address}</p>
 
                         {/* Cuisine chips */}
                         <div className="flex flex-wrap items-center gap-1 mb-4">
@@ -572,7 +876,7 @@ export default function Home({
                     </div>
 
                     {/* Delivery metadata footer line */}
-                    <div className="border-t border-[#8B1A1A]/10 px-5 py-3.5 bg-[#FFF8F0]/30 flex items-center justify-between text-xs text-gray-700 font-semibold">
+                    <div className="border-t border-[#8B1A1A]/10 px-5 py-3.5 bg-[#FFF8F0]/30 flex items-center justify-between text-xs text-gray-700 font-semibold font-sans">
                       <div className="flex items-center gap-1.5">
                         <Bike className="w-4 h-4 text-[#FF6B35]" />
                         <span>Delivery Rs. {rest.deliveryFee}</span>
@@ -583,41 +887,6 @@ export default function Home({
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "fresh" && (
-        <div className="space-y-6 text-left animate-fadeIn">
-          <div>
-            <h2 className="text-2xl font-serif italic text-[#2D6A4F] font-bold">Fresh Mandi & Organic Pantry</h2>
-            <p className="text-xs text-gray-550 font-medium">Directly from local organic cooperative farms to your kitchen</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {groceries.map((item) => (
-              <div key={item.id} className="bg-white rounded-3xl border border-gray-150 p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
-                <div className="relative rounded-2xl overflow-hidden mb-3 aspect-square bg-[#FFF8F0]/40 flex items-center justify-center">
-                  <img src={item.image} alt={item.name} className="object-cover w-full h-full" referrerPolicy="no-referrer" />
-                  <span className="absolute top-2 left-2 bg-[#2D6A4F] text-white font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-lg border border-emerald-600/25">
-                    {item.unit}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-[#8B1A1A] text-sm truncate leading-tight">{item.name}</h4>
-                  <p className="text-[10px] text-gray-450 font-medium mt-0.5 truncate">{item.category}</p>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                  <span className="font-bold text-gray-900 text-xs">Rs. {item.price}</span>
-                  <button
-                    onClick={() => onSelectGroceryItem(item, 1)}
-                    className="bg-[#2D6A4F] hover:bg-[#1a3d2e] text-white font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
-                  >
-                    + Carry Item
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -645,9 +914,9 @@ export default function Home({
                     <div className="absolute top-4 right-4 flex items-center gap-1.5">
                       <span className={`w-2 h-2 rounded-full ${isActive ? "bg-emerald-500 animate-ping" : "bg-gray-450"}`} />
                       <span className={`text-[10px] uppercase font-mono tracking-wider font-extrabold px-2.5 py-1 rounded-xl ${
-                        order.status === "delivered" ? "bg-emerald-50 text-emerald-855 border border-emerald-100" :
-                        order.status === "cancelled" ? "bg-red-50 text-red-855 border border-red-100" :
-                        "bg-orange-50 text-orange-950 border border-orange-200"
+                        order.status === "delivered" ? "bg-emerald-50 text-[#2D6A4F] border border-emerald-100 font-bold" :
+                        order.status === "cancelled" ? "bg-red-50 text-rose-700 border border-red-100 font-bold" :
+                        "bg-orange-50 text-orange-950 border border-orange-200 font-bold"
                       }`}>
                         {order.status.replace("_", " ")}
                       </span>
@@ -673,7 +942,7 @@ export default function Home({
                     <div className="flex items-center justify-between mt-5 pt-3.5 border-t border-gray-100 font-sans">
                       <div>
                         <p className="text-[9px] text-gray-400 font-bold uppercase leading-none font-sans">Total Value</p>
-                        <p className="text-sm font-extrabold text-gray-900 mt-0.5">Rs. {order.totalAmount}</p>
+                        <p className="text-sm font-extrabold text-gray-950 mt-0.5">Rs. {order.total || order.totalAmount || 180}</p>
                       </div>
 
                       <div className="flex gap-2">
