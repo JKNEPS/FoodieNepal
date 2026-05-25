@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Star, MapPin, Bike, Heart, Sparkles, Flame, Store, Plus, Clock, Compass, Activity, ArrowRight, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import HeroBanner from "../components/HeroBanner";
-import { Restaurant, MenuItem, GroceryItem, Order } from "../types";
+import { Restaurant, MenuItem, GroceryItem, Order, CartItem } from "../types";
 
 interface HomeProps {
   onSelectRestaurant: (id: string) => void;
@@ -17,6 +17,7 @@ interface HomeProps {
   loyaltyPoints: number;
   onChangeLoyaltyPoints: (pts: number | ((p: number) => number)) => void;
   onTrackOrder: (order: Order) => void;
+  cartItems: CartItem[];
 }
 
 // Correct high-resolution images for the loyalty prize hub
@@ -55,6 +56,18 @@ const LOYALTY_EXCHANGE_ITEMS = [
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",
     spiceLevel: "Medium",
     isVeg: false,
+    ingredients: []
+  },
+  {
+    id: "loyalty_pizza",
+    name: "🎁 Points Wood-Fired Wood Pizza",
+    pointsRequired: 450,
+    price: 0,
+    description: "Points Special: Delicious wood-fired organic pizza with local yak cheese and toppings.",
+    category: "Pizza",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",
+    spiceLevel: "Medium",
+    isVeg: true,
     ingredients: []
   }
 ];
@@ -325,7 +338,8 @@ export default function Home({
   onChangeAddress,
   loyaltyPoints,
   onChangeLoyaltyPoints,
-  onTrackOrder
+  onTrackOrder,
+  cartItems
 }: HomeProps) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -333,6 +347,7 @@ export default function Home({
   const [activeTab, setActiveTab] = useState<"food" | "history">("food");
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   const [redeemSuccess, setRedeemSuccess] = useState("");
+  const [redeemError, setRedeemError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
 
@@ -405,9 +420,22 @@ export default function Home({
   };
 
   const handleRedeemLoyaltyItem = (loyaltyItem: typeof LOYALTY_EXCHANGE_ITEMS[number]) => {
-    if (loyaltyPoints < loyaltyItem.pointsRequired) {
+    // Prevent multiple redeemed items in the active cart/order
+    const existingLoyaltyItem = cartItems?.find(it => it.menuItem.id.startsWith("loyalty_"));
+    if (existingLoyaltyItem) {
+      setRedeemSuccess("");
+      setRedeemError(`You can only redeem one item with points per order. Your cart already contains "${existingLoyaltyItem.menuItem.name.replace("🎁 Points ", "")}". Please complete your current order first!`);
+      setTimeout(() => setRedeemError(""), 5500);
       return;
     }
+
+    if (loyaltyPoints < loyaltyItem.pointsRequired) {
+      setRedeemSuccess("");
+      setRedeemError(`Insufficient loyalty points! "${loyaltyItem.name.replace("🎁 Points ", "")}" requires ${loyaltyItem.pointsRequired} pts but you only have ${loyaltyPoints} pts.`);
+      setTimeout(() => setRedeemError(""), 5500);
+      return;
+    }
+    
     onChangeLoyaltyPoints((prev) => prev - loyaltyItem.pointsRequired);
     
     const convertedItem: MenuItem = {
@@ -422,6 +450,7 @@ export default function Home({
       ingredients: []
     };
     onAddToCartDirect(convertedItem, "points_exchange", "FoodiePoints Rewards Hub");
+    setRedeemError("");
     setRedeemSuccess(`Successfully redeemed "${loyaltyItem.name.replace("🎁 Points ", "")}"! Added directly to your Cart at Rs. 0.`);
     setTimeout(() => setRedeemSuccess(""), 4500);
   };
@@ -553,6 +582,7 @@ export default function Home({
         onSearch={handleSearch}
         onFilterToggle={() => setShowFilters(!showFilters)}
         activeFilterCount={(minRating > 0 ? 1 : 0)}
+        menuItems={ALL_MENU_ITEMS}
       />
 
       {/* Filter Options Side Panel HUD */}
@@ -667,6 +697,13 @@ export default function Home({
               </div>
             </div>
 
+            {redeemError && (
+              <div className="bg-rose-950/40 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-shake flex items-center gap-2">
+                <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                <span>{redeemError}</span>
+              </div>
+            )}
+
             {redeemSuccess && (
               <div className="bg-[#2D6A4F]/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-fadeIn flex items-center gap-2">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
@@ -674,7 +711,7 @@ export default function Home({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {LOYALTY_EXCHANGE_ITEMS.map((item) => {
                 const countNeeded = item.pointsRequired;
                 const hasEnough = loyaltyPoints >= countNeeded;

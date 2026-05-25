@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bike, MapPin, Navigation, Compass, Shield, Map as MapIcon, Globe, Maximize2, Minimize2, X } from "lucide-react";
 
 interface RiderMapProps {
@@ -24,6 +24,25 @@ export default function RiderMap({
 }: RiderMapProps) {
   const [mapMode, setMapMode] = useState<"google" | "vector">("google");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapViewType, setMapViewType] = useState<"standard" | "satellite">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("foodienepal_map_view_type") as "standard" | "satellite") || "standard";
+    }
+    return "standard";
+  });
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail === "standard" || customEvent.detail === "satellite") {
+        setMapViewType(customEvent.detail);
+      }
+    };
+    window.addEventListener("foodienepal_map_view_type_changed", handler as EventListener);
+    return () => {
+      window.removeEventListener("foodienepal_map_view_type_changed", handler as EventListener);
+    };
+  }, []);
 
   // Auto-detect Pokhara vs Kathmandu bounding coordinates for the vector layout grids
   const isPokhara = (customerAddress || "").toLowerCase().includes("pokhara") || restaurantLat > 28;
@@ -114,7 +133,7 @@ export default function RiderMap({
               height="100%"
               frameBorder="0"
               style={{ border: 0 }}
-              src={`https://maps.google.com/maps?q=${riderLat},${riderLng}&z=17&t=m&hl=en&output=embed`}
+              src={`https://maps.google.com/maps?q=${riderLat},${riderLng}&z=17&t=${mapViewType === "satellite" ? "k" : "m"}&hl=en&output=embed`}
               allowFullScreen
               className="w-full h-full filter brightness-95 contrast-101"
               referrerPolicy="no-referrer"

@@ -12,6 +12,8 @@ interface CheckoutProps {
   customerAddress: string;
   onChangeAddress: (addr: string) => void;
   onPlaceOrder: (paymentMethod: "cod" | "esewa" | "khalti" | "imepay", promoCode?: string, discountAmount?: number) => void;
+  loyaltyPoints: number;
+  cartPointsError?: string;
 }
 
 export default function Checkout({
@@ -23,7 +25,9 @@ export default function Checkout({
   onUpdateCartItemNote,
   customerAddress,
   onChangeAddress,
-  onPlaceOrder
+  onPlaceOrder,
+  loyaltyPoints,
+  cartPointsError
 }: CheckoutProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "esewa" | "khalti" | "imepay">("cod");
   const [promoInput, setPromoInput] = useState("");
@@ -174,6 +178,13 @@ export default function Checkout({
           
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
             <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Cart Items</span>
+            
+            {cartPointsError && (
+              <div className="bg-rose-50 text-rose-600 border border-rose-150 p-3 rounded-xl text-xs font-bold leading-relaxed animate-shake flex items-center gap-2">
+                <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
+                <span>{cartPointsError}</span>
+              </div>
+            )}
             
             {cartItems.map((item) => (
               <div key={item.id} className="flex gap-4 border-b border-gray-50 pb-4 last:border-none last:pb-0">

@@ -1,7 +1,23 @@
-import { Heart, Compass, ShieldCheck, MapPin, Coffee } from "lucide-react";
+import { Heart, Compass, ShieldCheck, MapPin, Coffee, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [mapType, setMapType] = useState<"standard" | "satellite">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("foodienepal_map_view_type") as "standard" | "satellite") || "standard";
+    }
+    return "standard";
+  });
+
+  const toggleMapView = () => {
+    const nextType = mapType === "standard" ? "satellite" : "standard";
+    setMapType(nextType);
+    localStorage.setItem("foodienepal_map_view_type", nextType);
+    window.dispatchEvent(
+      new CustomEvent("foodienepal_map_view_type_changed", { detail: nextType })
+    );
+  };
 
   return (
     <footer id="global_application_footer" className="bg-[#FFF8F0] border-t border-[#8B1A1A]/10 mt-auto">
@@ -73,9 +89,22 @@ export default function Footer() {
 
         {/* Divider and Copyright */}
         <div className="border-t border-[#8B1A1A]/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left" id="footer_copyright_section">
-          <p className="text-xs text-gray-500 font-sans">
-            &copy; {currentYear} FoodieNepal. All rights reserved. Registered culinary delivery networks.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p className="text-xs text-gray-500 font-sans">
+              &copy; {currentYear} FoodieNepal. All rights reserved. Registered culinary delivery networks.
+            </p>
+            {/* Standard/Satellite toggle button */}
+            <button
+              onClick={toggleMapView}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 text-[#8B1A1A] text-xs font-bold transition-all shadow-xxs cursor-pointer active:scale-95"
+              title="Switch standard or satellite map base layers"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#FF6B35] animate-spin-slow" />
+              <span>
+                Map Mode: <span className="text-[#FF6B35] underline">{mapType === "satellite" ? "Satellite View" : "Standard View"}</span>
+              </span>
+            </button>
+          </div>
           <p className="text-xs text-gray-500 flex items-center gap-1">
             Built with <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> &amp; Dedication for Foodies in Nepal &bull; <span className="font-semibold text-gray-700">Developed By Jenish Sapkota</span>
           </p>
