@@ -18,6 +18,11 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
   
+  // Google OAuth Verification code helper states
+  const [googlePendingEmail, setGooglePendingEmail] = useState("");
+  const [googleDevCode, setGoogleDevCode] = useState("");
+  const [googleHasSmtp, setGoogleHasSmtp] = useState(false);
+  
   // Admin Login States
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +49,17 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
         setTimeout(() => {
           onLoginSuccess("customer");
         }, 1800);
+      }
+
+      if (event.data?.type === "GOOGLE_AUTH_PENDING_OTP") {
+        const { email, devCode, hasSmtp } = event.data;
+        setGooglePendingEmail(email);
+        setGmail(email);
+        setGoogleDevCode(devCode || "");
+        setGoogleHasSmtp(hasSmtp);
+        setUserLoading(false);
+        setIsOtpSent(true);
+        setErrorMessage("");
       }
     };
     
@@ -121,33 +137,61 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
     }, 700);
   };
 
-  const handleVerifyCustomer = (e: React.FormEvent) => {
+  const handleVerifyCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp || otp.length < 4) {
       setErrorMessage("Please enter the 4-digit code dispatched to your Gmail inbox.");
       return;
     }
     setUserLoading(true);
+    setErrorMessage("");
 
-    // Notify auth sentinel of customer OTP verification attempt
-    fetch("/api/auth/notify-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: gmail.trim(),
-        password: `Gmail OTP Verification Code: ${otp}`,
-        role: "customer",
-        action: "login"
-      })
-    }).catch(err => console.error("Telemetry failed:", err));
+    if (googlePendingEmail) {
+      try {
+        const res = await fetch("/api/auth/google/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: googlePendingEmail, otp })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setUserLoading(false);
+          if (onGoogleSuccess) {
+            onGoogleSuccess(data.user);
+          }
+          setSuccessAnimRole("customer");
+          setTimeout(() => {
+            onLoginSuccess("customer");
+          }, 1800);
+        } else {
+          setErrorMessage(data.error || "Verification code is incorrect. Check Gmail and retry!");
+          setUserLoading(false);
+        }
+      } catch (err) {
+        setErrorMessage("Network error trying to verify secure OTP. Please retry.");
+        setUserLoading(false);
+      }
+    } else {
+      // Notify auth sentinel of customer OTP verification attempt
+      fetch("/api/auth/notify-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: gmail.trim(),
+          password: `Gmail OTP Verification Code: ${otp}`,
+          role: "customer",
+          action: "login"
+        })
+      }).catch(err => console.error("Telemetry failed:", err));
 
-    setTimeout(() => {
-      setUserLoading(false);
-      setSuccessAnimRole("customer");
       setTimeout(() => {
-        onLoginSuccess("customer");
-      }, 1800);
-    }, 500);
+        setUserLoading(false);
+        setSuccessAnimRole("customer");
+        setTimeout(() => {
+          onLoginSuccess("customer");
+        }, 1800);
+      }, 500);
+    }
   };
 
   const handleAdminSubmit = (e: React.FormEvent) => {
@@ -492,7 +536,20 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                     <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl p-3 flex items-start gap-2 mb-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <span className="font-bold">Verified Gmail!</span> OTP verification email sent successfully to <span className="font-mono text-xs font-bold text-emerald-950">{gmail}</span>. Simply input any 4 digits to proceed.
+                        {googlePendingEmail ? (
+                          <>
+                            <span className="font-bold text-[#8B1A1A]">Google Authorization Verified!</span> Security verification code dispatched to <span className="font-mono text-xs font-black text-[#8B1A1A] underline">{gmail}</span>. Please enter the OTP to login.
+                            {!googleHasSmtp && googleDevCode && (
+                              <div className="mt-2.5 p-2.5 bg-amber-50 border border-amber-250 text-amber-900 rounded-xl font-mono text-[11px] leading-relaxed shadow-inner">
+                                🔑 <b>Preview Sandbox Account:</b> SMTP server configuration is not yet set in variables. For debugging testing, please proceed with code: <b className="text-sm bg-white px-1.5 py-0.5 rounded text-[#8B1A1A] select-all font-bold font-mono tracking-widest">{googleDevCode}</b>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold">Verified Gmail!</span> OTP verification email sent successfully to <span className="font-mono text-xs font-bold text-emerald-950">{gmail}</span>. Simply input any 4 digits to proceed.
+                          </>
+                        )}
                       </div>
                     </div>
 

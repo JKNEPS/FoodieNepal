@@ -1,11 +1,83 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { Restaurant, MenuItem, Order, ChatMessage, Review, User, GroceryItem } from "./src/types";
 
 dotenv.config();
+
+// Mapped Google User Verification Cache store
+const pendingGoogleVerifications = new Map<string, { user: User; otp: string; timestamp: number }>();
+
+// Lazy-initialized SMTP transporter
+function getSmtpTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass
+    }
+  });
+}
+
+async function sendVerificationEmail(toEmail: string, otpCode: string, userName: string) {
+  const transporter = getSmtpTransporter();
+  const subject = "🔒 FoodieNepal - Google Account Verification Code";
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 25px; border: 1px solid rgba(139, 26, 26, 0.1); border-radius: 16px; background-color: #FFF8F0; color: #333;">
+      <h2 style="color: #8B1A1A; font-family: Georgia, serif; font-style: italic; border-bottom: 2px solid #FF6B35; padding-bottom: 10px; margin-top: 0;">FoodieNepal!</h2>
+      <p style="font-size: 14px; line-height: 1.5;">Namaste <b>${userName}</b>,</p>
+      <p style="font-size: 14px; line-height: 1.5;">Thank you for registering or signing in with your Google Account on FoodieNepal.</p>
+      <div style="background-color: #fff; border: 1px dashed #FF6B35; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0;">
+        <span style="font-size: 12px; color: #666; font-family: monospace; display: block; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Gmail Security Verification Code</span>
+        <span style="font-size: 32px; font-weight: bold; color: #8B1A1A; letter-spacing: 5px; font-family: monospace;">${otpCode}</span>
+      </div>
+      <p style="font-size: 12px; color: #666; line-height: 1.4;">This OTP code is valid for 10 minutes. If you did not initiate this authentication request, please ignore this email.</p>
+      <div style="margin-top: 25px; pt-15px; border-top: 1px solid #dfdfdf; font-size: 10px; color: #999; text-align: center;">
+        FoodieNepal! Multi-Route Secured Delivery Gateway System &copy; 2026
+      </div>
+    </div>
+  `;
+
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: `"FoodieNepal Security" <${process.env.SMTP_USER}>`,
+        to: toEmail,
+        subject,
+        html: htmlContent
+      });
+      console.log(`REAL OTP sent to ${toEmail} successfully.`);
+      return true;
+    } catch (err) {
+      console.error("Failed to send real verification email via SMTP:", err);
+      return false;
+    }
+  } else {
+    console.log(`
+============================================================
+[SMTP NOT CONFIGURING FALLBACK]
+No SMTP configs (SMTP_USER/SMTP_PASS) provided in Environment Secrets!
+TO EMAIL: ${toEmail}
+OTP CODE: ${otpCode}
+============================================================
+    `);
+    return false;
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -875,7 +947,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     console.warn("No Google credentials or code found, starting simulated fallback flow.");
   }
 
-  // Update/insert user
+  // Find or construct user template
   let user = users.find(u => u.email === userData.email);
   const isNewUser = !user;
   if (!user) {
@@ -889,9 +961,26 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
       foodiePoints: 100,
       avatar: userData.picture
     };
-    users.push(user);
   }
-  currentUser = user;
+
+  // Generate random 4-digit secure code
+  const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+  // Save in pendings cache
+  pendingGoogleVerifications.set(userData.email, {
+    user: {
+      ...user,
+      avatar: userData.picture
+    },
+    otp: generatedOtp,
+    timestamp: Date.now()
+  });
+
+  // Trigger email delivery
+  const isSmtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER);
+  sendVerificationEmail(userData.email, generatedOtp, userData.name).catch(err => {
+    console.error("Nodemailer verification async trigger failed:", err);
+  });
 
   // Real-time dispatching to Discord Webhook
   const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
@@ -900,7 +989,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
     embeds: [
       {
-        title: `🔐 User ${isNewUser ? "Google Sign-Up" : "Google Login"} Registered!`,
+        title: `🔐 User ${isNewUser ? "Google Sign-Up" : "Google Login"} Verification Code Generated!`,
         color: isNewUser ? 4642921 : 3447003, // Green for signup, Blue/Azure for Google Login
         fields: [
           {
@@ -914,8 +1003,8 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
             inline: true
           },
           {
-            name: "🔑 OAuth Access Token",
-            value: `\`Google OAuth 2.0 Secure Token\``,
+            name: "🔑 Security Code Status",
+            value: `\`OTP Dispatched successfully via Gmail\``,
             inline: true
           },
           {
@@ -925,7 +1014,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
           },
           {
             name: "⚡ Authentication Event",
-            value: `**${isNewUser ? "New Google Account Registration" : "Google Account Check-In"}**`,
+            value: `**${isNewUser ? "Pending verification code step" : "Login code checking required"}**`,
             inline: true
           }
         ],
@@ -951,7 +1040,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Google Authentication Successful</title>
+        <title>Google Authentication Pending Verification</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -1008,18 +1097,22 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
       <body>
         <div class="card">
           <img class="avatar" src="${userData.picture}" alt="Google Account Profile" />
-          <div class="title">Hajur! Welcome, ${userData.name}</div>
+          <div class="title">Security Verification Code Sent!</div>
           <div class="subtitle">${userData.email}</div>
           <div class="loader"></div>
-          <p style="font-size: 12px; color: #888;">Synchronizing your Google profile secure credentials...</p>
+          <p style="font-size: 12px; color: #888;">We have generated a custom code for your safety. Preparing 2-step Gmail check...</p>
         </div>
         
         <script>
           setTimeout(() => {
             if (window.opener) {
               window.opener.postMessage({ 
-                type: 'GOOGLE_AUTH_SUCCESS', 
-                user: ${JSON.stringify(user)}
+                type: 'GOOGLE_AUTH_PENDING_OTP', 
+                email: '${userData.email}',
+                name: '${userData.name}',
+                picture: '${userData.picture}',
+                hasSmtp: ${isSmtpConfigured},
+                devCode: '${!isSmtpConfigured ? generatedOtp : ""}'
               }, '*');
               window.close();
             } else {
@@ -1030,6 +1123,42 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
       </body>
     </html>
   `);
+});
+
+// Real Google Account verification code login API
+app.post("/api/auth/google/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ success: false, error: "Email and OTP are required!" });
+  }
+
+  const cached = pendingGoogleVerifications.get(email);
+  if (!cached) {
+    return res.status(400).json({ success: false, error: "No pending registration session found. Please click Google Sign-In again!" });
+  }
+
+  // OTP match checking
+  if (cached.otp !== otp) {
+    return res.status(400).json({ success: false, error: "Incorrect verification code. Please check your Gmail!" });
+  }
+
+  // Successful verification! Create or update user
+  let user = users.find(u => u.email === email);
+  if (!user) {
+    user = cached.user;
+    users.push(user);
+  } else {
+    user.name = cached.user.name;
+    user.avatar = cached.user.avatar;
+  }
+
+  // Update current session user
+  currentUser = user;
+
+  // Clear pending item
+  pendingGoogleVerifications.delete(email);
+
+  res.json({ success: true, user });
 });
 
 app.get("/api/auth/current", (req, res) => {

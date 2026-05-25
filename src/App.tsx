@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Restaurant from "./pages/Restaurant";
@@ -107,8 +108,9 @@ export default function App() {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const [swipeFeedback, setSwipeFeedback] = useState<string | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
 
-  const minSwipeDistance = 80;
+  const minSwipeDistance = 120;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEndX(null);
@@ -133,15 +135,51 @@ export default function App() {
         // Swipe left: moves user forward (Home -> Restaurant -> Checkout)
         if (currentIdx !== -1 && currentIdx < views.length - 1) {
           const nextView = views[currentIdx + 1];
+          if (!googleUser && nextView === "checkout") {
+            setSwipeFeedback("🔑 Guest Mode: Please Login to navigate to Checkout!");
+            setShowLogin(true);
+            setTouchStartX(null);
+            setTouchEndX(null);
+            return;
+          }
+          setSwipeDirection("left");
           setCurrentView(nextView);
+          
+          // Provide short successful vibration buzz
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(35);
+          }
+
           setSwipeFeedback(`Moved to ${nextView.toUpperCase()} 👉`);
           setTimeout(() => setSwipeFeedback(null), 1500);
         }
       } else if (isRightSwipe) {
         // Swipe right: moves user backward (Checkout -> Restaurant -> Home)
+        
+        // Prevent swiping away from "checkout" if cart is active and order is incomplete
+        if (currentView === "checkout" && cart.length > 0) {
+          // Warning dual vibration haptic
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate([60, 40, 60]);
+          }
+
+          setSwipeFeedback("❌ Checkout process is active & incomplete! Finish order or clear cart.");
+          setTimeout(() => setSwipeFeedback(null), 2000);
+          setTouchStartX(null);
+          setTouchEndX(null);
+          return;
+        }
+
         if (currentIdx > 0) {
           const prevView = views[currentIdx - 1];
+          setSwipeDirection("right");
           setCurrentView(prevView);
+
+          // Provide short successful vibration buzz
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(35);
+          }
+
           setSwipeFeedback(`👈 Back to ${prevView.toUpperCase()}`);
           setTimeout(() => setSwipeFeedback(null), 1500);
         }
@@ -198,6 +236,14 @@ export default function App() {
 
   // Cart operations
   const handleAddToCart = (item: MenuItem, restId: string, restName: string) => {
+    if (!googleUser) {
+      setSwipeFeedback("🔑 Guest Mode: Sign In with Google & Gmail OTP to manage Cart!");
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([45, 30, 45]);
+      }
+      setShowLogin(true);
+      return;
+    }
     setCart((prev) => {
       // Support multi-restaurant items inside the cart together
       const baseCart = prev;
@@ -305,6 +351,14 @@ export default function App() {
 
   // Adding Raw Grocery item to standard Checkout Cart
   const handleSelectGroceryItem = (item: GroceryItem, qty: number) => {
+    if (!googleUser) {
+      setSwipeFeedback("🔑 Guest Mode: Sign In with Google & Gmail OTP to order Groceries!");
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([45, 30, 45]);
+      }
+      setShowLogin(true);
+      return;
+    }
     const relativeMenuItem: MenuItem = {
       id: item.id,
       name: item.name,
@@ -409,6 +463,11 @@ export default function App() {
   };
 
   const handleTrackOrder = (order: Order) => {
+    if (!googleUser) {
+      setSwipeFeedback("🔑 Guest Mode: Log In with Google to see Order Status Tracking!");
+      setShowLogin(true);
+      return;
+    }
     setActiveOrder(order);
     setCurrentView("tracking");
   };
@@ -426,7 +485,14 @@ export default function App() {
         currentRole={userRole}
         onRoleChange={handleRoleChange}
         cartCount={cart.reduce((acc, it) => acc + it.quantity, 0)}
-        onCartToggle={() => setCurrentView("checkout")}
+        onCartToggle={() => {
+          if (!googleUser) {
+            setSwipeFeedback("🔑 Guest Mode: Login with Google to inspect your Cart!");
+            setShowLogin(true);
+          } else {
+            setCurrentView("checkout");
+          }
+        }}
         currentAddress={customerAddress}
         foodiePoints={loyaltyPoints}
         onOpenLogin={() => setShowLogin(true)}
@@ -436,68 +502,111 @@ export default function App() {
         onResetPortal={handleResetPortal}
       />
 
-      <main className="flex-1 mt-6">
+      <main className="flex-1 mt-6 overflow-x-hidden">
         {/* Switch Rendering Views depending on Selected Roles */}
         {userRole === "customer" && (
-          <>
-            {currentView === "home" && (
-              <Home
-                onSelectRestaurant={(id) => {
-                  setSelectedRestaurantId(id);
-                  setCurrentView("restaurant");
-                }}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onAddToCartDirect={handleAddToCart}
-                onCookAnimation={(item) => setActiveCookItem(item)}
-                onARPreview={(item) => setActiveARItem(item)}
-                onSelectGroceryItem={handleSelectGroceryItem}
-                customerAddress={customerAddress}
-                onChangeAddress={setCustomerAddress}
-                loyaltyPoints={loyaltyPoints}
-                onChangeLoyaltyPoints={setLoyaltyPoints}
-                onTrackOrder={handleTrackOrder}
-                cartItems={cart}
-              />
-            )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{
+                opacity: 0.8,
+                x: swipeDirection === "left" ? 40 : swipeDirection === "right" ? -40 : 0
+              }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{
+                opacity: 0.8,
+                x: swipeDirection === "left" ? -40 : swipeDirection === "right" ? 40 : 0
+              }}
+              transition={{ duration: 0.12, ease: "circOut" }}
+              className="w-full"
+            >
+              {currentView === "home" && (
+                <Home
+                  onSelectRestaurant={(id) => {
+                    setSelectedRestaurantId(id);
+                    setCurrentView("restaurant");
+                  }}
+                  favorites={favorites}
+                  onToggleFavorite={handleToggleFavorite}
+                  onAddToCartDirect={handleAddToCart}
+                  onCookAnimation={(item) => {
+                    if (!googleUser) {
+                      setSwipeFeedback("🔑 Guest Mode: Login to play kitchen simulation!");
+                      setShowLogin(true);
+                    } else {
+                      setActiveCookItem(item);
+                    }
+                  }}
+                  onARPreview={(item) => {
+                    if (!googleUser) {
+                      setSwipeFeedback("🔑 Guest Mode: Login to view 3D AR Table Models!");
+                      setShowLogin(true);
+                    } else {
+                      setActiveARItem(item);
+                    }
+                  }}
+                  onSelectGroceryItem={handleSelectGroceryItem}
+                  customerAddress={customerAddress}
+                  onChangeAddress={setCustomerAddress}
+                  loyaltyPoints={loyaltyPoints}
+                  onChangeLoyaltyPoints={setLoyaltyPoints}
+                  onTrackOrder={handleTrackOrder}
+                  cartItems={cart}
+                />
+              )}
 
-            {currentView === "restaurant" && (
-              <Restaurant
-                restaurantId={selectedRestaurantId}
-                onBack={() => setCurrentView("home")}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onAddToCart={handleAddToCart}
-                onCookAnimation={(item) => setActiveCookItem(item)}
-                onARPreview={(item) => setActiveARItem(item)}
-              />
-            )}
+              {currentView === "restaurant" && (
+                <Restaurant
+                  restaurantId={selectedRestaurantId}
+                  onBack={() => setCurrentView("home")}
+                  favorites={favorites}
+                  onToggleFavorite={handleToggleFavorite}
+                  onAddToCart={handleAddToCart}
+                  onCookAnimation={(item) => {
+                    if (!googleUser) {
+                      setSwipeFeedback("🔑 Guest Mode: Login to play kitchen simulation!");
+                      setShowLogin(true);
+                    } else {
+                      setActiveCookItem(item);
+                    }
+                  }}
+                  onARPreview={(item) => {
+                    if (!googleUser) {
+                      setSwipeFeedback("🔑 Guest Mode: Login to view 3D AR Table Models!");
+                      setShowLogin(true);
+                    } else {
+                      setActiveARItem(item);
+                    }
+                  }}
+                />
+              )}
 
-            {currentView === "checkout" && (
-              <Checkout
-                cartItems={cart}
-                onBack={() => setCurrentView("home")}
-                onUpdateQty={handleUpdateCartQty}
-                onRemoveItem={handleRemoveCartItem}
-                onUpdateCartItemSpice={handleUpdateCartItemSpice}
-                onUpdateCartItemNote={handleUpdateCartItemNote}
-                customerAddress={customerAddress}
-                onChangeAddress={setCustomerAddress}
-                onPlaceOrder={handlePlaceOrder}
-                loyaltyPoints={loyaltyPoints}
-                cartPointsError={cartPointsError}
-              />
-            )}
+              {currentView === "checkout" && (
+                <Checkout
+                  cartItems={cart}
+                  onBack={() => setCurrentView("home")}
+                  onUpdateQty={handleUpdateCartQty}
+                  onRemoveItem={handleRemoveCartItem}
+                  onUpdateCartItemSpice={handleUpdateCartItemSpice}
+                  onUpdateCartItemNote={handleUpdateCartItemNote}
+                  customerAddress={customerAddress}
+                  onChangeAddress={setCustomerAddress}
+                  onPlaceOrder={handlePlaceOrder}
+                  loyaltyPoints={loyaltyPoints}
+                  cartPointsError={cartPointsError}
+                />
+              )}
 
-            {currentView === "tracking" && (
-              <OrderTracking
-                order={activeOrder}
-                onBack={() => setCurrentView("home")}
-                onCancelOrder={handleCancelOrder}
-                onVerifyOtp={handleVerifyOtp}
-              />
-            )}
-          </>
+              {currentView === "tracking" && (
+                <OrderTracking
+                  order={activeOrder}
+                  onBack={() => setCurrentView("home")}
+                  onCancelOrder={handleCancelOrder}
+                  onVerifyOtp={handleVerifyOtp}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {userRole === "vendor" && <VendorDashboard />}
@@ -540,7 +649,14 @@ export default function App() {
       {/* 🧠 NEURAL QUANTUM HUD FLOATING LAUNCHER */}
       {userRole === "customer" && (
         <button
-          onClick={() => setShowCyberHub(true)}
+          onClick={() => {
+            if (!googleUser) {
+              setSwipeFeedback("🔑 Guest Mode: Login to activate Neural Quantum HUD!");
+              setShowLogin(true);
+            } else {
+              setShowCyberHub(true);
+            }
+          }}
           className="fixed bottom-5 left-5 z-40 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 via-[#FF6B35] to-[#8B1A1A] text-white hover:text-[#FFF8F0] hover:shadow-cyan-500/20 hover:-translate-y-0.5 rounded-full font-bold text-xs shadow-xl border border-white/20 transition-all cursor-pointer animate-pulse active:scale-95"
           title="Switch Neural Quantum HUD Simulator (27 Futuristic Features)"
         >
