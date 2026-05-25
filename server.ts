@@ -859,7 +859,7 @@ app.post("/api/auth/otp-verify", (req, res) => {
 // Google OAuth Flow Endpoints
 app.get("/api/auth/google/url", (req, res) => {
   const origin = (req.query.origin as string) || process.env.APP_URL || "https://ais-dev-ksxvue5pm6zdv5xt7vgiwy-90132924091.asia-southeast1.run.app";
-  const clientId = process.env.GOOGLE_CLIENT_ID || "MOCK_CLIENT_ID";
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || "MOCK_CLIENT_ID";
   
   const redirectUri = `${origin.replace(/\/+$/, '')}/auth/callback`;
   const stateObj = { origin };
@@ -875,13 +875,13 @@ app.get("/api/auth/google/url", (req, res) => {
   });
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-  res.json({ url: authUrl, hasCredentials: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) });
+  res.json({ url: authUrl, hasCredentials: !!((process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID) && (process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET)) });
 });
 
 app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
   const { code, state } = req.query;
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET;
 
   let origin = process.env.APP_URL || "https://ais-dev-ksxvue5pm6zdv5xt7vgiwy-90132924091.asia-southeast1.run.app";
   if (state) {
