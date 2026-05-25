@@ -1172,10 +1172,14 @@ app.post("/api/auth/update-role", (req, res) => {
 });
 
 app.post("/api/auth/update-profile", (req, res) => {
-  const { name, email, address } = req.body;
-  currentUser.name = name;
-  currentUser.email = email;
-  currentUser.address = address;
+  const { name, email, address, avatar, bio } = req.body;
+  if (currentUser) {
+    if (name !== undefined) currentUser.name = name;
+    if (email !== undefined) currentUser.email = email;
+    if (address !== undefined) currentUser.address = address;
+    if (avatar !== undefined) currentUser.avatar = avatar;
+    if (bio !== undefined) currentUser.bio = bio;
+  }
   res.json({ success: true, user: currentUser });
 });
 

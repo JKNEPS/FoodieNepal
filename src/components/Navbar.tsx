@@ -13,6 +13,7 @@ interface NavbarProps {
   googleUser: UserType | null;
   onGoogleSignOut: () => void;
   onResetPortal: () => void;
+  onOpenProfile: () => void;
 }
 
 export default function Navbar({
@@ -26,7 +27,8 @@ export default function Navbar({
   portalLock,
   googleUser,
   onGoogleSignOut,
-  onResetPortal
+  onResetPortal,
+  onOpenProfile
 }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#8B1A1A]/10 shadow-xs">
@@ -91,22 +93,29 @@ export default function Navbar({
             {portalLock === "customer" ? (
               <div className="flex items-center gap-3" id="locked_customer_navbar_controls">
                 {googleUser ? (
-                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 p-1.5 pr-3.5 rounded-full">
+                  <div 
+                    onClick={onOpenProfile}
+                    className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 p-1.5 pr-3.5 rounded-full cursor-pointer transition-all duration-150"
+                    title="View & Edit User Profile"
+                  >
                     <img 
                       src={googleUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150"} 
                       alt="Google avatar" 
-                      className="w-7 h-7 rounded-full object-cover border border-emerald-500"
+                      className="w-7 h-7 rounded-full object-cover border border-emerald-500 hover:scale-105 transition-transform"
                       referrerPolicy="no-referrer"
                     />
                     <div className="text-left hidden sm:block">
                       <p className="text-[10px] font-bold text-emerald-900 leading-none truncate max-w-[80px]" title={googleUser.name}>
                         {googleUser.name}
                       </p>
-                      <span className="text-[8px] font-mono text-emerald-600 tracking-wider">SECURED</span>
+                      <span className="text-[8px] font-mono text-emerald-600 tracking-wider font-semibold block mt-0.5">MY PROFILE</span>
                     </div>
                     <button
-                      onClick={onGoogleSignOut}
-                      className="p-1 text-emerald-800 hover:text-red-600 rounded-full hover:bg-red-50 transition-all ml-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onGoogleSignOut();
+                      }}
+                      className="p-1 text-emerald-800 hover:text-red-600 rounded-full hover:bg-red-55 transition-all ml-1 cursor-pointer"
                       title="Log out Google account"
                     >
                       <LogOut className="w-3.5 h-3.5" />

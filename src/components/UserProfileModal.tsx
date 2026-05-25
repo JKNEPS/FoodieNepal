@@ -1,0 +1,422 @@
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles } from "lucide-react";
+import { User as UserType } from "../types";
+
+interface UserProfileModalProps {
+  user: UserType;
+  onClose: () => void;
+  onUpdateUser: (updatedUser: UserType) => void;
+}
+
+const PRESET_AVATARS = [
+  {
+    name: "Momo Master",
+    url: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=150"
+  },
+  {
+    name: "Spicy Chef",
+    url: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=150"
+  },
+  {
+    name: "Chiya Lover",
+    url: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=150"
+  },
+  {
+    name: "Gurung Boy",
+    url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150"
+  },
+  {
+    name: "Newari Queen",
+    url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+  },
+  {
+    name: "Everest Explorer",
+    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150"
+  }
+];
+
+export default function UserProfileModal({ user, onClose, onUpdateUser }: UserProfileModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(user.name || "");
+  const [email, setEmail] = useState(user.email || "");
+  const [address, setAddress] = useState(user.address || "Pokhara, Nepal");
+  const [avatar, setAvatar] = useState(user.avatar || "");
+  const [bio, setBio] = useState(user.bio || "Namaste! Foodie from Nepal. Loving standard Himalayan spices!");
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErrorMsg("Full Name cannot be empty.");
+      return;
+    }
+    if (!email.trim()) {
+      setErrorMsg("Email address cannot be empty.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const response = await fetch("/api/auth/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          address: address.trim(),
+          avatar: avatar,
+          bio: bio.trim()
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSuccessMsg("Profile updated successfully!");
+        onUpdateUser(data.user);
+        
+        // Also update standard local storage
+        localStorage.setItem("foodienepal_google_user", JSON.stringify(data.user));
+        localStorage.setItem("foodienepal_customer_address", data.user.address || "Pokhara, Nepal");
+
+        setTimeout(() => {
+          setIsEditing(false);
+          setSuccessMsg("");
+        }, 1200);
+      } else {
+        setErrorMsg(data.error || "Failed to update profile. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setErrorMsg("Network error updating profile. Please make sure the server is healthy.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectPresetAvatar = (url: string) => {
+    setAvatar(url);
+    setShowAvatarSelector(false);
+  };
+
+  const handleCustomAvatarSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customAvatarUrl.trim()) {
+      setAvatar(customAvatarUrl.trim());
+      setCustomAvatarUrl("");
+      setShowAvatarSelector(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop overlay with fade */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+        id="profile_modal_backdrop"
+      />
+
+      {/* Profile Card Container */}
+      <motion.div
+        initial={{ scale: 0.95, y: 15, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 15, opacity: 0 }}
+        transition={{ type: "spring", duration: 0.4 }}
+        className="relative w-full max-w-lg bg-[#FFF8F0] rounded-3xl overflow-hidden border border-[#8B1A1A]/10 shadow-2xl z-10 font-sans"
+        id="profile_modal_container"
+      >
+        {/* Colorful header band with Steaming Himalayan theme */}
+        <div className="bg-gradient-to-r from-[#8B1A1A] to-[#FF6B35] h-28 relative flex items-end px-6 pb-4">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-black/20 text-white/90 hover:text-white hover:bg-black/40 rounded-full transition-all"
+            title="Close Profile"
+            id="profile_close_btn"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center gap-2 text-white/90">
+            <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
+            <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-amber-150">FoodieNepal Member Since 2026</span>
+          </div>
+        </div>
+
+        {/* Profile Avatar overlay */}
+        <div className="relative px-6">
+          <div className="absolute -top-12 left-6 flex items-end">
+            <div className="relative group">
+              <img
+                src={avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150"}
+                alt="Profile Avatar"
+                className="w-24 h-24 rounded-2xl object-cover border-4 border-[#FFF8F0] shadow-md bg-white select-none"
+                referrerPolicy="no-referrer"
+                id="profile_avatar_img"
+              />
+              
+              {isEditing && (
+                <button
+                  onClick={() => setShowAvatarSelector(!showAvatarSelector)}
+                  className="absolute inset-0 bg-black/45 hover:bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white transition-all border border-white/20"
+                  type="button"
+                  title="Change Avatar"
+                  id="profile_change_avatar_badge_btn"
+                >
+                  <Camera className="w-5 h-5 mb-1" />
+                  <span className="text-[9px] font-bold uppercase tracking-wider">Change</span>
+                </button>
+              )}
+            </div>
+
+            {/* Profile Info Summary Banner */}
+            <div className="ml-5 mb-1">
+              <h2 className="text-xl font-bold text-[#8B1A1A] tracking-tight truncate max-w-[200px]" id="profile_display_name_header">
+                {user.name}
+              </h2>
+              <div className="flex items-center gap-1.5 bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full border border-[#2D6A4F]/20 text-[#2D6A4F] text-[10px] font-black w-fit mt-1">
+                <Award className="w-3 h-3" />
+                <span>{user.foodiePoints} Loyalty Pts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Space Spacer for avatar */}
+        <div className="h-16" />
+
+        {/* Main Content Pane */}
+        <div className="px-6 pb-6 overflow-y-auto max-h-[60vh]">
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-800 text-xs rounded-xl font-medium" id="profile_error_message">
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mb-4 p-3 bg-semibold bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl font-bold" id="profile_success_message">
+              🎉 {successMsg}
+            </div>
+          )}
+
+          {/* Avatar preset selector panel drawer */}
+          {showAvatarSelector && isEditing && (
+            <div className="mb-5 p-4 bg-white rounded-2xl border border-[#8B1A1A]/10 shadow-inner" id="avatar_select_pane">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-[#8B1A1A] uppercase tracking-wider">Select Nepal Custom Avatar</span>
+                <button 
+                  onClick={() => setShowAvatarSelector(false)} 
+                  className="text-gray-400 hover:text-gray-600 text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* Curated Previews Grid */}
+              <div className="grid grid-cols-6 gap-2 mb-3">
+                {PRESET_AVATARS.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectPresetAvatar(p.url)}
+                    className={`relative rounded-xl overflow-hidden hover:scale-105 duration-200 transition-all border ${avatar === p.url ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/20 scale-105" : "border-gray-200"}`}
+                    title={p.name}
+                  >
+                    <img src={p.url} alt={p.name} className="w-full h-11 object-cover" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom url form */}
+              <form onSubmit={handleCustomAvatarSubmit} className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="Or paste direct image URL..."
+                  value={customAvatarUrl}
+                  onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                  className="flex-1 px-3 py-1.5 bg-[#FFF8F0] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#FF6B35] font-sans"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 bg-[#8B1A1A] text-white rounded-xl text-xs font-bold hover:bg-[#FF6B35] transition"
+                >
+                  Apply
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Form wrapper */}
+          {!isEditing ? (
+            /* VIEW RESUME MODE */
+            <div className="space-y-4" id="view_profile_pane">
+              {/* Bio block */}
+              <div className="bg-white p-4 rounded-2xl border border-[#8B1A1A]/5 shadow-xs">
+                <span className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-wider block mb-1">My Bio</span>
+                <p className="text-xs text-gray-700 leading-relaxed italic pr-2 font-sans" id="profile_display_bio">
+                  "{bio || "No custom bio yet."}"
+                </p>
+              </div>
+
+              {/* Context list */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl border border-[#8B1A1A]/5">
+                  <User className="w-4 h-4 text-[#8B1A1A] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] text-[#FF6B35] font-bold tracking-wider block uppercase">Full Name</span>
+                    <span className="text-xs font-semibold text-gray-800 block truncate" id="profile_display_name">{user.name}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl border border-[#8B1A1A]/5">
+                  <Mail className="w-4 h-4 text-[#8B1A1A] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] text-[#FF6B35] font-bold tracking-wider block uppercase">Verified Email</span>
+                    <span className="text-xs font-semibold text-gray-800 block truncate" id="profile_display_email">{user.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl border border-[#8B1A1A]/5">
+                  <MapPin className="w-4 h-4 text-[#8B1A1A] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] text-[#FF6B35] font-bold tracking-wider block uppercase">Delivery / Drop Address</span>
+                    <span className="text-xs font-semibold text-gray-800 block truncate" id="profile_display_address">
+                      {address || "No active address configured"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Activation button */}
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white font-bold text-xs rounded-2xl transition-all shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                id="profile_edit_btn"
+              >
+                <PenSquare className="w-4 h-4" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
+          ) : (
+            /* MUTATION EDIT MODE */
+            <form onSubmit={handleSave} className="space-y-4" id="edit_profile_pane">
+              {/* Full name input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider block">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B1A1A]/40" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#FF6B35] font-sans"
+                    placeholder="E.g. Jenish Sapkota"
+                    id="profile_edit_name_input"
+                  />
+                </div>
+              </div>
+
+              {/* Email input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider block">Email Address (Readonly)</label>
+                <div className="relative opacity-65">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B1A1A]/40" />
+                  <input
+                    type="email"
+                    disabled
+                    value={email}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-xs font-medium focus:outline-none font-sans cursor-not-allowed"
+                    id="profile_edit_email_input"
+                  />
+                </div>
+              </div>
+
+              {/* Bio details */}
+              <div className="space-y-1 font-sans">
+                <div className="flex justify-between items-baseline">
+                  <label className="text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider block">Foodie Bio</label>
+                  <span className="text-[9px] font-mono text-gray-400">{bio.length}/120 chars</span>
+                </div>
+                <textarea
+                  maxLength={120}
+                  rows={2}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full p-3 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#FF6B35] resize-none font-sans"
+                  placeholder="Share your favorite cuisines or spice preferences..."
+                  id="profile_edit_bio_input"
+                />
+              </div>
+
+              {/* Active Delivery address */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider block">Primary Delivery Address</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B1A1A]/40" />
+                  <input
+                    type="text"
+                    required
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#FF6B35] font-sans"
+                    placeholder="E.g. Lakeside Ward 6, Pokhara"
+                    id="profile_edit_address_input"
+                  />
+                </div>
+              </div>
+
+              {/* Action operations buttons */}
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setName(user.name);
+                    setAddress(user.address || "Pokhara, Nepal");
+                    setAvatar(user.avatar || "");
+                    setBio(user.bio || "Namaste! Foodie from Nepal. Loving standard Himalayan spices!");
+                    setErrorMsg("");
+                  }}
+                  className="w-1/3 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-2xl transition"
+                  id="profile_edit_cancel_btn"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-[#FF6B35] hover:bg-[#8B1A1A] text-white font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                  id="profile_edit_save_btn"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}

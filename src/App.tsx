@@ -16,6 +16,7 @@ import LoginPortal from "./components/LoginPortal";
 import AdminPortalPanel from "./components/AdminPortalPanel";
 import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
+import UserProfileModal from "./components/UserProfileModal";
 
 const LOYALTY_ITEM_POINTS: Record<string, number> = {
   loyalty_momo: 50,
@@ -38,6 +39,7 @@ export default function App() {
 
   const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
   const [showLogin, setShowLogin] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -525,6 +527,7 @@ export default function App() {
         googleUser={googleUser}
         onGoogleSignOut={handleGoogleSignOut}
         onResetPortal={handleResetPortal}
+        onOpenProfile={() => setShowUserProfile(true)}
       />
 
       <main className="flex-1 mt-6 overflow-x-hidden">
@@ -722,6 +725,18 @@ export default function App() {
           }}
           onCancel={() => setShowLogin(false)}
           onGoogleSuccess={handleGoogleSuccess}
+        />
+      )}
+
+      {showUserProfile && googleUser && (
+        <UserProfileModal
+          user={googleUser}
+          onClose={() => setShowUserProfile(false)}
+          onUpdateUser={(updated) => {
+            setGoogleUser(updated);
+            setCustomerAddress(updated.address || "Pokhara, Nepal");
+            setLoyaltyPoints(updated.foodiePoints || 120);
+          }}
         />
       )}
 
