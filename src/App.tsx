@@ -26,9 +26,7 @@ const LOYALTY_ITEM_POINTS: Record<string, number> = {
 
 export default function App() {
   // Global States
-  const [portalLock, setPortalLock] = useState<"customer" | "admin" | null>(() => {
-    return (localStorage.getItem("foodienepal_portal_lock") as "customer" | "admin" | null) || null;
-  });
+  const [portalLock, setPortalLock] = useState<"customer" | "admin" | null>(null);
   const [googleUser, setGoogleUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem("foodienepal_google_user");
@@ -38,9 +36,7 @@ export default function App() {
     }
   });
 
-  const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">(() => {
-    return (localStorage.getItem("foodienepal_portal_lock") as any) || "customer";
-  });
+  const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
   const [showLogin, setShowLogin] = useState(false);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
@@ -471,6 +467,35 @@ export default function App() {
     setActiveOrder(order);
     setCurrentView("tracking");
   };
+
+  if (!portalLock) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center font-sans overflow-hidden">
+        <OnboardingWizard
+          onComplete={handleOnboardingComplete}
+          onGoogleSignIn={() => setShowLogin(true)}
+        />
+        {showLogin && (
+          <LoginPortal
+            onLoginSuccess={(role) => {
+              setUserRole(role);
+              if (role === "admin") {
+                setPortalLock("admin");
+              } else if (role === "customer" || role === "vendor" || role === "rider") {
+                setPortalLock("customer");
+                if (role === "customer") {
+                  setCurrentView("home");
+                }
+              }
+              setShowLogin(false);
+            }}
+            onCancel={() => setShowLogin(false)}
+            onGoogleSuccess={handleGoogleSuccess}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div 
