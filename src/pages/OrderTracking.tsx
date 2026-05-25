@@ -137,6 +137,7 @@ export default function OrderTracking({
 
   // Poll server for active order status updates dynamically
   const [polledOrder, setPolledOrder] = useState<Order | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const getArrivalClockTime = (etaMinutes: number) => {
     const d = new Date();
@@ -314,8 +315,9 @@ export default function OrderTracking({
         {/* Cancel option if preparation is not active yet */}
         {(polledOrder.status === "placed" || polledOrder.status === "confirmed") && (
           <button
-            onClick={() => onCancelOrder(polledOrder.id)}
+            onClick={() => setShowCancelModal(true)}
             className="px-4 py-2 hover:bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold rounded-xl transition-all"
+            id="open_cancel_confirmation_btn"
           >
             Cancel Order
           </button>
@@ -766,6 +768,57 @@ export default function OrderTracking({
           </div>
         )}
       </div>
+
+      {/* Dynamic Order Cancellation Warning Confirmation Dialog */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setShowCancelModal(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            id="cancel_order_backdrop"
+          />
+          <div
+            className="relative bg-white border border-[#8B1A1A]/10 max-w-sm w-full rounded-2xl p-6 shadow-2xl z-10 text-center font-sans animate-scaleIn"
+            id="cancel_order_modal"
+          >
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+              <AlertTriangle className="w-6 h-6 animate-bounce" />
+            </div>
+
+            <h3 className="text-lg font-extrabold text-[#8B1A1A] leading-tight mb-2">
+              Are you sure you want to cancel?
+            </h3>
+            
+            <p className="text-xs text-gray-600 leading-relaxed mb-5">
+              Hajur, our kitchen staff might have already started preparing your delicious meals like steaming momos or traditional spiced curry! 
+              <span className="block mt-1.5 font-semibold text-rose-600">This action is permanent and cannot be undone.</span>
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition border border-gray-250 cursor-pointer"
+                id="cancel_order_modal_dismiss"
+              >
+                No, Keep Food
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  onCancelOrder(polledOrder.id);
+                  setShowCancelModal(false);
+                }}
+                className="flex-1 py-2.5 bg-[#8B1A1A] hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-rose-200"
+                id="cancel_order_modal_confirm"
+              >
+                Yes, Cancel Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

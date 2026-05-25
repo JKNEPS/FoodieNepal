@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, UtensilsCrossed, ShieldCheck, ArrowRight, User, Settings, CheckCircle2, CloudLightning } from "lucide-react";
+import { Sparkles, UtensilsCrossed, ShieldCheck, ArrowRight, User, Settings, CheckCircle2, CloudLightning, X } from "lucide-react";
 import { UserRole } from "../types";
 
 interface OnboardingWizardProps {
@@ -80,6 +80,16 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
         {/* Top Decorative Himalayan Gradient border */}
         <div className="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-orange-500 via-[#8B1A1A] to-[#2D6A4F]" />
         
+        {/* Absolute Dismiss / Cancel button to skip onboarding */}
+        <button
+          onClick={() => onComplete("customer")}
+          className="absolute top-5 right-5 p-2 bg-gray-100 hover:bg-rose-50 text-gray-400 hover:text-[#8B1A1A] rounded-full transition-all border border-gray-150 cursor-pointer z-10"
+          title="Cancel and Browse as Guest"
+          id="dismiss_onboarding_btn"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex p-3.5 bg-[#8B1A1A] text-white rounded-2xl mb-4 shadow-[#8B1A1A]/10 shadow-lg">
@@ -149,6 +159,18 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
                     </p>
                   </div>
                 </div>
+              </button>
+            </div>
+
+            {/* Cancel & Skip onboarding button */}
+            <div className="pt-4 text-center border-t border-dashed border-gray-200 mt-3">
+              <button
+                type="button"
+                onClick={() => onComplete("customer")}
+                className="text-xs text-slate-500 hover:text-[#8B1A1A] font-mono transition-colors font-bold underline decoration-dotted cursor-pointer"
+                id="textual_skip_onboarding_btn"
+              >
+                &times; Cancel &bull; Browse standard menu directly
               </button>
             </div>
           </div>
