@@ -14,6 +14,7 @@ import RiderDashboard from "./rider/RiderDashboard";
 import { MenuItem, CartItem, Order, GroceryItem, User } from "./types";
 import LoginPortal from "./components/LoginPortal";
 import AdminPortalPanel from "./components/AdminPortalPanel";
+import GoogleFormsHub from "./components/GoogleFormsHub";
 import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
@@ -40,7 +41,7 @@ export default function App() {
   const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
   const [showLogin, setShowLogin] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
-  const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking">("home");
+  const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking" | "forms">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -528,6 +529,8 @@ export default function App() {
         onGoogleSignOut={handleGoogleSignOut}
         onResetPortal={handleResetPortal}
         onOpenProfile={() => setShowUserProfile(true)}
+        currentView={currentView}
+        onNavigateForms={() => setCurrentView("forms")}
       />
 
       <main className="flex-1 mt-6 overflow-x-hidden">
@@ -632,6 +635,12 @@ export default function App() {
                   onCancelOrder={handleCancelOrder}
                   onVerifyOtp={handleVerifyOtp}
                 />
+              )}
+
+              {currentView === "forms" && (
+                <div className="max-w-7xl mx-auto px-4 md:px-8 py-2">
+                  <GoogleFormsHub />
+                </div>
               )}
             </motion.div>
           </AnimatePresence>

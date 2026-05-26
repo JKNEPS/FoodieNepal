@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Shield, Users, UtensilsCrossed, Calendar, TicketPercent, Check, X, Plus, Trash2, TrendingUp, HandCoins } from "lucide-react";
+import GoogleFormsHub from "./GoogleFormsHub";
 
 export default function AdminPortalPanel() {
   // Analytical stats
@@ -375,6 +376,11 @@ export default function AdminPortalPanel() {
 
         </div>
 
+      </div>
+
+      {/* Dynamic Google Workspace Forms Hub */}
+      <div className="mt-8">
+        <GoogleFormsHub />
       </div>
 
     </div>
