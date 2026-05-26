@@ -184,13 +184,31 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
         })
       }).catch(err => console.error("Telemetry failed:", err));
 
-      setTimeout(() => {
+      try {
+        const res = await fetch("/api/auth/gmail-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: gmail.trim(), otp })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setUserLoading(false);
+          if (onGoogleSuccess) {
+            onGoogleSuccess(data.user);
+          }
+          setSuccessAnimRole("customer");
+          setTimeout(() => {
+            onLoginSuccess("customer");
+          }, 1800);
+        } else {
+          setErrorMessage(data.error || "Failed to verify Gmail account code. Please try again.");
+          setUserLoading(false);
+        }
+      } catch (err) {
+        console.error("Error verifying email OTP:", err);
+        setErrorMessage("Connection error verifying Gmail. Please retry.");
         setUserLoading(false);
-        setSuccessAnimRole("customer");
-        setTimeout(() => {
-          onLoginSuccess("customer");
-        }, 1800);
-      }, 500);
+      }
     }
   };
 

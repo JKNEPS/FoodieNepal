@@ -856,6 +856,38 @@ app.post("/api/auth/otp-verify", (req, res) => {
   res.json({ success: true, user });
 });
 
+app.post("/api/auth/gmail-verify", (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Gmail and verification code are required" });
+  }
+
+  let cleanEmail = email.trim().toLowerCase();
+  
+  // Find or create customer
+  let user = users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    let emailPrefix = cleanEmail.split('@')[0];
+    let name = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+    name = name.replace(/[._-]/g, ' ');
+    
+    user = {
+      id: `usr_${Date.now()}`,
+      name: name,
+      email: cleanEmail,
+      phone: "+977-9845612345",
+      role: "customer",
+      address: "Lakeside Ward 6, Pokhara, Nepal",
+      foodiePoints: 120,
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150"
+    };
+    users.push(user);
+  }
+
+  currentUser = user;
+  res.json({ success: true, user });
+});
+
 // Google OAuth Flow Endpoints
 app.get("/api/auth/google/url", (req, res) => {
   const origin = (req.query.origin as string) || process.env.APP_URL || "https://ais-dev-ksxvue5pm6zdv5xt7vgiwy-90132924091.asia-southeast1.run.app";
