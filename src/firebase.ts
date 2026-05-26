@@ -9,8 +9,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Authentication
 export const auth = getAuth();
 
-// Initialize Firestore using standard default instance
-export const db = getFirestore(app);
+// Initialize Firestore using custom database instance
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
 
 // Standardized Operation Type enum
 export enum OperationType {

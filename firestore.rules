@@ -127,5 +127,11 @@ service cloud.firestore {
       );
       allow delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
     }
+
+    // MATCH: System Checks and Configuration details (like google_forms)
+    match /system_checks/{checkId} {
+      allow read: if true; // Let customers/admins read configurations
+      allow write: if isSignedIn(); // Let authenticated clients/admins modify or record checks
+    }
   }
 }
