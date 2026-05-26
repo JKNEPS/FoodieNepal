@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Catch-All Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper: Verify standard user sign-in status
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Ensure the user's email is verified
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Helper: Safe Document ID validation
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Helper: Get incoming data changes
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Helper: Get existing active data state
+    function existing() {
+      return resource.data;
+    }
+
+    // Helper: Look up user role directly from Firestore
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    // Helper: Determine if current requester is an administrator
+    function isAdmin() {
+      return isSignedIn() && getUserRole(request.auth.uid) == "admin";
+    }
+
+    // Helper: Validation Blueprint for User Profiles
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.role in ["customer", "vendor", "rider", "admin"] &&
+             data.foodiePoints is int && data.foodiePoints >= 0;
+    }
+
+    // MATCH: Users Profile collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (incoming().role == "customer" || incoming().role == "rider");
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (
+        // Prevent Self-Assigned role upgrades or points manipulation
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'address', 'avatar', 'bio'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Helper: Validation Blueprint for Active Orders
+    function isValidOrder(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.restaurantId is string && data.restaurantId.size() <= 128 &&
+             data.restaurantName is string && data.restaurantName.size() <= 150 &&
+             data.subtotal is int && data.subtotal >= 0 &&
+             data.total is int && data.total >= 0 &&
+             data.address is string && data.address.size() <= 500 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.paymentMethod in ["cod", "esewa", "khalti", "imepay"] &&
+             data.status in ["placed", "confirmed", "preparing", "ready", "picked_up", "on_the_way", "delivered", "cancelled"];
+    }
+
+    // MATCH: Food & Groceries Consignment Orders Collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (existing().userId == request.auth.uid || getUserRole(request.auth.uid) in ["vendor", "rider", "admin"]);
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        getUserRole(request.auth.uid) in ["vendor", "rider", "admin"]
+      );
+      allow create: if isSignedIn() && isValidOrder(incoming()) && incoming().userId == request.auth.uid && incoming().status == "placed";
+      allow update: if isSignedIn() && isValidOrder(incoming()) && (
+        isAdmin() ||
+        // Customer updates: Can only cancel order if it is in "placed" or "confirmed" stage OR submit feedback
+        (existing().userId == request.auth.uid && (
+          // Cancel order transition
+          (incoming().status == "cancelled" && existing().status in ["placed", "confirmed"] && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Feedback submission transition
+          (incoming().diff(existing()).affectedKeys().hasOnly(['feedbackSubmitted']))
+        )) ||
+        // Restaurant Kitchen updates: Can transition order status to preparation steps
+        (getUserRole(request.auth.uid) == "vendor" && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+        )) ||
+        // Rider Deliveries: Can claim order, update rider location, delivery status
+        (getUserRole(request.auth.uid) == "rider" && (
+          incoming().diff(existing()).affectedKeys().hasAny(['riderId', 'riderName', 'riderPhone', 'riderLat', 'riderLng', 'status'])
+        ))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Helper: Validation Blueprint for Restaurant Reviews
+    function isValidReview(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.restaurantId is string && data.restaurantId.size() <= 128 &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 1000 &&
+             data.userId is string && data.userId.size() <= 128;
+    }
+
+    // MATCH: Restaurant & Merchant Reviews Feedback
+    match /reviews/{reviewId} {
+      allow read: if true; // Everyone can read restaurant ratings/reviews
+      allow create: if isSignedIn() && isValidReview(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        // Review Creator can revise comment/rating
+        (existing().userId == request.auth.uid && isValidReview(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['comment', 'rating'])) ||
+        // Restaurant Kitchen vendor can reply
+        (getUserRole(request.auth.uid) == "vendor" && incoming().diff(existing()).affectedKeys().hasOnly(['restaurantReply']))
+      );
+      allow delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+    }
+  }
+}

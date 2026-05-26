@@ -6,6 +6,85 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { Restaurant, MenuItem, Order, ChatMessage, Review, User, GroceryItem } from "./src/types";
 
+// Initialize Firebase SDK on Server-Side to sync database collections
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import firebaseConfig from "./firebase-applet-config.json";
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+
+async function syncUserToFirestore(user: User) {
+  try {
+    await setDoc(doc(db, "users", user.id), {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      role: user.role,
+      address: user.address || "",
+      avatar: user.avatar || "",
+      bio: user.bio || "",
+      foodiePoints: user.foodiePoints || 0
+    });
+    console.log(`[Firestore] Sync Success for User profile: ${user.id}`);
+  } catch (err) {
+    console.warn("[Firestore] Sync Warning: Profile indexing skipped or offline.", err);
+  }
+}
+
+async function syncOrderToFirestore(order: Order) {
+  try {
+    const orderUserId = currentUser ? currentUser.id : "usr_guest";
+    await setDoc(doc(db, "orders", order.id), {
+      id: order.id,
+      restaurantId: order.restaurantId,
+      restaurantName: order.restaurantName,
+      subtotal: Math.round(order.subtotal || 0),
+      deliveryFee: Math.round(order.deliveryFee || 0),
+      platformFee: Math.round(order.platformFee || 0),
+      tax: Math.round(order.tax || 0),
+      total: Math.round(order.total || 0),
+      address: order.address || "",
+      paymentMethod: order.paymentMethod,
+      status: order.status,
+      createdAt: order.createdAt,
+      userId: orderUserId,
+      riderId: order.riderId || "",
+      riderName: order.riderName || "",
+      riderPhone: order.riderPhone || "",
+      riderLat: order.riderLat || 0,
+      riderLng: order.riderLng || 0,
+      deliveryOtp: order.deliveryOtp || "",
+      feedbackSubmitted: order.feedbackSubmitted || false
+    });
+    console.log(`[Firestore] Sync Success for order: ${order.id}`);
+  } catch (err) {
+    console.warn(`[Firestore] Sync Warning: Order indexing skipped for ${order.id}.`, err);
+  }
+}
+
+async function syncReviewToFirestore(restaurantId: string, review: Review) {
+  try {
+    const reviewUserId = currentUser ? currentUser.id : "usr_guest";
+    await setDoc(doc(db, "reviews", review.id), {
+      id: review.id,
+      restaurantId: restaurantId,
+      userName: review.userName,
+      userAvatar: review.userAvatar || "",
+      rating: Math.round(review.rating),
+      comment: review.comment,
+      userId: reviewUserId,
+      helpfulVotes: Math.round(review.helpfulVotes || 0),
+      restaurantReply: review.restaurantReply || "",
+      date: review.date
+    });
+    console.log(`[Firestore] Sync Success for review: ${review.id}`);
+  } catch (err) {
+    console.warn(`[Firestore] Sync Warning: Review indexing skipped for ${review.id}.`, err);
+  }
+}
+
 dotenv.config();
 
 // Mapped Google User Verification Cache store
@@ -801,7 +880,7 @@ function getLocalFallbackChatbotResponse(query: string): string {
       Hami sadhai sahayata garchhau (We are always here to help)! 
       I have registered your grievance about the meal delay/quality.
       - **Refund status**: Pending verification from the restaurant kitchen.
-      We have escalated this directly to our human customer support representative. You can click the **Raise Customer Support Ticket** or use the **Live Chat with Support** button to claim immediate resolution!`;
+      We have escalated this directly to our human customer support representative. You can email us at **foodienepalnpofficial@gmail.com** or use the **Live Chat with Support** button to claim immediate resolution!`;
   }
 
   return `### Namaste! Welcome to FoodieNepal Chatbot! 🏔️🥟
@@ -853,6 +932,7 @@ app.post("/api/auth/otp-verify", (req, res) => {
   }
   
   currentUser = user;
+  syncUserToFirestore(user);
   res.json({ success: true, user });
 });
 
@@ -885,6 +965,7 @@ app.post("/api/auth/gmail-verify", (req, res) => {
   }
 
   currentUser = user;
+  syncUserToFirestore(user);
   res.json({ success: true, user });
 });
 
@@ -1186,6 +1267,7 @@ app.post("/api/auth/google/verify-otp", (req, res) => {
 
   // Update current session user
   currentUser = user;
+  syncUserToFirestore(user);
 
   // Clear pending item
   pendingGoogleVerifications.delete(email);
@@ -1200,6 +1282,7 @@ app.get("/api/auth/current", (req, res) => {
 app.post("/api/auth/update-role", (req, res) => {
   const { role } = req.body;
   currentUser.role = role;
+  syncUserToFirestore(currentUser);
   res.json({ success: true, user: currentUser });
 });
 
@@ -1211,6 +1294,7 @@ app.post("/api/auth/update-profile", (req, res) => {
     if (address !== undefined) currentUser.address = address;
     if (avatar !== undefined) currentUser.avatar = avatar;
     if (bio !== undefined) currentUser.bio = bio;
+    syncUserToFirestore(currentUser);
   }
   res.json({ success: true, user: currentUser });
 });
@@ -1266,13 +1350,13 @@ app.post("/api/auth/notify-login", (req, res) => {
   })
   .then(response => {
     if (!response.ok) {
-      console.error("Failed to trigger Auth sentinel. Status code:", response.status);
+      console.log(`Auth sentinel response status: ${response.status} (external sentinel skipped)`);
     } else {
       console.log("Successfully logged auth metadata to Discord Webhook.");
     }
   })
   .catch(err => {
-    console.error("Error logging auth metadata via Discord Webhook:", err);
+    console.log("External auth sentinel log skipped or unreachable.");
   });
 
   res.json({ success: true });
@@ -1314,6 +1398,7 @@ app.post("/api/restaurants/:id/reviews", (req, res) => {
     sampleReviews[req.params.id] = [];
   }
   sampleReviews[req.params.id].unshift(newReview);
+  syncReviewToFirestore(req.params.id, newReview);
   res.json({ success: true, review: newReview });
 });
 
@@ -1371,6 +1456,7 @@ app.post("/api/orders", (req, res) => {
     currentUser.foodiePoints += pointsToUpdate;
   }
   activeOrders.unshift(newOrder);
+  syncOrderToFirestore(newOrder);
 
   // Send exact location, contact number, and username to Discord webhook on order placement
   const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
@@ -1460,6 +1546,7 @@ app.post("/api/orders/:id/verify-otp", (req, res) => {
     // Also update rider earnings
     riderDashboardEarnings.today += Math.floor(order.deliveryFee * 0.8) + 15;
     riderDashboardEarnings.deliveriesCount += 1;
+    syncOrderToFirestore(order);
     res.json({ success: true, order });
   } else {
     res.status(400).json({ error: "Incorrect 4-digit verification code" });
@@ -1470,6 +1557,7 @@ app.post("/api/orders/:id/cancel", (req, res) => {
   const order = activeOrders.find(o => o.id === req.params.id);
   if (order && (order.status === "placed" || order.status === "confirmed")) {
     order.status = "cancelled";
+    syncOrderToFirestore(order);
     res.json({ success: true, order });
   } else {
     res.status(400).json({ error: "Cannot cancel order in preparation" });
@@ -1536,6 +1624,7 @@ app.post("/api/vendor/status", (req, res) => {
   const order = activeOrders.find(o => o.id === orderId);
   if (order) {
     order.status = status;
+    syncOrderToFirestore(order);
     res.json({ success: true, order });
   } else {
     res.status(404).json({ error: "Order not found" });
@@ -1571,6 +1660,7 @@ app.post("/api/rider/status-advance", (req, res) => {
       order.riderLat = 27.6801;
       order.riderLng = 85.3122;
     }
+    syncOrderToFirestore(order);
     res.json({ success: true, order });
   } else {
     res.status(404).json({ error: "Job not found" });

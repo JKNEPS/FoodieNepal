@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile schema including role, points, and address details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the user (auth UID)" },
+        "name": { "type": "string", "description": "Full display name of the user" },
+        "phone": { "type": "string", "description": "Sms contact phone number" },
+        "email": { "type": "string", "format": "email", "description": "Associated email address of the user" },
+        "role": { "type": "string", "enum": ["customer", "vendor", "rider", "admin"], "description": "System access capability role" },
+        "address": { "type": "string", "description": "Default delivery location address text" },
+        "avatar": { "type": "string", "description": "URL link to the profile avatar image" },
+        "bio": { "type": "string", "description": "Optional brief bio descriptor" },
+        "foodiePoints": { "type": "integer", "description": "Catering customer reward cashback points balance" }
+      },
+      "required": ["id", "name", "email", "role", "foodiePoints"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Consignment delivery order for meals or groceries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order tracking hash identifier" },
+        "restaurantId": { "type": "string", "description": "Restaurant identity reference" },
+        "restaurantName": { "type": "string", "description": "Name of the restaurant" },
+        "subtotal": { "type": "integer", "description": "Total price before delivery/taxes" },
+        "deliveryFee": { "type": "integer", "description": "Catering courier dispatch charge" },
+        "platformFee": { "type": "integer", "description": "Service charge" },
+        "tax": { "type": "integer", "description": "State tax amount" },
+        "total": { "type": "integer", "description": "Grand total payable price" },
+        "address": { "type": "string", "description": "Specific delivery spot address" },
+        "paymentMethod": { "type": "string", "enum": ["cod", "esewa", "khalti", "imepay"], "description": "Selected checkout transaction gateway" },
+        "status": { "type": "string", "enum": ["placed", "confirmed", "preparing", "ready", "picked_up", "on_the_way", "delivered", "cancelled"], "description": "Active logistic status code" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "riderId": { "type": "string", "description": "Assigned rider identifier" },
+        "riderName": { "type": "string", "description": "Assigned courier's name" },
+        "riderPhone": { "type": "string", "description": "Courier contact number" },
+        "riderLat": { "type": "number", "description": "Courier geo-latitude coordinate" },
+        "riderLng": { "type": "number", "description": "Courier geo-longitude coordinate" },
+        "deliveryOtp": { "type": "string", "description": "Order handover authentication OTP token" },
+        "feedbackSubmitted": { "type": "boolean", "description": "Check if user rated this order" }
+      },
+      "required": ["id", "restaurantId", "restaurantName", "subtotal", "total", "address", "paymentMethod", "status", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer feedback and evaluation of food kitchens",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique review record reference" },
+        "restaurantId": { "type": "string", "description": "Associated dining restaurant ID" },
+        "userName": { "type": "string", "description": "Subjective user displayName" },
+        "userAvatar": { "type": "string", "description": "Optional reviewer avatar logo" },
+        "rating": { "type": "integer", "description": "Numeric star count from 1 to 5" },
+        "comment": { "type": "string", "description": "Self-expressed comment text" },
+        "date": { "type": "string", "description": "Brief timestamp text" },
+        "helpfulVotes": { "type": "integer", "description": "Count of helpful clicks" },
+        "restaurantReply": { "type": "string", "description": "Response from the kitchen vendor" }
+      },
+      "required": ["id", "restaurantId", "userName", "rating", "comment", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Secure storage of individual user accounts"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Global user transactions registry"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Social reviews feedback records"
+    }
+  }
+}
