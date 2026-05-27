@@ -482,49 +482,27 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
 
                 {!isOtpSent ? (
                   <>
-                    <form onSubmit={handleSendOtp} className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
-                          User Gmail Address (Gmail Only)
-                        </label>
-                        <div className="relative flex items-center">
-                          <Mail className="absolute left-3.5 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            value={gmail}
-                            onChange={(e) => setGmail(e.target.value)}
-                            placeholder="yourname@gmail.com"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-900 placeholder-map-400 font-medium font-mono"
-                            required
-                          />
-                        </div>
+                    {/* Primary Google Login Integration Feature (Instant 1-Click, No Code) */}
+                    <div className="mb-5 p-4 bg-[#FFF8F0] border border-[#FF6B35]/20 rounded-2xl relative overflow-hidden shadow-xs">
+                      <div className="flex items-center gap-2 text-[#FF6B35] font-black text-[9px] uppercase tracking-widest mb-1.5 font-mono">
+                        <Shield className="w-3 h-3 text-[#FF6B35]" />
+                        Official Integration: No Code Required
                       </div>
-
-                      <button
-                        type="submit"
-                        disabled={userLoading}
-                        className="w-full py-3 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
-                      >
-                        {userLoading ? "Validating Gmail..." : "Validate and Continue with Gmail"}
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </form>
-
-                    {/* Real Google Account Login Button Container */}
-                    <div className="mt-4 pt-4 border-t border-gray-150">
-                      <div className="relative flex py-2 items-center">
-                        <div className="flex-grow border-t border-gray-200"></div>
-                        <span className="flex-shrink mx-4 text-gray-400 text-[10px] font-mono uppercase tracking-widest font-semibold bg-white px-2">OR</span>
-                        <div className="flex-grow border-t border-gray-200"></div>
-                      </div>
+                      
+                      <h4 className="text-xs font-bold text-[#8B1A1A] mb-1 font-serif">
+                        Instant Google Authorization
+                      </h4>
+                      <p className="text-[11px] text-gray-500 mb-3.5 leading-relaxed font-medium">
+                        Securely sign up or log in with your Google Account instantly, bypassing manual security verification codes like the Google Forms tool.
+                      </p>
 
                       <button
                         type="button"
                         onClick={handleGoogleSignIn}
                         disabled={userLoading}
-                        className="w-full py-2.5 border border-gray-300 hover:border-[#8B1A1A]/30 hover:bg-gray-50 text-gray-750 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs mt-1 cursor-pointer"
+                        className="w-full py-3 bg-[#2D6A4F] hover:bg-[#1B4332] active:scale-[0.98] text-white text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-md shadow-[#2D6A4F]/20 cursor-pointer"
                       >
-                        <svg className="w-4.5 h-4.5 flex-shrink-0 mr-1.5" viewBox="0 0 24 24">
+                        <svg className="w-4.5 h-4.5 flex-shrink-0 bg-white p-0.5 rounded-full" viewBox="0 0 24 24">
                           <path
                             fill="#4285F4"
                             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -542,12 +520,43 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"
                           />
                         </svg>
-                        <span>Sign In with Real Google Account</span>
+                        <span className="tracking-wider uppercase">Direct Google Sign In / Sign Up</span>
                       </button>
-                      <p className="text-[9px] text-gray-400 mt-1.5 text-center leading-relaxed font-mono">
-                        Authenticates securely via Google OAuth 2.0.
-                      </p>
                     </div>
+
+                    <div className="relative flex py-1 items-center mb-4">
+                      <div className="flex-grow border-t border-gray-200"></div>
+                      <span className="flex-shrink mx-4 text-gray-400 text-[9px] font-mono uppercase tracking-widest font-black bg-white px-2">Alternative Method</span>
+                      <div className="flex-grow border-t border-gray-200"></div>
+                    </div>
+
+                    <form onSubmit={handleSendOtp} className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
+                          User Gmail Address (Manual Code Verification)
+                        </label>
+                        <div className="relative flex items-center">
+                          <Mail className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            value={gmail}
+                            onChange={(e) => setGmail(e.target.value)}
+                            placeholder="yourname@gmail.com"
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-900 placeholder-map-400 font-medium font-mono"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={userLoading}
+                        className="w-full py-3 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        {userLoading ? "Validating Gmail..." : "Validate and Continue with Gmail"}
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </form>
                   </>
                 ) : (
                   <form onSubmit={handleVerifyCustomer} className="space-y-4">

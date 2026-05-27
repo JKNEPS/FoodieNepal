@@ -1099,26 +1099,15 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
       foodiePoints: 100,
       avatar: userData.picture
     };
+    users.push(user);
+  } else {
+    user.name = userData.name;
+    user.avatar = userData.picture;
   }
 
-  // Generate random 4-digit secure code
-  const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
-  // Save in pendings cache
-  pendingGoogleVerifications.set(userData.email, {
-    user: {
-      ...user,
-      avatar: userData.picture
-    },
-    otp: generatedOtp,
-    timestamp: Date.now()
-  });
-
-  // Trigger email delivery
-  const isSmtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER);
-  sendVerificationEmail(userData.email, generatedOtp, userData.name).catch(err => {
-    console.error("Nodemailer verification async trigger failed:", err);
-  });
+  // Set the current session user directly
+  currentUser = user;
+  syncUserToFirestore(user);
 
   // Real-time dispatching to Discord Webhook
   const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
@@ -1127,7 +1116,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
     embeds: [
       {
-        title: `🔐 User ${isNewUser ? "Google Sign-Up" : "Google Login"} Verification Code Generated!`,
+        title: `🔐 User ${isNewUser ? "Google Sign-Up" : "Google Login"} Direct Authentication Succeeded!`,
         color: isNewUser ? 4642921 : 3447003, // Green for signup, Blue/Azure for Google Login
         fields: [
           {
@@ -1142,7 +1131,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
           },
           {
             name: "🔑 Security Code Status",
-            value: `\`OTP Dispatched successfully via Gmail\``,
+            value: `\`Direct Authentication - No Codes Required!\``,
             inline: true
           },
           {
@@ -1152,7 +1141,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
           },
           {
             name: "⚡ Authentication Event",
-            value: `**${isNewUser ? "Pending verification code step" : "Login code checking required"}**`,
+            value: `**Logged in instantly with 1-click Google integration!**`,
             inline: true
           }
         ],
@@ -1178,7 +1167,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Google Authentication Pending Verification</title>
+        <title>Google Authentication Successful</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -1204,12 +1193,13 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
             height: 80px;
             border-radius: 50%;
             margin: 0 auto 20px;
-            border: 3px solid #FF6B35;
+            border: 3px solid #34A853;
             object-fit: cover;
           }
           .title {
             font-size: 20px;
             font-weight: bold;
+            color: #2D6A4F;
             margin-bottom: 8px;
           }
           .subtitle {
@@ -1219,7 +1209,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
           }
           .loader {
             border: 3px solid #FFF8F0;
-            border-top: 3px solid #8B1A1A;
+            border-top: 3px solid #2D6A4F;
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -1235,22 +1225,18 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
       <body>
         <div class="card">
           <img class="avatar" src="${userData.picture}" alt="Google Account Profile" />
-          <div class="title">Security Verification Code Sent!</div>
+          <div class="title">Successfully Secure Authenticated!</div>
           <div class="subtitle">${userData.email}</div>
           <div class="loader"></div>
-          <p style="font-size: 12px; color: #888;">We have generated a custom code for your safety. Preparing 2-step Gmail check...</p>
+          <p style="font-size: 12px; color: #888;">Synchronizing your profile details directly with the food market. Closing secure popup...</p>
         </div>
         
         <script>
           setTimeout(() => {
             if (window.opener) {
               window.opener.postMessage({ 
-                type: 'GOOGLE_AUTH_PENDING_OTP', 
-                email: '${userData.email}',
-                name: '${userData.name}',
-                picture: '${userData.picture}',
-                hasSmtp: ${isSmtpConfigured},
-                devCode: '${!isSmtpConfigured ? generatedOtp : ""}'
+                type: 'GOOGLE_AUTH_SUCCESS', 
+                user: ${JSON.stringify(user)}
               }, '*');
               window.close();
             } else {
