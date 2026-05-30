@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "motion/react";
-import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles, Lock, Eye, EyeOff, Shield } from "lucide-react";
+import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles, Lock, Eye, EyeOff, Shield, UploadCloud } from "lucide-react";
 import { User as UserType } from "../types";
 
 interface UserProfileModalProps {
@@ -8,6 +8,53 @@ interface UserProfileModalProps {
   onClose: () => void;
   onUpdateUser: (updatedUser: UserType) => void;
 }
+
+// Client-side lightweight image resizing & compression to keep local/GCP payloads optimal
+const resizeAndCompressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(event.target?.result as string);
+          return;
+        }
+
+        // Target bounds e.g. 150x150 for user avatar
+        const maxDimension = 150;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress as JPEG to make it highly lightweight
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+        resolve(compressedBase64);
+      };
+      img.onerror = (e) => reject(e);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+};
 
 const PRESET_AVATARS = [
   {
@@ -48,6 +95,61 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Image Upload / Drag 'n' Drop States
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith("image/")) {
+        await processUploadedFile(file);
+      } else {
+        setErrorMsg("Invalid file type. Please upload an image file (PNG/JPEG/GIF).");
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      await processUploadedFile(file);
+    }
+  };
+
+  const processUploadedFile = async (file: File) => {
+    setUploadProgress(true);
+    setErrorMsg("");
+    try {
+      const compressedUrl = await resizeAndCompressImage(file);
+      setAvatar(compressedUrl);
+      setSuccessMsg("Profile photo uploaded and optimized successfully! Make sure to click 'Save Changes' to update your permanent identity.");
+      setTimeout(() => setSuccessMsg(""), 5000);
+    } catch (e) {
+      console.error(e);
+      setErrorMsg("Failed to process your image file. Please try another copy.");
+    } finally {
+      setUploadProgress(false);
+    }
+  };
 
   // Change Password Inner States
   const [showPassChanger, setShowPassChanger] = useState(false);
@@ -269,18 +371,19 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
                 id="profile_avatar_img"
               />
               
-              {isEditing && (
-                <button
-                  onClick={() => setShowAvatarSelector(!showAvatarSelector)}
-                  className="absolute inset-0 bg-black/45 hover:bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white transition-all border border-white/20"
-                  type="button"
-                  title="Change Avatar"
-                  id="profile_change_avatar_badge_btn"
-                >
-                  <Camera className="w-5 h-5 mb-1" />
-                  <span className="text-[9px] font-bold uppercase tracking-wider">Change</span>
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setIsEditing(true);
+                  setShowAvatarSelector(!showAvatarSelector);
+                }}
+                className="absolute inset-0 bg-black/45 hover:bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white transition-all border border-white/20 cursor-pointer"
+                type="button"
+                title="Change Avatar"
+                id="profile_change_avatar_badge_btn"
+              >
+                <Camera className="w-5 h-5 mb-1" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">Change Photo</span>
+              </button>
             </div>
 
             {/* Profile Info Summary Banner */}
@@ -315,48 +418,101 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
 
           {/* Avatar preset selector panel drawer */}
           {showAvatarSelector && isEditing && (
-            <div className="mb-5 p-4 bg-white rounded-2xl border border-[#8B1A1A]/10 shadow-inner" id="avatar_select_pane">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold text-[#8B1A1A] uppercase tracking-wider">Select Nepal Custom Avatar</span>
-                <button 
-                  onClick={() => setShowAvatarSelector(false)} 
-                  className="text-gray-400 hover:text-gray-600 text-xs"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              {/* Curated Previews Grid */}
-              <div className="grid grid-cols-6 gap-2 mb-3">
-                {PRESET_AVATARS.map((p, idx) => (
-                  <button
-                    key={idx}
+            <div className="mb-5 p-4 bg-white rounded-2xl border border-[#8B1A1A]/10 shadow-inner flex flex-col gap-4" id="avatar_select_pane">
+              <div>
+                <div className="flex justify-between items-center mb-3.5">
+                  <span className="text-xs font-bold text-[#8B1A1A] uppercase tracking-wider">Select Nepal Custom Avatar</span>
+                  <button 
                     type="button"
-                    onClick={() => selectPresetAvatar(p.url)}
-                    className={`relative rounded-xl overflow-hidden hover:scale-105 duration-200 transition-all border ${avatar === p.url ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/20 scale-105" : "border-gray-200"}`}
-                    title={p.name}
+                    onClick={() => setShowAvatarSelector(false)} 
+                    className="text-gray-400 hover:text-[#8B1A1A] text-xs font-black transition-all"
                   >
-                    <img src={p.url} alt={p.name} className="w-full h-11 object-cover" />
+                    Cancel
                   </button>
-                ))}
+                </div>
+
+                {/* Curated Previews Grid */}
+                <div className="grid grid-cols-6 gap-2">
+                  {PRESET_AVATARS.map((p, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => selectPresetAvatar(p.url)}
+                      className={`relative rounded-xl overflow-hidden hover:scale-105 duration-200 transition-all border ${avatar === p.url ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/20 scale-105" : "border-gray-200"}`}
+                      title={p.name}
+                    >
+                      <img src={p.url} alt={p.name} className="w-full h-11 object-cover" />
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Custom url form */}
-              <form onSubmit={handleCustomAvatarSubmit} className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="Or paste direct image URL..."
-                  value={customAvatarUrl}
-                  onChange={(e) => setCustomAvatarUrl(e.target.value)}
-                  className="flex-1 px-3 py-1.5 bg-[#FFF8F0] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#FF6B35] font-sans"
-                />
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 bg-[#8B1A1A] text-white rounded-xl text-xs font-bold hover:bg-[#FF6B35] transition"
+              {/* Separator line */}
+              <div className="border-t border-gray-100 flex items-center justify-center my-0.5 relative">
+                <span className="absolute bg-white px-2.5 text-[8px] text-gray-400 font-bold uppercase tracking-wider">Or Upload Your Own Photo</span>
+              </div>
+
+              {/* Drag and Drop Upload Area */}
+              <div className="space-y-1">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={triggerFileInput}
+                  className={`border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center transition-all cursor-pointer relative group text-center min-h-[90px] ${
+                    isDragging 
+                      ? "border-[#FF6B35] bg-[#FF6B35]/5 scale-[0.98]" 
+                      : "border-gray-200 bg-gray-50/50 hover:border-[#8B1A1A]/30 hover:bg-gray-100/50"
+                  }`}
+                  id="profile_picture_upload_zone"
                 >
-                  Apply
-                </button>
-              </form>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
+                    id="profile_picture_file_input"
+                  />
+                  
+                  {uploadProgress ? (
+                    <div className="flex flex-col items-center justify-center py-2 animate-pulse">
+                      <Loader2 className="w-6 h-6 text-[#FF6B35] animate-spin mb-1.5" />
+                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-mono">Optimizing image quality...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <UploadCloud className="w-6 h-6 text-gray-400 group-hover:text-[#8B1A1A] transition-colors mb-1.5" />
+                      <p className="text-xs font-bold text-gray-700">
+                        Drag & Drop profile image
+                      </p>
+                      <p className="text-[8px] text-gray-400 mt-0.5 font-mono tracking-wide uppercase">
+                        Or click to browse from device (PNG, JPEG, GIF)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Or specify custom URL */}
+              <div className="space-y-1.5">
+                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Or Paste Direct Image Web Address</span>
+                <form onSubmit={handleCustomAvatarSubmit} className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://example.com/your-image.png"
+                    value={customAvatarUrl}
+                    onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                    className="flex-1 px-3 py-1.5 bg-[#FFF8F0] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#FF6B35] font-sans"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-[#8B1A1A] text-white rounded-xl text-xs font-bold hover:bg-[#FF6B35] transition"
+                  >
+                    Apply Address
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 
