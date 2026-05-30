@@ -4,6 +4,14 @@ import { motion, AnimatePresence } from "motion/react";
 import HeroBanner from "../components/HeroBanner";
 import { Restaurant, MenuItem, GroceryItem, Order, CartItem } from "../types";
 
+// Import custom high-resolution food assets
+import chickenBurgerImg from "../assets/images/chicken_burger_1780140936309.png";
+import chickenPizzaImg from "../assets/images/chicken_pizza_1780140960052.png";
+import samayBajiImg from "../assets/images/samay_baji_1780140980351.png";
+import buckwheatDhidoImg from "../assets/images/buckwheat_dhido_1780141002501.png";
+import nepaliChatpateImg from "../assets/images/nepali_chatpate_1780141021967.png";
+import buffChhoilaImg from "../assets/images/buff_chhoila_1780141044024.png";
+
 interface HomeProps {
   onSelectRestaurant: (id: string) => void;
   favorites: string[];
@@ -24,38 +32,38 @@ interface HomeProps {
 const LOYALTY_EXCHANGE_ITEMS = [
   {
     id: "loyalty_momo",
-    name: "🎁 Points Steamed Buff Momo (10pcs)",
+    name: "🎁 Points Chicken Steamed MoMo (10pcs)",
     pointsRequired: 600,
     price: 0,
-    description: "Points Special: Authentic plate of 10 juicy steamed dumplings seasoned to perfection.",
+    description: "Points Special: Authentic plate of 10 juicy chicken steamed dumplings seasoned to perfection.",
     category: "Momo",
-    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
+    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=600",
     spiceLevel: "Medium",
     isVeg: false,
     ingredients: []
   },
   {
     id: "loyalty_burger",
-    name: "🎁 Points Burger (200Rs)",
+    name: "🎁 Points Chicken Burger (200Rs)",
     pointsRequired: 2000,
     price: 0,
-    description: "Points Special: Mouth-watering local burger with cheese and seasoned patty.",
+    description: "Points Special: Mouth-watering crispy chicken burger with cheese and premium toasted buns.",
     category: "Burger",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400",
+    image: chickenBurgerImg,
     spiceLevel: "Mild",
     isVeg: false,
     ingredients: []
   },
   {
     id: "loyalty_pizza",
-    name: "🎁 Points Wood-Fired Wood Pizza",
+    name: "🎁 Points Chicken Fired Wood Pizza",
     pointsRequired: 5400,
     price: 0,
-    description: "Points Special: Delicious wood-fired organic pizza with local yak cheese and toppings.",
+    description: "Points Special: Delicious wood-fired organic pizza topped with grilled chicken, local yak cheese, and fresh herbs.",
     category: "Pizza",
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",
+    image: chickenPizzaImg,
     spiceLevel: "Medium",
-    isVeg: true,
+    isVeg: false,
     ingredients: []
   }
 ];
@@ -108,7 +116,7 @@ const ALL_MENU_ITEMS = [
     price: 220,
     description: "Spiced grilled meat salad marinated with roasted garlic, fenugreek, and mustard oil.",
     category: "Newari",
-    image: "https://images.unsplash.com/photo-1603360946369-fa9902792685?auto=format&fit=crop&q=80&w=400",
+    image: buffChhoilaImg,
     restaurantId: "rest_1",
     restaurantName: "Momo House & Newari Delicacy"
   },
@@ -118,7 +126,7 @@ const ALL_MENU_ITEMS = [
     price: 250,
     description: "An authentic Newari feast with beaten rice, spiced buffalo chhoila, roasted black soybeans, and baras.",
     category: "Newari",
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
+    image: samayBajiImg,
     restaurantId: "rest_2",
     restaurantName: "Basantapur Samay Baji Corner"
   },
@@ -168,7 +176,7 @@ const ALL_MENU_ITEMS = [
     price: 290,
     description: "Himalayan nutritional powerhouse: buckwheat porridge served with clarifying ghee, Gundruk and local stew.",
     category: "Traditional",
-    image: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=400",
+    image: buckwheatDhidoImg,
     restaurantId: "rest_3",
     restaurantName: "Thakali Bhanchha Ghar"
   },
@@ -278,7 +286,7 @@ const ALL_MENU_ITEMS = [
     price: 50,
     description: "Crunchy puffed rice mixed in raw green chilies, boiled potatoes, chopped onions, and mustard oil.",
     category: "Street Food",
-    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400",
+    image: nepaliChatpateImg,
     restaurantId: "rest_10",
     restaurantName: "Baneshwor Lassi & Chatpat Corner"
   },

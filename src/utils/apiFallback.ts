@@ -7,13 +7,13 @@ const IMAGES = {
   momoJhol: "https://plus.unsplash.com/premium_photo-1669742928014-ba36511677c7?auto=format&fit=crop&q=80&w=600",
   momoVeg: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=600",
   momoFried: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=600",
-  chhoila: "https://images.unsplash.com/photo-1603360946369-fa9902792685?auto=format&fit=crop&q=80&w=600",
-  samaybaji: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
+  chhoila: "/src/assets/images/buff_chhoila_1780141044024.png",
+  samaybaji: "/src/assets/images/samay_baji_1780140980351.png",
   bara: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=600",
   chatamari: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600",  // Traditional Nepalese Pizza Pizza layout!
   alubodi: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
   thakaliChicken: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=600",
-  dhido: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
+  dhido: "/src/assets/images/buckwheat_dhido_1780141002501.png",
   sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
   dalbhatVeg: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=600",
   dalbhatMutton: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
@@ -24,7 +24,7 @@ const IMAGES = {
   buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",
   sekuwa: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600",
   lassi: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=600",
-  chatpat: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=600"
+  chatpat: "/src/assets/images/nepali_chatpate_1780141021967.png"
 };
 
 // --- In-Memory Fallback Databases ---
