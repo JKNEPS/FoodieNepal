@@ -20,10 +20,9 @@ import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
 
 const LOYALTY_ITEM_POINTS: Record<string, number> = {
-  loyalty_momo: 50,
-  loyalty_selroti: 80,
-  loyalty_chatamari: 100,
-  loyalty_pizza: 450
+  loyalty_momo: 600,
+  loyalty_burger: 2000,
+  loyalty_pizza: 5400
 };
 
 export default function App() {
@@ -426,12 +425,9 @@ export default function App() {
         setActiveOrder(data.order);
         setCart([]); // Clear cart
         
-        // Calculate precise points: Up to 500 Rs -> 50 pts, Up to 1000 Rs -> 100 pts, etc. per item
-        const earnedPoints = cart.reduce((acc, item) => {
-          const itemPrice = item.menuItem.price;
-          const pointsPerItemUnit = Math.ceil(itemPrice / 500) * 50;
-          return acc + (pointsPerItemUnit * item.quantity);
-        }, 0);
+        // Calculate points earned based on order total (50 pts per Rs. 500 block)
+        const subtotal = cart.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
+        const earnedPoints = subtotal >= 500 ? Math.floor(subtotal / 500) * 50 : 0;
         
         setLoyaltyPoints((pts) => pts + earnedPoints);
         setOrderPlacedSuccess(true);

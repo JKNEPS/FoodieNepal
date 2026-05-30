@@ -63,7 +63,7 @@ export default function Footer() {
               Our Hospitality
             </h4>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Every package is handled with hygienic safety measures. Get 5% loyalty cashback points with every bite. Standard regional delivery in Kathmandu, Lalitpur, Bhaktapur & Pokhara.
+              Every package is handled with hygienic safety measures. Get hand-picked traditional specialties with loyalty points. Standard regional delivery in Kathmandu, Lalitpur, Bhaktapur & Pokhara.
             </p>
             <div className="text-xs text-gray-650 flex flex-col gap-1 font-sans">
               <span className="font-semibold text-gray-700">Support Email:</span>

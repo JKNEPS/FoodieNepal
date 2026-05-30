@@ -843,6 +843,7 @@ async function askGeminiMaps(prompt: string, lat: number, lng: number) {
 
   try {
     const basePrompt = `You are "FoodieNepal AI Assistant", a super friendly local food expert chatbot, dedicated to guiding users through traditional cuisines (Momo, Thakali sets, Samay Baji, Sukuti, Sel Roti, Chowmein, etc.) in Kathmandu & Lalitpur, Nepal. Use Nepali-English mixed conversation (or warm Devanagari Devanagari if the user asks in Nepali). Today is ${new Date().toLocaleDateString()}.
+      CRITICAL RULE: Do NOT say "Sabse Sasto", "cheap", or "affordable". Instead, use words like "yummy", "scrumptious", "delightful", "satisfying", or "authentic local delights".
       The user is physically located near: Latitude ${lat}, Longitude ${lng}. Keep recommendations highly geographical around this.
       Suggest items from Kathmandu Basantapur, Thamel, Lalitpur Jhamsikhel or Pulchowk. Recommend delicious local favorites (like standard dishes under Rs. 150), explain ingredients (e.g. beaten rice, buffalo buff meat, cumin seed gundruk), and help with order problems.
       Always respond in Markdown. If any places or restaurant spots are found, output the links found in the grounding metadata.
@@ -924,14 +925,14 @@ function getLocalFallbackChatbotResponse(query: string): string {
       - **Chatamari Supreme (Rs. 180)**: Famous thin rice flour crepe baked with egg and mince chicken top. 
       Perfect to order from Basantapur Durbar Squares!`;
   }
-  if (lowercase.includes("sasto") || lowercase.includes("cheap") || lowercase.includes("budget") || lowercase.includes("150") || lowercase.includes("value")) {
-    return `### 🍽️ Top Value (Under Rs. 150) Nepali Meals!
-      FoodieNepal helps you find incredible local specialties. Here are our top options under Rs. 150:
+  if (lowercase.includes("sasto") || lowercase.includes("cheap") || lowercase.includes("budget") || lowercase.includes("150") || lowercase.includes("value") || lowercase.includes("yummy")) {
+    return `### 🍽️ Yummy Traditional (Under Rs. 150) Nepali Meals!
+      FoodieNepal helps you find incredible yummy local specialties. Here are our top hand-picked favorites under Rs. 150:
       1. **Spicy Basantapur Chatpat (Rs. 50)**: Mixed with raw mustard oil, crunchy puffed rice, and fresh lemon.
       2. **Classic Veg Dal Bhat Thali (Rs. 130)** at Dal-Bhat Kamalpokhari.
       3. **Golden Sweet Jerry (Rs. 60)**: Perfect warm breakfast.
       4. **Classic Buff Chowmein (Rs. 110)** at Lalitpur Chowmein Corner.
-      All of these deliver high-quality, authentic flavors right to your door!`;
+      All of these deliver high-quality, authentic scrumptious flavors right to your door!`;
   }
   if (lowercase.includes("status") || lowercase.includes("where") || lowercase.includes("order")) {
     const lastOrder = activeOrders[activeOrders.length - 1];
@@ -2021,8 +2022,8 @@ app.post("/api/orders", (req, res) => {
     deliveryOtp: orderOtp
   };
   
-  // Grant customer loyalty points with zero NaN protection
-  const pointsToUpdate = Math.floor(subtotal * 0.1);
+  // Grant customer loyalty points with zero NaN protection (50 pts per Rs. 500 block)
+  const pointsToUpdate = subtotal >= 500 ? Math.floor(subtotal / 500) * 50 : 0;
   if (!isNaN(pointsToUpdate) && pointsToUpdate > 0) {
     currentUser.foodiePoints += pointsToUpdate;
   }

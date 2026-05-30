@@ -24,10 +24,10 @@ interface HomeProps {
 const LOYALTY_EXCHANGE_ITEMS = [
   {
     id: "loyalty_momo",
-    name: "🎁 Points Steamed Buff Momo (6 pcs)",
-    pointsRequired: 50,
+    name: "🎁 Points Steamed Buff Momo (10pcs)",
+    pointsRequired: 600,
     price: 0,
-    description: "Points Special: Authentic mini plate of steamed dumplings seasoned to perfection.",
+    description: "Points Special: Authentic plate of 10 juicy steamed dumplings seasoned to perfection.",
     category: "Momo",
     image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
     spiceLevel: "Medium",
@@ -35,33 +35,21 @@ const LOYALTY_EXCHANGE_ITEMS = [
     ingredients: []
   },
   {
-    id: "loyalty_selroti",
-    name: "🎁 Points Sel Roti with Chhiya (Set)",
-    pointsRequired: 80,
+    id: "loyalty_burger",
+    name: "🎁 Points Burger (200Rs)",
+    pointsRequired: 2000,
     price: 0,
-    description: "Points Special: Warm spiced ring bread served with a traditional cup of sweet milk tea.",
-    category: "Traditional",
-    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400",
+    description: "Points Special: Mouth-watering local burger with cheese and seasoned patty.",
+    category: "Burger",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400",
     spiceLevel: "Mild",
-    isVeg: true,
-    ingredients: []
-  },
-  {
-    id: "loyalty_chatamari",
-    name: "🎁 Points Supreme Egg Chatamari",
-    pointsRequired: 100,
-    price: 0,
-    description: "Points Special: Delightful thin crispy rice flour base topped with coriander and farm egg.",
-    category: "Newari",
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",
-    spiceLevel: "Medium",
     isVeg: false,
     ingredients: []
   },
   {
     id: "loyalty_pizza",
     name: "🎁 Points Wood-Fired Wood Pizza",
-    pointsRequired: 450,
+    pointsRequired: 5400,
     price: 0,
     description: "Points Special: Delicious wood-fired organic pizza with local yak cheese and toppings.",
     category: "Pizza",
@@ -681,7 +669,7 @@ export default function Home({
                   <span>🎁 Points Food Exchange Bazaar</span>
                 </h3>
                 <p className="text-xs text-gray-400 max-w-xl leading-relaxed mt-0.5">
-                  Redeem accumulated foodie loyalty points here instantly for zero-price gourmet delicacies! Points are credited automatically: up to <b>Rs. 500</b> gives <b>50 pts</b> (worth Rs. 2), up to <b>Rs. 1000</b> gives <b>100 pts</b> (worth Rs. 4), and so on, calculated directly per ordered item price!
+                  Redeem accumulated foodie loyalty points here instantly for zero-price gourmet delicacies! Points are credited automatically on checkout: placing an order of more than <b>Rs. 500</b> secures <b>50 pts</b> (worth Rs. 5), placing an order of more than <b>Rs. 1000</b> secures <b>100 pts</b> (worth Rs. 10), and so on (50 PTS = Rs. 5, 1 PTS = Rs. 0.1 ratio)!
                 </p>
               </div>
 
@@ -691,7 +679,7 @@ export default function Home({
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#FFF8F0]/65 block font-bold">Your Available Points</span>
                   <div className="flex flex-col">
                     <span className="text-xl font-black text-amber-300 font-mono">{loyaltyPoints} pts</span>
-                    <span className="text-[10px] text-orange-200/90 font-mono font-bold mt-0.5">≈ Rs. {(loyaltyPoints * 0.04).toFixed(2)} Value</span>
+                    <span className="text-[10px] text-orange-200/90 font-mono font-bold mt-0.5">≈ Rs. {(loyaltyPoints * 0.1).toFixed(2)} Value</span>
                   </div>
                 </div>
               </div>

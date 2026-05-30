@@ -18,7 +18,7 @@ export default function Chatbot({
     {
       id: "init_1",
       sender: "bot",
-      text: "Namaste! 🏔️ I am **FoodieNepal AI Custom Assistant** with real-time Google Maps grounding.\n\nI can recommend traditional dishes, detail ingredients (momo, samay baji), check your tracker status, find top local choices under Rs. 150, or process complaints.\n\nType down what you feel like eating today!",
+      text: "Namaste! 🏔️ I am **FoodieNepal AI Custom Assistant** with real-time Google Maps grounding.\n\nI can recommend traditional dishes, detail ingredients (momo, samay baji), check your tracker status, find top yummy local dishes, or process complaints.\n\nType down what you feel like eating today!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -189,7 +189,7 @@ export default function Chatbot({
           {/* Lower Quick Prompts Shortcuts selector */}
           <div className="p-2 border-t border-gray-100 flex gap-1.5 overflow-x-auto bg-white whitespace-nowrap scrollbar-hide">
             <button
-              onClick={() => handleQuickPrompt("Recommend popular spicy momo under 150")}
+              onClick={() => handleQuickPrompt("Recommend yummy popular spicy momo")}
               className="px-2.5 py-1 text-[10px] font-bold bg-[#FF6B35]/5 text-[#FF6B35] hover:bg-[#FF6B35]/15 border border-[#FF6B35]/20 rounded-lg transition-all"
             >
               🥟 Spicy MoMo Pick

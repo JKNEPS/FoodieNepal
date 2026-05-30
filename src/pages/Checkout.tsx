@@ -118,13 +118,9 @@ export default function Checkout({
 
   const grandTotal = Math.max(0, subtotal + deliveryFee + platformFee + tax - discountAmount);
 
-  // Calculate points to be earned from individual items based on the tiers
-  const pointsToEarn = cartItems.reduce((acc, item) => {
-    const itemPrice = item.menuItem.price;
-    const pointsPerItemUnit = Math.ceil(itemPrice / 500) * 50;
-    return acc + (pointsPerItemUnit * item.quantity);
-  }, 0);
-  const pointsWorthRupees = (pointsToEarn * 0.04).toFixed(2);
+  // Calculate points to be earned based on the order total (50 pts per Rs. 500 block)
+  const pointsToEarn = subtotal >= 500 ? Math.floor(subtotal / 500) * 50 : 0;
+  const pointsWorthRupees = (pointsToEarn * 0.1).toFixed(2);
 
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
@@ -467,7 +463,7 @@ export default function Checkout({
                 </span>
               </div>
               <p className="text-[10.5px] text-gray-500 font-semibold leading-relaxed">
-                You will receive <b className="text-[#FF6B35]">{pointsToEarn} loyalty points</b> (worth <b className="text-[#2D6A4F]">Rs. {pointsWorthRupees}</b> real value) on checkout. 50 points per Rs. 500 block per item price!
+                You will receive <b className="text-[#FF6B35]">{pointsToEarn} loyalty points</b> (worth <b className="text-[#2D6A4F]">Rs. {pointsWorthRupees}</b> real value) on checkout. 50 points are earned for every Rs. 500 block on your order subtotal!
               </p>
             </div>
 

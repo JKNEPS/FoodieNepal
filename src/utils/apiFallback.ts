@@ -734,19 +734,9 @@ export const initFetchInterceptor = () => {
           };
 
           // Increment foodie points according to the price tiers specified:
-          // Up to 500 Rs gives 50 points, up to 1000 Rs gives 100 points, etc. (Math.ceil(price / 500) * 50 points per item quantity)
-          let pointsEarned = 0;
-          if (items && Array.isArray(items)) {
-            items.forEach((it: any) => {
-              const itemPrice = it.menuItem?.price || 0;
-              const quantity = it.quantity || 1;
-              const pointsPerItemUnit = Math.ceil(itemPrice / 500) * 50;
-              pointsEarned += (pointsPerItemUnit * quantity);
-            });
-          } else {
-            const refPrice = Math.max(1, total - 50);
-            pointsEarned = Math.ceil(refPrice / 500) * 50;
-          }
+          // 50 points per Rs. 500 block on the order subtotal
+          const subtotalValue = newOrder.subtotal || 0;
+          const pointsEarned = subtotalValue >= 500 ? Math.floor(subtotalValue / 500) * 50 : 0;
           currentUserDB.foodiePoints += pointsEarned;
           saveKey("foodienepal_current_user", currentUserDB);
 
@@ -795,7 +785,7 @@ export const initFetchInterceptor = () => {
       // 11. Chat Fallback
       if (path === "chat") {
         return respondJSON(200, {
-          text: `Namaste! I am the FoodieNepal local assistance bot. All delicious foods under Rs. 150 can be filtered using our "Sabse Sasto" dashboard grid! Let me know if you would like me to add anything to your cart.`
+          text: `Namaste! I am the FoodieNepal local assistance bot. All yummy traditional specialties can be filtered directly on our live menu dashboard grid! Let me know if you would like me to add anything to your cart.`
         });
       }
 
