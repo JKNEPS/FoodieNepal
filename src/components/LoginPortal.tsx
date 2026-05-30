@@ -483,7 +483,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                             type="text"
                             value={dbUsername}
                             onChange={(e) => setDbUsername(e.target.value)}
-                            placeholder="e.g. jenish"
+                            placeholder="e.g. Jenish_NP"
                             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-150 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-medium"
                             required
                           />
@@ -557,7 +557,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                             setRegUsername(e.target.value);
                             checkRegUsername(e.target.value);
                           }}
-                          placeholder="e.g. jenish272"
+                          placeholder="e.g. Jenish_NP"
                           className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
                           required
                         />
