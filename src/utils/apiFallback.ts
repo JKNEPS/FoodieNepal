@@ -508,8 +508,8 @@ let usersDB = loadKey<User[]>("foodienepal_users", [
   {
     id: "usr_1",
     name: "Jenish Sapkota",
-    phone: "+977 9845612345",
-    email: "jenishsapkota272@gmail.com",
+    phone: "+977 98********",
+    email: "j******@gmail.com",
     role: "customer",
     address: "Ward No. 3, Jhamsikhel, Pokhara, Nepal",
     foodiePoints: 340

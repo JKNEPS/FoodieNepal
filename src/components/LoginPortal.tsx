@@ -592,7 +592,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                         />
                       </div>
 
-                      <div>
+                       <div>
                         <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
                           Phone Number *
                         </label>
@@ -600,7 +600,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                           type="tel"
                           value={regPhone}
                           onChange={(e) => setRegPhone(e.target.value)}
-                          placeholder="e.g. +977 9845612345"
+                          placeholder="e.g. 98********"
                           className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
                           required
                         />
@@ -614,7 +614,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                           type="email"
                           value={regEmail}
                           onChange={(e) => setRegEmail(e.target.value)}
-                          placeholder="e.g. jenishsapkota272@gmail.com"
+                          placeholder="e.g. j******@gmail.com"
                           className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
                           required
                         />
