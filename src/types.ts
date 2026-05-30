@@ -5,6 +5,8 @@ export type UserRole = "customer" | "vendor" | "rider" | "admin";
 export interface User {
   id: string;
   name: string;
+  username?: string;
+  password?: string;
   phone: string;
   email: string;
   role: UserRole;

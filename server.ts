@@ -42,6 +42,8 @@ async function syncUserToFirestore(user: User) {
     await db.collection("users").doc(user.id).set({
       id: user.id,
       name: user.name,
+      username: user.username || "",
+      password: user.password || "",
       email: user.email,
       phone: user.phone || "",
       role: user.role,
@@ -213,6 +215,8 @@ let users: User[] = [
   {
     id: "usr_1",
     name: "Jenish Sapkota",
+    username: "jenish",
+    password: "password123",
     phone: "+977 9845612345",
     email: "jenishsapkota272@gmail.com",
     role: "customer",
@@ -223,6 +227,17 @@ let users: User[] = [
 ];
 
 let currentUser: User = users[0];
+
+function isUsernameTaken(checkingName: string, excludeUserId?: string): boolean {
+  if (!checkingName) return false;
+  const clean = checkingName.trim().toLowerCase();
+  return users.some(u => {
+    if (u.id === excludeUserId) return false;
+    const matchName = u.name ? u.name.trim().toLowerCase() : "";
+    const matchUser = u.username ? u.username.trim().toLowerCase() : "";
+    return matchName === clean || matchUser === clean;
+  });
+}
 
 // Define static lists of Nepali standard ingredients for animations
 const ingFlour = { name: "Maida Flour", icon: "🌾", xOffset: -120, yOffset: -80 };
@@ -1089,9 +1104,19 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
   let user = users.find(u => u.email === userData.email);
   const isNewUser = !user;
   if (!user) {
+    let desiredName = userData.name;
+    if (isUsernameTaken(desiredName)) {
+      // Find a unique name
+      let suffix = Math.floor(100 + Math.random() * 900);
+      desiredName = `${userData.name} #${suffix}`;
+      while (isUsernameTaken(desiredName)) {
+        suffix = Math.floor(100 + Math.random() * 900);
+        desiredName = `${userData.name} #${suffix}`;
+      }
+    }
     user = {
       id: `usr_${Date.now()}`,
-      name: userData.name,
+      name: desiredName,
       email: userData.email,
       phone: "+977-9801122334",
       role: "customer",
@@ -1101,7 +1126,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     };
     users.push(user);
   } else {
-    user.name = userData.name;
+    // Keep their name and update avatar from Google
     user.avatar = userData.picture;
   }
 
@@ -1286,8 +1311,217 @@ app.post("/api/auth/google/verify-otp", (req, res) => {
   res.json({ success: true, user });
 });
 
+// Resilient Google Account Direct Integration (No OTP verification code, zero external quota required)
+app.post("/api/auth/google-sandbox-login", (req, res) => {
+  const { email, name, avatar } = req.body;
+  if (!email || !name) {
+    return res.status(400).json({ success: false, error: "Both Google Gmail and Full Name are strictly required." });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = name.trim();
+
+  // Validate Gmail prefix regex and domain suffix
+  const gmailRegex = /^[a-zA-Z5-9._%+-]+@gmail\.com$/i;
+  if (!gmailRegex.test(cleanEmail)) {
+    return res.status(400).json({ success: false, error: "Invalid google connection ID: You must use a valid personal Gmail address ending with @gmail.com" });
+  }
+
+  // Find if this specific email is already registered
+  let user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  // If registering a NEW user with this email, make sure their input name doesn't collide with another user
+  if (isUsernameTaken(cleanName, user ? user.id : undefined)) {
+    return res.status(400).json({ success: false, error: `The username "${cleanName}" is already claimed by another customer. Please choose a different unique username to complete authorization.` });
+  }
+
+  if (!user) {
+    user = {
+      id: `usr_${Date.now()}`,
+      name: cleanName,
+      email: cleanEmail,
+      phone: "+977-98" + Math.floor(4000000 + Math.random() * 5999999).toString(),
+      role: "customer",
+      address: "Lakeside Ward 6, Pokhara, Nepal",
+      foodiePoints: 100,
+      avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150"
+    };
+    users.push(user);
+    console.log(`[Auth Sandbox] Created new direct Google account: ${cleanEmail} (${cleanName})`);
+  } else {
+    // Already exists under this email, let's update their name / avatar
+    user.name = cleanName;
+    if (avatar) {
+      user.avatar = avatar;
+    }
+  }
+
+  currentUser = user;
+  syncUserToFirestore(user);
+
+  // Broadcast user login or signup information to the Discord Webhook directly
+  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
+  const discordPayload = {
+    username: "FoodieNepal Auth Sentinel",
+    avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
+    embeds: [
+      {
+        title: `🔐 Direct Google Authenticator Connection Success!`,
+        color: 3066993, // Green
+        fields: [
+          {
+            name: "👤 Registered Username",
+            value: `**${user.name}**`,
+            inline: true
+          },
+          {
+            name: "📧 Associated Gmail Address",
+            value: `\`${user.email}\``,
+            inline: true
+          },
+          {
+            name: "🛡️ Connection Hub Style",
+            value: `\`Direct Google Forms Mode - Instant Bypass\``,
+            inline: true
+          }
+        ],
+        footer: {
+          text: "Integrated Unified Resilient Login",
+          icon_url: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=50"
+        },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(discordPayload)
+  }).catch(err => {
+    console.error("Direct auth telemetry error:", err);
+  });
+
+  res.json({ success: true, user });
+});
+
+app.post("/api/auth/customer-register", (req, res) => {
+  const { name, username, password, phone, email, address, avatar, bio } = req.body;
+  if (!name || !username || !password || !phone || !email || !address) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "All profile details (Full Name, Username, Password, Phone Number, Gmail address, and Permanent Address) are strictly required to sign up." 
+    });
+  }
+
+  const cleanName = name.trim();
+  const cleanUsername = username.trim();
+  const cleanEmail = email.trim().toLowerCase();
+
+  const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+  if (!gmailRegex.test(cleanEmail)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Registration Rejected: You must enter a valid personal Gmail address ending with @gmail.com" 
+    });
+  }
+
+  if (isUsernameTaken(cleanUsername)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: `The username "${cleanUsername}" is already taken. Please choose a different unique username.` 
+    });
+  }
+
+  const newUser: User = {
+    id: `usr_${Date.now()}`,
+    name: cleanName,
+    username: cleanUsername,
+    password: password,
+    phone: phone.trim(),
+    email: cleanEmail,
+    address: address.trim(),
+    role: "customer",
+    foodiePoints: 100,
+    avatar: avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(cleanUsername)}`,
+    bio: bio || "New Food Lover from Nepal!"
+  };
+
+  users.push(newUser);
+  currentUser = newUser;
+  syncUserToFirestore(newUser);
+
+  // Send a webhook notification
+  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
+  const discordPayload = {
+    username: "FoodieNepal Account Sentinel",
+    avatar_url: newUser.avatar,
+    embeds: [
+      {
+        title: `🆕 New Direct Customer Registered!`,
+        color: 3066993, // Green
+        fields: [
+          { name: "👤 Full Name", value: `**${newUser.name}**`, inline: true },
+          { name: "🔑 Username", value: `\`${newUser.username}\``, inline: true },
+          { name: "📧 Gmail Connection", value: `\`${newUser.email}\``, inline: true },
+          { name: "📞 Phone", value: `\`${newUser.phone}\``, inline: true },
+          { name: "🏠 Permanent Address", value: `\`${newUser.address}\``, inline: false }
+        ],
+        footer: { text: "Database Direct Sign Up - OTP Bypassed" },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(discordPayload)
+  }).catch(e => console.warn("Webhook registration telemetry skipped:", e));
+
+  res.json({ success: true, user: newUser });
+});
+
+app.post("/api/auth/customer-login", (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Both Username and Password are required to log in." 
+    });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+
+  // Find user based on username or email
+  const user = users.find(u => {
+    const matchUser = u.username ? u.username.toLowerCase() : "";
+    const matchEmail = u.email ? u.email.toLowerCase() : "";
+    return matchUser === cleanUsername || matchEmail === cleanUsername;
+  });
+
+  if (!user || user.password !== password) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Authentication failed: Invalid unique username or password. Please try again." 
+    });
+  }
+
+  currentUser = user;
+  res.json({ success: true, user });
+});
+
 app.get("/api/auth/current", (req, res) => {
   res.json(currentUser);
+});
+
+app.get("/api/auth/check-username", (req, res) => {
+  const username = (req.query.username as string || "").trim();
+  const excludeId = (req.query.excludeId as string || "").trim();
+  if (!username) {
+    return res.json({ success: true, unique: true });
+  }
+  const taken = isUsernameTaken(username, excludeId);
+  res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
 });
 
 app.post("/api/auth/update-role", (req, res) => {
@@ -1300,7 +1534,13 @@ app.post("/api/auth/update-role", (req, res) => {
 app.post("/api/auth/update-profile", (req, res) => {
   const { name, email, address, avatar, bio } = req.body;
   if (currentUser) {
-    if (name !== undefined) currentUser.name = name;
+    if (name !== undefined) {
+      const cleanName = name.trim();
+      if (isUsernameTaken(cleanName, currentUser.id)) {
+        return res.status(400).json({ success: false, error: `The username "${cleanName}" is already claimed by another active citizen in Nepal market. Please specify a unique username.` });
+      }
+      currentUser.name = cleanName;
+    }
     if (email !== undefined) currentUser.email = email;
     if (address !== undefined) currentUser.address = address;
     if (avatar !== undefined) currentUser.avatar = avatar;

@@ -49,6 +49,40 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameCheckMsg, setUsernameCheckMsg] = useState("");
+  const [isNameTaken, setIsNameTaken] = useState(false);
+
+  const performUsernameCheck = async (typedName: string) => {
+    const trimmed = typedName.trim();
+    if (!trimmed || trimmed.toLowerCase() === (user.name || "").toLowerCase()) {
+      setUsernameCheckMsg("");
+      setIsNameTaken(false);
+      return;
+    }
+    setCheckingUsername(true);
+    setUsernameCheckMsg("");
+    try {
+      const response = await fetch(`/api/auth/check-username?username=${encodeURIComponent(trimmed)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          if (!data.unique) {
+            setIsNameTaken(true);
+            setUsernameCheckMsg(`⚠️ The username "${trimmed}" is already claimed by another food lover. Please choose another handle.`);
+          } else {
+            setIsNameTaken(false);
+            setUsernameCheckMsg(`✓ Username "${trimmed}" is unique & safe to claim!`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Real-time uniqueness lookup skipped", e);
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -57,6 +91,11 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
     }
     if (!email.trim()) {
       setErrorMsg("Email address cannot be empty.");
+      return;
+    }
+
+    if (isNameTaken) {
+      setErrorMsg("Cannot save details: Specified display username is claimed by another user. Please choose a different unique username to proceed.");
       return;
     }
 
@@ -320,12 +359,26 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
                     type="text"
                     required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      performUsernameCheck(e.target.value);
+                    }}
                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#FF6B35] font-sans"
                     placeholder="E.g. Jenish Sapkota"
                     id="profile_edit_name_input"
                   />
                 </div>
+                {checkingUsername && (
+                  <div className="text-[9px] text-[#2D6A4F] font-mono animate-pulse pl-1.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2D6A4F] animate-ping" />
+                    Checking display handle uniqueness...
+                  </div>
+                )}
+                {usernameCheckMsg && (
+                  <div className={`p-1.5 text-[9px] font-bold rounded-lg ${isNameTaken ? "bg-red-50 text-red-800 border border-red-150 animate-pulse mt-0.5" : "bg-emerald-50 text-emerald-800 border border-emerald-150 mt-0.5"}`}>
+                    {usernameCheckMsg}
+                  </div>
+                )}
               </div>
 
               {/* Email input */}

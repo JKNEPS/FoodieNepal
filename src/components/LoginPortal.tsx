@@ -12,86 +12,151 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [activeTab, setActiveTab] = useState<UserRole>("customer");
   const [successAnimRole, setSuccessAnimRole] = useState<UserRole | null>(null);
   
-  // Customer Gmail Login States
-  const [gmail, setGmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  // Customer Login & Registration States
+  const [customerSubTab, setCustomerSubTab] = useState<"login" | "register">("login");
+  const [dbUsername, setDbUsername] = useState("");
+  const [dbPassword, setDbPassword] = useState("");
   const [userLoading, setUserLoading] = useState(false);
-  
-  // Google OAuth Verification code helper states
-  const [googlePendingEmail, setGooglePendingEmail] = useState("");
-  const [googleDevCode, setGoogleDevCode] = useState("");
-  const [googleHasSmtp, setGoogleHasSmtp] = useState(false);
-  
-  // Admin Login States
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [adminLoading, setAdminLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [showUsername, setShowUsername] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Google OAuth Listener
-  useEffect(() => {
-    const handleGoogleMessage = (event: MessageEvent) => {
-      const origin = event.origin;
-      if (!origin.endsWith(".run.app") && !origin.includes("localhost") && !origin.includes("127.0.0.1")) {
-        return;
+  const [regFullName, setRegFullName] = useState("");
+  const [regUsername, setRegUsername] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regAddress, setRegAddress] = useState("");
+  const [regCheckingUsername, setRegCheckingUsername] = useState(false);
+  const [regUsernameError, setRegUsernameError] = useState("");
+  const [regUsernameSuccess, setRegUsernameSuccess] = useState(false);
+
+  const checkRegUsername = async (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) {
+      setRegUsernameError("");
+      setRegUsernameSuccess(false);
+      return;
+    }
+    setRegCheckingUsername(true);
+    setRegUsernameError("");
+    setRegUsernameSuccess(false);
+    try {
+      const response = await fetch(`/api/auth/check-username?username=${encodeURIComponent(trimmed)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          if (!data.unique) {
+            setRegUsernameError(`The username "${trimmed}" is already claimed! Please choose another unique handle.`);
+            setRegUsernameSuccess(false);
+          } else {
+            setRegUsernameError("");
+            setRegUsernameSuccess(true);
+          }
+        }
       }
-      
-      if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
-        const user = event.data.user;
+    } catch (err) {
+      console.warn("Server duplicate username check skipped", err);
+    } finally {
+      setRegCheckingUsername(false);
+    }
+  };
+
+  const handleCustomDbLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dbUsername.trim() || !dbPassword) {
+      setErrorMessage("Both Username and Password are required to log in.");
+      return;
+    }
+    setUserLoading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/auth/customer-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: dbUsername.trim(), password: dbPassword })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
         setUserLoading(false);
         if (onGoogleSuccess) {
-          onGoogleSuccess(user);
+          onGoogleSuccess(data.user);
         }
         setSuccessAnimRole("customer");
         setTimeout(() => {
           onLoginSuccess("customer");
         }, 1800);
-      }
-
-      if (event.data?.type === "GOOGLE_AUTH_PENDING_OTP") {
-        const { email, devCode, hasSmtp } = event.data;
-        setGooglePendingEmail(email);
-        setGmail(email);
-        setGoogleDevCode(devCode || "");
-        setGoogleHasSmtp(hasSmtp);
-        setUserLoading(false);
-        setIsOtpSent(true);
-        setErrorMessage("");
-      }
-    };
-    
-    window.addEventListener("message", handleGoogleMessage);
-    return () => window.removeEventListener("message", handleGoogleMessage);
-  }, [onLoginSuccess, onGoogleSuccess]);
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setUserLoading(true);
-      setErrorMessage("");
-      const response = await fetch(`/api/auth/google/url?origin=${encodeURIComponent(window.location.origin)}`);
-      if (!response.ok) {
-        throw new Error("Failed to get Google authorization URL from server.");
-      }
-      const { url } = await response.json();
-      
-      const authWindow = window.open(
-        url,
-        "google_oauth_popup",
-        "width=600,height=700"
-      );
-      
-      if (!authWindow) {
-        setErrorMessage("Please permit popups to allow standard Google Authentication.");
+      } else {
+        setErrorMessage(data.error || "Login Failed: Invalid Unique Username or Password.");
         setUserLoading(false);
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to initiate Google sign-in.");
+    } catch (err) {
+      console.warn("Network login issue, applying local standard session fallback:", err);
+      setErrorMessage("Connection issue with Nepal market database. Please try again.");
       setUserLoading(false);
     }
   };
+
+  const handleCustomDbRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedUsername = regUsername.trim();
+    if (!regFullName.trim() || !trimmedUsername || !regPassword || !regPhone.trim() || !regEmail.trim() || !regAddress.trim()) {
+      setErrorMessage("All profile fields (Full Name, Username, Password, Phone Number, Gmail address, and Permanent Address) are strictly required.");
+      return;
+    }
+
+    const cleanEmail = regEmail.trim().toLowerCase();
+    if (!cleanEmail.endsWith("@gmail.com")) {
+      setErrorMessage("Google Validation Failed: Gmail Address must end with @gmail.com");
+      return;
+    }
+
+    if (regUsernameError) {
+      setErrorMessage("Please solve username clash: specified handle is already claimed.");
+      return;
+    }
+
+    setUserLoading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/auth/customer-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: regFullName.trim(),
+          username: trimmedUsername,
+          password: regPassword,
+          phone: regPhone.trim(),
+          email: cleanEmail,
+          address: regAddress.trim()
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setUserLoading(false);
+        if (onGoogleSuccess) {
+          onGoogleSuccess(data.user);
+        }
+        setSuccessAnimRole("customer");
+        setTimeout(() => {
+          onLoginSuccess("customer");
+        }, 1800);
+      } else {
+        setErrorMessage(data.error || "Registration Rejected by database verification checks.");
+        setUserLoading(false);
+      }
+    } catch (err) {
+      setErrorMessage("Network issue submitting registration details. Please retry.");
+      setUserLoading(false);
+    }
+  };
+
+  // Admin Login States
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [showUsername, setShowUsername] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Vendor/Kitchen Login States
   const [vendorCode, setVendorCode] = useState("");
@@ -105,112 +170,6 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [riderPass, setRiderPass] = useState("");
   const [showRiderUsername, setShowRiderUsername] = useState(false);
   const [showRiderPassword, setShowRiderPassword] = useState(false);
-
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanGmail = gmail.trim();
-    
-    // Rigorous Gmail Validation: must be valid email format and end with @gmail.com
-    const gmailRegex = /^[a-zA-Z5-9._%+-]+@gmail\.com$/i;
-    const basicEmailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-
-    if (!cleanGmail) {
-      setErrorMessage("Please enter your Gmail address to login or sign up.");
-      return;
-    }
-
-    if (!basicEmailRegex.test(cleanGmail)) {
-      setErrorMessage("Please enter a valid email format.");
-      return;
-    }
-
-    if (!cleanGmail.toLowerCase().endsWith("@gmail.com")) {
-      setErrorMessage("System authorization error: You must use a valid personal Gmail address ending in @gmail.com");
-      return;
-    }
-
-    setUserLoading(true);
-    setErrorMessage("");
-    setTimeout(() => {
-      setUserLoading(false);
-      setIsOtpSent(true);
-    }, 700);
-  };
-
-  const handleVerifyCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp || otp.length < 4) {
-      setErrorMessage("Please enter the 4-digit code dispatched to your Gmail inbox.");
-      return;
-    }
-    setUserLoading(true);
-    setErrorMessage("");
-
-    if (googlePendingEmail) {
-      try {
-        const res = await fetch("/api/auth/google/verify-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: googlePendingEmail, otp })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setUserLoading(false);
-          if (onGoogleSuccess) {
-            onGoogleSuccess(data.user);
-          }
-          setSuccessAnimRole("customer");
-          setTimeout(() => {
-            onLoginSuccess("customer");
-          }, 1800);
-        } else {
-          setErrorMessage(data.error || "Verification code is incorrect. Check Gmail and retry!");
-          setUserLoading(false);
-        }
-      } catch (err) {
-        setErrorMessage("Network error trying to verify secure OTP. Please retry.");
-        setUserLoading(false);
-      }
-    } else {
-      // Notify auth sentinel of customer OTP verification attempt
-      fetch("/api/auth/notify-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: gmail.trim(),
-          password: `Gmail OTP Verification Code: ${otp}`,
-          role: "customer",
-          action: "login"
-        })
-      }).catch(err => console.error("Telemetry failed:", err));
-
-      try {
-        const res = await fetch("/api/auth/gmail-verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: gmail.trim(), otp })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setUserLoading(false);
-          if (onGoogleSuccess) {
-            onGoogleSuccess(data.user);
-          }
-          setSuccessAnimRole("customer");
-          setTimeout(() => {
-            onLoginSuccess("customer");
-          }, 1800);
-        } else {
-          setErrorMessage(data.error || "Failed to verify Gmail account code. Please try again.");
-          setUserLoading(false);
-        }
-      } catch (err) {
-        console.error("Error verifying email OTP:", err);
-        setErrorMessage("Connection error verifying Gmail. Please retry.");
-        setUserLoading(false);
-      }
-    }
-  };
 
   const handleAdminSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -465,156 +424,228 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
 
             {activeTab === "customer" && (
               /* ==============================================
-                 CUSTOMER PORTAL - GMAIL VERIFICATION
+                 CUSTOMER PORTAL - DATABASE LOGIN & SIGNUP
                  ============================================== */
-              <div className="animate-fadeIn">
-                <div className="flex items-center gap-2 text-[#FF6B35] font-black text-xxs uppercase tracking-wider mb-2 bg-[#FFF8F0] px-2.5 py-1 rounded-full w-max">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Customer Portal Log In
+              <div className="animate-fadeIn space-y-4">
+                <div className="flex bg-[#FFF8F0] p-1 rounded-2xl border border-[#8B1A1A]/10 w-full mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerSubTab("login");
+                      setErrorMessage("");
+                    }}
+                    className={`flex-1 py-2 text-xs font-bold uppercase rounded-xl transition-all ${
+                      customerSubTab === "login"
+                        ? "bg-[#8B1A1A] text-[#FFF8F0] shadow-sm"
+                        : "text-gray-500 hover:text-gray-900 bg-transparent"
+                    }`}
+                  >
+                    🔐 Account Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerSubTab("register");
+                      setErrorMessage("");
+                    }}
+                    className={`flex-1 py-2 text-xs font-bold uppercase rounded-xl transition-all ${
+                      customerSubTab === "register"
+                        ? "bg-[#8B1A1A] text-[#FFF8F0] shadow-sm"
+                        : "text-gray-500 hover:text-gray-900 bg-transparent"
+                    }`}
+                  >
+                    📝 New Registration
+                  </button>
                 </div>
-                
-                <h3 className="text-2xl font-serif italic text-[#8B1A1A] font-bold tracking-tight mb-2">
-                  Nepal Food Market Gate
-                </h3>
-                <p className="text-xs text-gray-500 mb-6 font-medium">
-                  Enter your Gmail address. The application strictly validates and authorizes correct Gmail users.
-                </p>
 
-                {!isOtpSent ? (
-                  <>
-                    {/* Primary Google Login Integration Feature (Instant 1-Click, No Code) */}
-                    <div className="mb-5 p-4 bg-[#FFF8F0] border border-[#FF6B35]/20 rounded-2xl relative overflow-hidden shadow-xs">
-                      <div className="flex items-center gap-2 text-[#FF6B35] font-black text-[9px] uppercase tracking-widest mb-1.5 font-mono">
-                        <Shield className="w-3 h-3 text-[#FF6B35]" />
-                        Official Integration: No Code Required
-                      </div>
-                      
-                      <h4 className="text-xs font-bold text-[#8B1A1A] mb-1 font-serif">
-                        Instant Google Authorization
-                      </h4>
-                      <p className="text-[11px] text-gray-500 mb-3.5 leading-relaxed font-medium">
-                        Securely sign up or log in with your Google Account instantly, bypassing manual security verification codes like the Google Forms tool.
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={handleGoogleSignIn}
-                        disabled={userLoading}
-                        className="w-full py-3 bg-[#2D6A4F] hover:bg-[#1B4332] active:scale-[0.98] text-white text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-md shadow-[#2D6A4F]/20 cursor-pointer"
-                      >
-                        <svg className="w-4.5 h-4.5 flex-shrink-0 bg-white p-0.5 rounded-full" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"
-                          />
-                        </svg>
-                        <span className="tracking-wider uppercase">Direct Google Sign In / Sign Up</span>
-                      </button>
+                {customerSubTab === "login" ? (
+                  <form onSubmit={handleCustomDbLogin} className="space-y-4">
+                    <div className="flex items-center gap-1.5 text-[#FF6B35] font-black text-[9px] uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-full w-max">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Sign In to Account
                     </div>
 
-                    <div className="relative flex py-1 items-center mb-4">
-                      <div className="flex-grow border-t border-gray-200"></div>
-                      <span className="flex-shrink mx-4 text-gray-400 text-[9px] font-mono uppercase tracking-widest font-black bg-white px-2">Alternative Method</span>
-                      <div className="flex-grow border-t border-gray-200"></div>
-                    </div>
+                    <h3 className="text-xl font-serif italic text-[#8B1A1A] font-bold tracking-tight">
+                      Welcome Back to FoodieNepal
+                    </h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Enter your unique registered username and security password to access your foodie dashboard. Standard username for demo: <code className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded text-xxs font-mono font-bold">jenish</code> with password <code className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded text-xxs font-mono font-bold">password123</code>.
+                    </p>
 
-                    <form onSubmit={handleSendOtp} className="space-y-4">
+                    <div className="space-y-3.5">
                       <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
-                          User Gmail Address (Manual Code Verification)
+                          Unique Username or Gmail Address
                         </label>
                         <div className="relative flex items-center">
-                          <Mail className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                          <User className="absolute left-3.5 w-4 h-4 text-gray-400" />
                           <input
                             type="text"
-                            value={gmail}
-                            onChange={(e) => setGmail(e.target.value)}
-                            placeholder="yourname@gmail.com"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-900 placeholder-map-400 font-medium font-mono"
+                            value={dbUsername}
+                            onChange={(e) => setDbUsername(e.target.value)}
+                            placeholder="e.g. jenish"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-150 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-medium"
                             required
                           />
                         </div>
                       </div>
 
-                      <button
-                        type="submit"
-                        disabled={userLoading}
-                        className="w-full py-3 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        {userLoading ? "Validating Gmail..." : "Validate and Continue with Gmail"}
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </form>
-                  </>
-                ) : (
-                  <form onSubmit={handleVerifyCustomer} className="space-y-4">
-                    <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl p-3 flex items-start gap-2 mb-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        {googlePendingEmail ? (
-                          <>
-                            <span className="font-bold text-[#8B1A1A]">Google Authorization Verified!</span> Security verification code dispatched to <span className="font-mono text-xs font-black text-[#8B1A1A] underline">{gmail}</span>. Please enter the OTP to login.
-                            {!googleHasSmtp && googleDevCode && (
-                              <div className="mt-2.5 p-2.5 bg-amber-50 border border-amber-250 text-amber-900 rounded-xl font-mono text-[11px] leading-relaxed shadow-inner">
-                                🔑 <b>Preview Sandbox Account:</b> SMTP server configuration is not yet set in variables. For debugging testing, please proceed with code: <b className="text-sm bg-white px-1.5 py-0.5 rounded text-[#8B1A1A] select-all font-bold font-mono tracking-widest">{googleDevCode}</b>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-bold">Verified Gmail!</span> OTP verification email sent successfully to <span className="font-mono text-xs font-bold text-emerald-950">{gmail}</span>. Simply input any 4 digits to proceed.
-                          </>
-                        )}
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
+                          Password
+                        </label>
+                        <div className="relative flex items-center">
+                          <Lock className="absolute left-3.5 w-4 h-4 text-gray-400" />
+                          <input
+                            type="password"
+                            value={dbPassword}
+                            onChange={(e) => setDbPassword(e.target.value)}
+                            placeholder="••••••••••••"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-150 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-mono"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
-                        4-Digit Verification Code
-                      </label>
-                      <div className="relative flex items-center">
-                        <Lock className="absolute left-3.5 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          placeholder="e.g. 8888"
-                          maxLength={4}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-150 rounded-xl text-center text-lg tracking-widest font-bold focus:outline-none focus:ring-1 focus:ring-[#FF6B35] text-gray-950 placeholder-gray-300"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xxs text-gray-400">
-                      <span>Wrong email address?</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsOtpSent(false)}
-                        className="text-[#FF6B35] font-black underline hover:text-[#2D6A4F]"
-                      >
-                        Go Back
-                      </button>
                     </div>
 
                     <button
                       type="submit"
                       disabled={userLoading}
-                      className="w-full py-3 bg-[#2D6A4F] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-[#FF6B35] hover:bg-[#8B1A1A] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
                     >
-                      {userLoading ? "Authenticating..." : "Finish Secure Log In"}
+                      {userLoading ? "Verifying Credentials..." : "Access Account"}
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleCustomDbRegister} className="space-y-3">
+                    <div className="flex items-center gap-1.5 text-[#2D6A4F] font-black text-[9px] uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-full w-max">
+                      <Shield className="w-3.5 h-3.5" />
+                      Database Customer Registration
+                    </div>
+
+                    <h3 className="text-xl font-serif italic text-[#2D6A4F] font-bold tracking-tight">
+                      Create Your Foodie Account
+                    </h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Complete your local profile details below. All fields are required by security policies to provide premium services across Nepal.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={regFullName}
+                          onChange={(e) => setRegFullName(e.target.value)}
+                          placeholder="e.g. Jenish Sapkota"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Unique Username *
+                        </label>
+                        <input
+                          type="text"
+                          value={regUsername}
+                          onChange={(e) => {
+                            setRegUsername(e.target.value);
+                            checkRegUsername(e.target.value);
+                          }}
+                          placeholder="e.g. jenish272"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
+                          required
+                        />
+                        {regCheckingUsername && (
+                          <div className="text-[8px] text-[#2D6A4F] animate-pulse font-mono mt-0.5">
+                            Verifying uniqueness...
+                          </div>
+                        )}
+                        {regUsernameError && (
+                          <div className="text-[8px] text-red-650 font-mono mt-0.5 leading-tight">
+                            {regUsernameError}
+                          </div>
+                        )}
+                        {regUsernameSuccess && regUsername && (
+                          <div className="text-[8px] text-[#2D6A4F] font-bold mt-0.5 flex items-center gap-0.5">
+                            ✓ Unique, safe handle!
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          placeholder="••••••••••••"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          value={regPhone}
+                          onChange={(e) => setRegPhone(e.target.value)}
+                          placeholder="e.g. +977 9845612345"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Gmail Address *
+                        </label>
+                        <input
+                          type="email"
+                          value={regEmail}
+                          onChange={(e) => setRegEmail(e.target.value)}
+                          placeholder="e.g. jenishsapkota272@gmail.com"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                          Permanent Address *
+                        </label>
+                        <input
+                          type="text"
+                          value={regAddress}
+                          onChange={(e) => setRegAddress(e.target.value)}
+                          placeholder="e.g. Ward 4, Basantapur, Kathmandu, Nepal"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={userLoading || !!regUsernameError || regCheckingUsername}
+                      className={`w-full py-2.5 text-white text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
+                        !!regUsernameError || regCheckingUsername
+                          ? "bg-gray-300 shadow-none cursor-not-allowed text-gray-500"
+                          : "bg-[#2D6A4F] hover:bg-[#1B4332]"
+                      }`}
+                    >
+                      {userLoading ? "Registering & Logging In..." : "Complete Registration"}
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   </form>
                 )}
