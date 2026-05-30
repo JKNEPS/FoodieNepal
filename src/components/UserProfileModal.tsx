@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles } from "lucide-react";
+import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles, Lock, Eye, EyeOff, Shield } from "lucide-react";
 import { User as UserType } from "../types";
 
 interface UserProfileModalProps {
@@ -48,6 +48,71 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Change Password Inner States
+  const [showPassChanger, setShowPassChanger] = useState(false);
+  const [passDob, setPassDob] = useState("");
+  const [passPet, setPassPet] = useState("");
+  const [passNew, setPassNew] = useState("");
+  const [showPassNewToggle, setShowPassNewToggle] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
+  const [passError, setPassError] = useState("");
+  const [passSuccess, setPassSuccess] = useState("");
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passDob || !passPet.trim() || !passNew) {
+      setPassError("Date of Birth, Favourite Pet Answer, and New Password are all strictly required.");
+      return;
+    }
+
+    // Strong password validations
+    const hasMinLength = passNew.length >= 8;
+    const hasUppercase = /[A-Z]/.test(passNew);
+    const hasLowercase = /[a-z]/.test(passNew);
+    const hasDigit = /[0-9]/.test(passNew);
+    const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passNew);
+
+    if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+      setPassError("Security Policy Violation: Password requires 8+ characters, premium upper, lower, numbers, and special symbol.");
+      return;
+    }
+
+    setPassLoading(true);
+    setPassError("");
+    setPassSuccess("");
+
+    try {
+      const response = await fetch("/api/auth/change-profile-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          dob: passDob,
+          favoritePet: passPet.trim(),
+          newPassword: passNew
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setPassSuccess(data.message);
+        setPassDob("");
+        setPassPet("");
+        setPassNew("");
+        // collapse after brief timeout
+        setTimeout(() => {
+          setShowPassChanger(false);
+          setPassSuccess("");
+        }, 3000);
+      } else {
+        setPassError(data.error || "Verification failed: security answers did not match current profile records.");
+      }
+    } catch (err) {
+      setPassError("Network connectivity problem. Please verify database connection.");
+    } finally {
+      setPassLoading(false);
+    }
+  };
 
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameCheckMsg, setUsernameCheckMsg] = useState("");
@@ -334,6 +399,127 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* CHANGE PASSWORD CHALLENGE DRAWER */}
+              <div className="mt-4 border-t border-gray-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPassChanger(!showPassChanger);
+                    setPassError("");
+                    setPassSuccess("");
+                  }}
+                  className="w-full flex items-center justify-between py-2 text-xs font-black text-[#8B1A1A] hover:text-[#FF6B35] transition-colors focus:outline-none cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5 font-mono tracking-wider uppercase">
+                    🔒 Change My Password
+                  </span>
+                  <span className="text-[10px] bg-[#8B1A1A]/10 px-2 py-0.5 rounded-full font-bold font-mono">
+                    {showPassChanger ? "Hide Form" : "Expand Form"}
+                  </span>
+                </button>
+
+                {showPassChanger && (
+                  <form onSubmit={handleChangePasswordSubmit} className="mt-3 bg-white p-4 rounded-2xl border border-[#8B1A1A]/5 space-y-3 animate-in slide-in-from-top-2 duration-150">
+                    <span className="text-[10px] text-gray-500 leading-relaxed block mb-1">
+                      Provide your security challenge answers below to unlock profile password reset.
+                    </span>
+
+                    {passError && (
+                      <div className="bg-red-50 border border-red-100 text-red-700 text-[10px] p-2.5 rounded-lg font-bold font-mono">
+                        ⚠️ {passError}
+                      </div>
+                    )}
+
+                    {passSuccess && (
+                      <div className="bg-emerald-50 border border-emerald-100 text-[#2D6A4F] text-[10px] p-2.5 rounded-lg font-bold font-mono">
+                        ✓ {passSuccess}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 text-left">
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                          Date of Birth *
+                        </label>
+                        <input
+                          type="date"
+                          value={passDob}
+                          onChange={(e) => setPassDob(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none font-mono text-gray-900"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                          Favourite Pet *
+                        </label>
+                        <input
+                          type="text"
+                          value={passPet}
+                          onChange={(e) => setPassPet(e.target.value)}
+                          placeholder="e.g. Dog"
+                          className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none font-medium text-gray-900"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-left font-sans">
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                        New Security Password *
+                      </label>
+                      <div className="relative flex items-center">
+                        <input
+                          type={showPassNewToggle ? "text" : "password"}
+                          value={passNew}
+                          onChange={(e) => setPassNew(e.target.value)}
+                          placeholder="••••••••••••"
+                          className="w-full pl-2 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none font-mono text-gray-950"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassNewToggle(!showPassNewToggle)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B1A1A] transition-colors focus:outline-none cursor-pointer"
+                        >
+                          {showPassNewToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Criteria checks for new password */}
+                    <div className="bg-orange-50/50 border border-orange-100/50 rounded-lg p-2.5 space-y-1 flex flex-col justify-center text-left">
+                      <span className="text-[8px] font-black text-[#8B1A1A] uppercase tracking-wider block font-mono">
+                        🛡️ Password Requirements
+                      </span>
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[7px] font-bold font-mono">
+                        <div className={passNew.length >= 8 ? "text-emerald-700" : "text-gray-400"}>
+                          {passNew.length >= 8 ? "✓" : "○"} 8+ chars
+                        </div>
+                        <div className={/[A-Z]/.test(passNew) ? "text-emerald-700" : "text-gray-400"}>
+                          {/[A-Z]/.test(passNew) ? "✓" : "○"} Upper [A-Z]
+                        </div>
+                        <div className={/[a-z]/.test(passNew) ? "text-emerald-700" : "text-gray-400"}>
+                          {/[a-z]/.test(passNew) ? "✓" : "○"} Lower [a-z]
+                        </div>
+                        <div className={/[0-9]/.test(passNew) ? "text-emerald-700" : "text-gray-400"}>
+                          {/[0-9]/.test(passNew) ? "✓" : "○"} Digit [0-9]
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={passLoading}
+                      className="w-full py-2 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1 bg-opacity-95"
+                    >
+                      {passLoading ? "Validating QA Answers..." : "Verify & Update Password"}
+                    </button>
+                  </form>
+                )}
               </div>
 
               {/* Edit Activation button */}

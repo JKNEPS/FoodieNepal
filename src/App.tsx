@@ -40,7 +40,21 @@ export default function App() {
 
   const [userRole, setUserRole] = useState<"customer" | "vendor" | "rider" | "admin">("customer");
   const [showLogin, setShowLogin] = useState(false);
+  const [initialResetEmail, setInitialResetEmail] = useState("");
   const [showUserProfile, setShowUserProfile] = useState(false);
+
+  // Parse URL query parameters for unique secure password reset keys
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get("email");
+    const tokenParam = params.get("token");
+    if (emailParam && tokenParam && tokenParam.startsWith("reset_")) {
+      // Clear URL query parameters from address bar to safeguard user sessions
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setInitialResetEmail(emailParam);
+      setShowLogin(true);
+    }
+  }, []);
   const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking" | "forms">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -480,6 +494,8 @@ export default function App() {
         />
         {showLogin && (
           <LoginPortal
+            initialResetEmail={initialResetEmail}
+            onClearInitialResetEmail={() => setInitialResetEmail("")}
             onLoginSuccess={(role) => {
               setUserRole(role);
               if (role === "admin") {
@@ -718,6 +734,8 @@ export default function App() {
 
       {showLogin && (
         <LoginPortal
+          initialResetEmail={initialResetEmail}
+          onClearInitialResetEmail={() => setInitialResetEmail("")}
           onLoginSuccess={(role) => {
             setUserRole(role);
             if (role === "admin") {

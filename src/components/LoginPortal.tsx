@@ -6,11 +6,36 @@ interface LoginPortalProps {
   onLoginSuccess: (role: UserRole) => void;
   onCancel: () => void;
   onGoogleSuccess?: (user: any) => void;
+  initialResetEmail?: string;
+  onClearInitialResetEmail?: () => void;
 }
 
-export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess }: LoginPortalProps) {
+export default function LoginPortal({ 
+  onLoginSuccess, 
+  onCancel, 
+  onGoogleSuccess,
+  initialResetEmail = "",
+  onClearInitialResetEmail
+}: LoginPortalProps) {
   const [activeTab, setActiveTab] = useState<UserRole>("customer");
   const [successAnimRole, setSuccessAnimRole] = useState<UserRole | null>(null);
+
+  // Auto initialize password reset mode if prefilled email parameter exists
+  useEffect(() => {
+    if (initialResetEmail) {
+      setForgotEmail(initialResetEmail);
+      setForgotDob("");
+      setForgotFavoritePet("");
+      setForgotNewPassword("");
+      setForgotErrorMsg("");
+      setForgotSuccessMsg("💡 Verification link successfully followed. Please provide the matching answers below to reset your password.");
+      setForgotStep(2); // Go straight to challenge inputs and new password setup
+      setShowForgotModal(true);
+      if (onClearInitialResetEmail) {
+        onClearInitialResetEmail();
+      }
+    }
+  }, [initialResetEmail]);
   
   // Customer Login & Registration States
   const [customerSubTab, setCustomerSubTab] = useState<"login" | "register">("login");
@@ -24,6 +49,8 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [regFullName, setRegFullName] = useState("");
   const [regUsername, setRegUsername] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  const [regDob, setRegDob] = useState("");
+  const [regFavoritePet, setRegFavoritePet] = useState("");
   // Real-time password criteria calculations
   const regPasswordMinLength = regPassword.length >= 8;
   const regPasswordUppercase = /[A-Z]/.test(regPassword);
@@ -36,6 +63,28 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [regCheckingUsername, setRegCheckingUsername] = useState(false);
   const [regUsernameError, setRegUsernameError] = useState("");
   const [regUsernameSuccess, setRegUsernameSuccess] = useState(false);
+
+  // Forgot Password Multi-Step Modal States
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotDob, setForgotDob] = useState("");
+  const [forgotFavoritePet, setForgotFavoritePet] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1); // 1: Email, 2: Security QA + New Password, 3: Success
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotErrorMsg, setForgotErrorMsg] = useState("");
+  const [forgotSuccessMsg, setForgotSuccessMsg] = useState("");
+  const [forgotSandboxLink, setForgotSandboxLink] = useState("");
+
+  // Alternate direct identity challenge states (Username, Phone, DOB, Pet)
+  const [useAlternateMethod, setUseAlternateMethod] = useState(false);
+  const [altUsername, setAltUsername] = useState("");
+  const [altPhone, setAltPhone] = useState("");
+  const [altDob, setAltDob] = useState("");
+  const [altFavoritePet, setAltFavoritePet] = useState("");
+  const [altNewPassword, setAltNewPassword] = useState("");
+  const [showAltNewPassword, setShowAltNewPassword] = useState(false);
 
   const checkRegUsername = async (val: string) => {
     const trimmed = val.trim();
@@ -107,8 +156,8 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const handleCustomDbRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedUsername = regUsername.trim();
-    if (!regFullName.trim() || !trimmedUsername || !regPassword || !regPhone.trim() || !regEmail.trim() || !regAddress.trim()) {
-      setErrorMessage("All profile fields (Full Name, Username, Password, Phone Number, Gmail address, and Permanent Address) are strictly required.");
+    if (!regFullName.trim() || !trimmedUsername || !regPassword || !regPhone.trim() || !regEmail.trim() || !regAddress.trim() || !regDob || !regFavoritePet.trim()) {
+      setErrorMessage("All profile fields (Full Name, Username, Password, Phone Number, Gmail address, Permanent Address, Date of Birth, and Favourite Pet Name) are strictly required.");
       return;
     }
 
@@ -155,7 +204,9 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
           password: regPassword,
           phone: regPhone.trim(),
           email: cleanEmail,
-          address: regAddress.trim()
+          address: regAddress.trim(),
+          dob: regDob,
+          favoritePet: regFavoritePet.trim()
         })
       });
       const data = await response.json();
@@ -175,6 +226,134 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
     } catch (err) {
       setErrorMessage("Network issue submitting registration details. Please retry.");
       setUserLoading(false);
+    }
+  };
+
+  const handleForgotStep1Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotErrorMsg("Please enter your registered Gmail address.");
+      return;
+    }
+    setForgotLoading(true);
+    setForgotErrorMsg("");
+    setForgotSuccessMsg("");
+    setForgotSandboxLink("");
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.trim() })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setForgotSuccessMsg(data.message);
+        if (data.resetLink) {
+          setForgotSandboxLink(data.resetLink);
+        }
+        setForgotStep(2); // Progress to Verification & Password creation
+      } else {
+        setForgotErrorMsg(data.error || "We could not find an account associated with this Gmail.");
+      }
+    } catch (err) {
+      setForgotErrorMsg("Server connection problem. Please verify your connection.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleForgotStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim() || !forgotDob || !forgotFavoritePet.trim() || !forgotNewPassword) {
+      setForgotErrorMsg("All fields are strictly required.");
+      return;
+    }
+
+    // Client-side strong password validation for UI parity
+    const hasMinLength = forgotNewPassword.length >= 8;
+    const hasUppercase = /[A-Z]/.test(forgotNewPassword);
+    const hasLowercase = /[a-z]/.test(forgotNewPassword);
+    const hasDigit = /[0-9]/.test(forgotNewPassword);
+    const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(forgotNewPassword);
+
+    if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+      setForgotErrorMsg("Password requires 8+ characters, an uppercase, a lowercase, a number, and a special character.");
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotErrorMsg("");
+
+    try {
+      const response = await fetch("/api/auth/reset-password-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: forgotEmail.trim(),
+          dob: forgotDob,
+          favoritePet: forgotFavoritePet.trim(),
+          newPassword: forgotNewPassword
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setForgotStep(3); // recovery complete page
+      } else {
+        setForgotErrorMsg(data.error || "Validation answers are incorrect. Access denied.");
+      }
+    } catch (err) {
+      setForgotErrorMsg("Could not submit reset request. Please check server.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleAlternateRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!altUsername.trim() || !altPhone.trim() || !altDob || !altFavoritePet.trim() || !altNewPassword) {
+      setForgotErrorMsg("All fields are strictly required for the Alternative Security Challenge.");
+      return;
+    }
+
+    // Passwords criteria validation
+    const hasMinLength = altNewPassword.length >= 8;
+    const hasUppercase = /[A-Z]/.test(altNewPassword);
+    const hasLowercase = /[a-z]/.test(altNewPassword);
+    const hasDigit = /[0-9]/.test(altNewPassword);
+    const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(altNewPassword);
+
+    if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+      setForgotErrorMsg("New Password must be 8+ characters, contain at least one uppercase letter, one lowercase letter, one digit, and one special character.");
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotErrorMsg("");
+
+    try {
+      const response = await fetch("/api/auth/alternate-recovery-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: altUsername.trim(),
+          phone: altPhone.trim(),
+          dob: altDob,
+          favoritePet: altFavoritePet.trim(),
+          newPassword: altNewPassword
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // Go to success
+        setForgotStep(3);
+      } else {
+        setForgotErrorMsg(data.error || "Bypass challenge failed. Security values do not match registered credentials.");
+      }
+    } catch (err) {
+      setForgotErrorMsg("Problem reaching security gateway. Please verify network status.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -518,9 +697,28 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-mono">
-                          Password
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">
+                            Password
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForgotErrorMsg("");
+                              setForgotSuccessMsg("");
+                              setForgotEmail("");
+                              setForgotDob("");
+                              setForgotFavoritePet("");
+                              setForgotNewPassword("");
+                              setForgotSandboxLink("");
+                              setForgotStep(1);
+                              setShowForgotModal(true);
+                            }}
+                            className="text-[10px] font-black text-[#FF6B35] hover:text-[#8B1A1A] tracking-wide transition-colors focus:outline-none cursor-pointer"
+                          >
+                            Forgot Password?
+                          </button>
+                        </div>
                         <div className="relative flex items-center">
                           <Lock className="absolute left-3.5 w-4 h-4 text-gray-400" />
                           <input
@@ -697,6 +895,33 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                           value={regAddress}
                           onChange={(e) => setRegAddress(e.target.value)}
                           placeholder="e.g. Ward 4, Basantapur, Kathmandu, Nepal"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-[#2D6A4F] uppercase tracking-mono mb-1 font-mono">
+                          Date of Birth * (For Password Recovery)
+                        </label>
+                        <input
+                          type="date"
+                          value={regDob}
+                          onChange={(e) => setRegDob(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-[#2D6A4F] uppercase tracking-mono mb-1 font-mono">
+                          Favourite Pet * (For Password Recovery)
+                        </label>
+                        <input
+                          type="text"
+                          value={regFavoritePet}
+                          onChange={(e) => setRegFavoritePet(e.target.value)}
+                          placeholder="e.g. Dog, Cat, Parrot"
                           className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-medium"
                           required
                         />
@@ -1020,6 +1245,449 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
         </div>
 
       </div>
+
+      {/* SECURE PASSWORD RECOVERY SYSTEM MODAL */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header branding band */}
+            <div className="bg-[#8B1A1A] px-5 py-4 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-orange-400" />
+                <span className="text-xs font-black uppercase tracking-widest font-mono">
+                  Nepal Gatekeeper System
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="text-white/70 hover:text-white transition-colors focus:outline-none cursor-pointer text-sm font-bold"
+              >
+                &times; Close
+              </button>
+            </div>
+            {forgotStep !== 3 && (
+              <div className="flex bg-gray-50 border-b border-gray-100 font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseAlternateMethod(false);
+                    setForgotErrorMsg("");
+                  }}
+                  className={`flex-1 py-3 text-center text-xs font-bold tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                    !useAlternateMethod
+                      ? "bg-white border-t border-t-[#8B1A1A] border-r border-r-gray-100 text-[#8B1A1A]"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Gmail Link Recovery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseAlternateMethod(true);
+                    setForgotErrorMsg("");
+                  }}
+                  className={`flex-1 py-3 text-center text-xs font-bold tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                    useAlternateMethod
+                      ? "bg-white border-t border-t-[#8B1A1A] border-l border-l-gray-100 text-[#8B1A1A]"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                  }`}
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Alternative Challenge
+                </button>
+              </div>
+            )}
+
+            <div className="p-5">
+              {/* ANIMATED OPT-IN FLASHING FAILURE BANNER */}
+              {forgotErrorMsg && !useAlternateMethod && forgotStep !== 3 && (
+                <div 
+                  onClick={() => {
+                    setUseAlternateMethod(true);
+                    setForgotErrorMsg("");
+                  }}
+                  className="bg-gradient-to-r from-red-600 via-[#FF6B35] to-red-600 text-white text-[11px] p-3 rounded-xl font-bold flex items-center justify-between shadow-lg cursor-pointer animate-pulse hover:scale-[1.02] transition-transform mb-4 border-2 border-amber-300"
+                  title="Click to switch to direct bypass recovery challenge"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">💡</span>
+                    <div className="text-left">
+                      <p className="font-extrabold uppercase tracking-wider text-[10px]">Gmail Authentication Fail?</p>
+                      <p className="text-[9px] text-white/95 leading-normal">Click here to use Direct Alternative Method instead!</p>
+                    </div>
+                  </div>
+                  <span className="text-amber-200 text-xs font-black font-mono animate-bounce">&rsaquo;&rsaquo;</span>
+                </div>
+              )}
+
+              {/* ROUTE A: Standard Gmail & Verification Token Link Method */}
+              {!useAlternateMethod && (
+                <>
+                  {/* Step 1: Account identification */}
+                  {forgotStep === 1 && (
+                    <form onSubmit={handleForgotStep1Submit} className="space-y-4">
+                      <div className="space-y-1">
+                        <h4 className="text-base font-serif italic font-bold text-gray-900">
+                          Recover Password
+                        </h4>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                          Enter your registered Gmail address below, and we will trigger a unique security reset link via SMTP, plus unlock identity verification.
+                        </p>
+                      </div>
+
+                      {forgotErrorMsg && (
+                        <div className="bg-red-50 border border-red-100 text-red-700 text-[10px] p-2.5 rounded-lg font-bold font-mono">
+                          ⚠️ {forgotErrorMsg}
+                        </div>
+                      )}
+
+                      <div className="bg-[#8B1A1A]/5 border border-[#8B1A1A]/10 rounded-xl p-3 text-xs leading-relaxed text-gray-700 flex gap-2 items-start font-sans">
+                        <span className="text-sm">📧</span>
+                        <div>
+                          <p className="font-bold text-gray-900">Forgot your registered Gmail?</p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            Our system secures email records with format masking. Example layout is <code className="bg-[#8B1A1A]/10 text-[#8B1A1A] px-1 py-0.2 rounded font-bold font-mono">j********@gmail.com</code>.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono font-mono">
+                            Registered Gmail Address *
+                          </label>
+                          <span className="text-[8px] font-mono font-bold text-[#FF6B35] animate-pulse">
+                            e.g. j********@gmail.com
+                          </span>
+                        </div>
+                        <input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="e.g. j********@gmail.com"
+                          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] font-mono text-gray-900"
+                          required
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={forgotLoading}
+                        className="w-full py-2.5 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white text-xs font-black tracking-widest uppercase rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                      >
+                        {forgotLoading ? "Initiating Gateway..." : "Verify & Send Reset Link"}
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Step 2: Answer Verification & Reset password */}
+                  {forgotStep === 2 && (
+                    <form onSubmit={handleForgotStep2Submit} className="space-y-4">
+                      <div className="space-y-1">
+                        <h4 className="text-base font-serif italic font-bold text-gray-900 flex items-center gap-1.5">
+                          🔒 Identity Challenge
+                        </h4>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                          Verify Date of Birth and Favourite Pet Name for <span className="font-mono text-gray-900 font-bold bg-amber-50 px-1 py-0.5 rounded">{forgotEmail}</span> to unlock replacement.
+                        </p>
+                      </div>
+
+                      {forgotErrorMsg && (
+                        <div className="bg-red-50 border border-red-100 text-red-700 text-[10px] p-2.5 rounded-lg font-bold font-mono">
+                          ⚠️ {forgotErrorMsg}
+                        </div>
+                      )}
+
+                      {forgotSuccessMsg && (
+                        <div className="bg-emerald-50 border border-emerald-100 text-[#2D6A4F] text-[10px] p-2.5 rounded-lg leading-relaxed font-mono">
+                          ✉️ {forgotSuccessMsg}
+                        </div>
+                      )}
+
+                      {forgotSandboxLink && (
+                        <div className="bg-amber-50 border border-amber-200 text-amber-900 text-[10px] p-3 rounded-lg leading-relaxed font-mono space-y-1">
+                          <span className="font-bold uppercase tracking-wider text-amber-900 block text-[9px]">💡 Sandbox Live Reset Link:</span>
+                          <a 
+                            href={forgotSandboxLink} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="underline text-red-800 break-all hover:text-red-900 block font-bold"
+                          >
+                            {forgotSandboxLink}
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-3 border-t border-gray-100 pt-3">
+                        <div>
+                          <label className="block text-[9px] font-bold text-[#8B1A1A] uppercase tracking-mono mb-1 font-mono">
+                            Date of Birth * (Exactly match registered profile)
+                          </label>
+                          <input
+                            type="date"
+                            value={forgotDob}
+                            onChange={(e) => setForgotDob(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] font-mono text-gray-900"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-bold text-[#8B1A1A] uppercase tracking-mono mb-1 font-mono">
+                            Favourite Pet Name * (Case-insensitive)
+                          </label>
+                          <input
+                            type="text"
+                            value={forgotFavoritePet}
+                            onChange={(e) => setForgotFavoritePet(e.target.value)}
+                            placeholder="e.g. Dog, Cat, parrot"
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] font-medium text-gray-900"
+                            required
+                          />
+                        </div>
+
+                        <div className="border-t border-gray-100 pt-2">
+                          <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                            New Security Password *
+                          </label>
+                          <div className="relative flex items-center">
+                            <input
+                              type={showForgotNewPassword ? "text" : "password"}
+                              value={forgotNewPassword}
+                              onChange={(e) => setForgotNewPassword(e.target.value)}
+                              placeholder="••••••••••••"
+                              className="w-full pl-3 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-mono"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B1A1A] transition-colors focus:outline-none cursor-pointer"
+                              title={showForgotNewPassword ? "Hide password" : "Show password"}
+                            >
+                              {showForgotNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Real-time criteria checker */}
+                        <div className="bg-orange-50/50 border border-orange-100/50 rounded-lg p-3 space-y-1.5 flex flex-col justify-center">
+                          <span className="text-[9px] font-black text-[#8B1A1A] uppercase tracking-wider block font-mono">
+                            🛡️ Target Password Strength Requirements
+                          </span>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] font-bold font-mono">
+                            <div className={forgotNewPassword.length >= 8 ? "text-emerald-700" : "text-gray-400"}>
+                              {forgotNewPassword.length >= 8 ? "✓" : "○"} 8+ Characters
+                            </div>
+                            <div className={/[A-Z]/.test(forgotNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                              {/[A-Z]/.test(forgotNewPassword) ? "✓" : "○"} Upper [A-Z]
+                            </div>
+                            <div className={/[a-z]/.test(forgotNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                              {/[a-z]/.test(forgotNewPassword) ? "✓" : "○"} Lower [a-z]
+                            </div>
+                            <div className={/[0-9]/.test(forgotNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                              {/[0-9]/.test(forgotNewPassword) ? "✓" : "○"} Digit [0-9]
+                            </div>
+                            <div className={`col-span-2 ${/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(forgotNewPassword) ? "text-emerald-700" : "text-gray-400"}`}>
+                              {/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(forgotNewPassword) ? "✓" : "○"} Special Char (!@#$%&*?)
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setForgotStep(1)}
+                          className="w-1/3 py-2.5 border border-gray-200 text-gray-500 hover:bg-gray-50 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                        >
+                          Back
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={forgotLoading}
+                          className="w-2/3 py-2.5 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white text-xs font-black tracking-widest uppercase rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                        >
+                          {forgotLoading ? "Writing Changes..." : "Authorize & Save"}
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </>
+              )}
+
+              {/* ROUTE B: Alternative bypass challenge method (No Gmail needed) */}
+              {useAlternateMethod && forgotStep !== 3 && (
+                <form onSubmit={handleAlternateRecoverySubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="text-base font-serif italic font-bold text-gray-900 flex items-center gap-1.5">
+                      🔑 Alternative Identity challenge
+                    </h4>
+                    <p className="text-[11px] text-gray-500 leading-relaxed">
+                      Restore credentials without email SMTP verification. Enter your licensed username, phone, Date of Birth, and registered Favourite Pet response below.
+                    </p>
+                  </div>
+
+                  {forgotErrorMsg && (
+                    <div className="bg-red-50 border border-red-100 text-red-700 text-[10px] p-2.5 rounded-lg font-bold font-mono">
+                      ⚠️ {forgotErrorMsg}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                        Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={altUsername}
+                        onChange={(e) => setAltUsername(e.target.value)}
+                        placeholder="e.g. jenish"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-900 font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={altPhone}
+                        onChange={(e) => setAltPhone(e.target.value)}
+                        placeholder="e.g. 9841234567"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-900 font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                        Date of Birth *
+                      </label>
+                      <input
+                        type="date"
+                        value={altDob}
+                        onChange={(e) => setAltDob(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-900 font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-mono mb-1 font-mono">
+                        Favourite Pet *
+                      </label>
+                      <input
+                        type="text"
+                        value={altFavoritePet}
+                        onChange={(e) => setAltFavoritePet(e.target.value)}
+                        placeholder="e.g. Parrot"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-900 font-medium"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-3">
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
+                      New Security Password *
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type={showAltNewPassword ? "text" : "password"}
+                        value={altNewPassword}
+                        onChange={(e) => setAltNewPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="w-full pl-3 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-mono"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAltNewPassword(!showAltNewPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B1A1A] transition-colors focus:outline-none cursor-pointer"
+                        title={showAltNewPassword ? "Hide password" : "Show password"}
+                      >
+                        {showAltNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Real-time criteria checker */}
+                  <div className="bg-orange-50/50 border border-orange-100/50 rounded-lg p-3 space-y-1.5 flex flex-col justify-center">
+                    <span className="text-[9px] font-black text-[#8B1A1A] uppercase tracking-wider block font-mono">
+                      🛡️ Target Password Strength Requirements
+                    </span>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] font-bold font-mono">
+                      <div className={altNewPassword.length >= 8 ? "text-emerald-700" : "text-gray-400"}>
+                        {altNewPassword.length >= 8 ? "✓" : "○"} 8+ Characters
+                      </div>
+                      <div className={/[A-Z]/.test(altNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                        {/[A-Z]/.test(altNewPassword) ? "✓" : "○"} Upper [A-Z]
+                      </div>
+                      <div className={/[a-z]/.test(altNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                        {/[a-z]/.test(altNewPassword) ? "✓" : "○"} Lower [a-z]
+                      </div>
+                      <div className={/[0-9]/.test(altNewPassword) ? "text-emerald-700" : "text-gray-400"}>
+                        {/[0-9]/.test(altNewPassword) ? "✓" : "○"} Digit [0-9]
+                      </div>
+                      <div className={`col-span-2 ${/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(altNewPassword) ? "text-emerald-700" : "text-gray-400"}`}>
+                        {/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(altNewPassword) ? "✓" : "○"} Special Char (!@#$%&*?)
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full py-2.5 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white text-xs font-black tracking-widest uppercase rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  >
+                    {forgotLoading ? "Verifying & Saving..." : "Verify Bypass & Reset Password"}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </form>
+              )}
+
+              {/* Step 3: Success Screen */}
+              {forgotStep === 3 && (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600 text-2xl">
+                    ✓
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-base font-serif italic font-bold text-gray-900">
+                      Profile Re-Secured!
+                    </h4>
+                    <p className="text-[11px] text-gray-500 leading-relaxed px-4">
+                      Your replacement password has been written to the database! You can now access your profile dashboard normally.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotModal(false);
+                      setCustomerSubTab("login");
+                    }}
+                    className="px-6 py-2 bg-[#8B1A1A] hover:bg-[#FF6B35] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all"
+                  >
+                    Done &bull; Log In Now
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

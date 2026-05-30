@@ -14,6 +14,8 @@ export interface User {
   avatar?: string;
   bio?: string;
   foodiePoints: number;
+  dob?: string;
+  favoritePet?: string;
 }
 
 export interface Ingredient {
