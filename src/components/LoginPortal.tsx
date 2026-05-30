@@ -16,12 +16,20 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
   const [customerSubTab, setCustomerSubTab] = useState<"login" | "register">("login");
   const [dbUsername, setDbUsername] = useState("");
   const [dbPassword, setDbPassword] = useState("");
+  const [showDbPassword, setShowDbPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [regFullName, setRegFullName] = useState("");
   const [regUsername, setRegUsername] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  // Real-time password criteria calculations
+  const regPasswordMinLength = regPassword.length >= 8;
+  const regPasswordUppercase = /[A-Z]/.test(regPassword);
+  const regPasswordLowercase = /[a-z]/.test(regPassword);
+  const regPasswordDigit = /[0-9]/.test(regPassword);
+  const regPasswordSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(regPassword);
   const [regPhone, setRegPhone] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regAddress, setRegAddress] = useState("");
@@ -104,6 +112,13 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
       return;
     }
 
+    // Validate Username Format: 3 to 15 alphanumeric characters and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]{3,15}$/;
+    if (!usernameRegex.test(trimmedUsername)) {
+      setErrorMessage("Username requirements not met: Username must be 3-15 characters long and contain only letters, numbers, and underscores (no spaces, e.g. Jenish_NP).");
+      return;
+    }
+
     const cleanEmail = regEmail.trim().toLowerCase();
     if (!cleanEmail.endsWith("@gmail.com")) {
       setErrorMessage("Google Validation Failed: Gmail Address must end with @gmail.com");
@@ -111,7 +126,19 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
     }
 
     if (regUsernameError) {
-      setErrorMessage("Please solve username clash: specified handle is already claimed.");
+      setErrorMessage("Please solve username clash: specified unique handle is already claimed.");
+      return;
+    }
+
+    // Check strength of Password
+    const hasMinLength = regPassword.length >= 8;
+    const hasUppercase = /[A-Z]/.test(regPassword);
+    const hasLowercase = /[a-z]/.test(regPassword);
+    const hasDigit = /[0-9]/.test(regPassword);
+    const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(regPassword);
+
+    if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+      setErrorMessage("Password Security Validation Failed: Your password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return;
     }
 
@@ -497,13 +524,21 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                         <div className="relative flex items-center">
                           <Lock className="absolute left-3.5 w-4 h-4 text-gray-400" />
                           <input
-                            type="password"
+                            type={showDbPassword ? "text" : "password"}
                             value={dbPassword}
                             onChange={(e) => setDbPassword(e.target.value)}
                             placeholder="••••••••••••"
-                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-150 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-mono"
+                            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-150 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#8B1A1A] text-gray-950 font-medium"
                             required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowDbPassword(!showDbPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B1A1A] transition-colors focus:outline-none cursor-pointer"
+                            title={showDbPassword ? "Hide password" : "Show password"}
+                          >
+                            {showDbPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -582,17 +617,50 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                         <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
                           Password *
                         </label>
-                        <input
-                          type="password"
-                          value={regPassword}
-                          onChange={(e) => setRegPassword(e.target.value)}
-                          placeholder="••••••••••••"
-                          className="w-full px-3 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
-                          required
-                        />
+                        <div className="relative flex items-center">
+                          <input
+                            type={showRegPassword ? "text" : "password"}
+                            value={regPassword}
+                            onChange={(e) => setRegPassword(e.target.value)}
+                            placeholder="••••••••••••"
+                            className="w-full pl-3 pr-10 py-2 bg-gray-50 border border-gray-150 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] text-gray-950 font-mono"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegPassword(!showRegPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2D6A4F] transition-colors focus:outline-none cursor-pointer"
+                            title={showRegPassword ? "Hide password" : "Show password"}
+                          >
+                            {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
 
-                       <div>
+                      <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-lg p-3 space-y-1.5 flex flex-col justify-center">
+                        <span className="text-[9px] font-black text-[#2D6A4F] uppercase tracking-wider block font-mono">
+                          🔑 Unique Security Shield
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] font-bold font-mono">
+                          <div className={regPasswordMinLength ? "text-[#2D6A4F]" : "text-gray-400"}>
+                            {regPasswordMinLength ? "✓" : "○"} 8+ Characters
+                          </div>
+                          <div className={regPasswordUppercase ? "text-[#2D6A4F]" : "text-gray-400"}>
+                            {regPasswordUppercase ? "✓" : "○"} Upper [A-Z]
+                          </div>
+                          <div className={regPasswordLowercase ? "text-[#2D6A4F]" : "text-gray-400"}>
+                            {regPasswordLowercase ? "✓" : "○"} Lower [a-z]
+                          </div>
+                          <div className={regPasswordDigit ? "text-[#2D6A4F]" : "text-gray-400"}>
+                            {regPasswordDigit ? "✓" : "○"} Digit [0-9]
+                          </div>
+                          <div className={`col-span-2 ${regPasswordSpecial ? "text-[#2D6A4F]" : "text-gray-400"}`}>
+                            {regPasswordSpecial ? "✓" : "○"} Special Char (!@#$%&*?)
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
                         <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
                           Phone Number *
                         </label>
@@ -606,7 +674,7 @@ export default function LoginPortal({ onLoginSuccess, onCancel, onGoogleSuccess 
                         />
                       </div>
 
-                      <div className="md:col-span-2">
+                      <div>
                         <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-mono mb-1 font-mono">
                           Gmail Address *
                         </label>

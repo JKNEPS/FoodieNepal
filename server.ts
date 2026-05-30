@@ -1418,6 +1418,15 @@ app.post("/api/auth/customer-register", (req, res) => {
   const cleanUsername = username.trim();
   const cleanEmail = email.trim().toLowerCase();
 
+  // Validate Username Format: letters, numbers and underscore (3 to 15 characters)
+  const usernameRegex = /^[a-zA-Z0-9_]{3,15}$/;
+  if (!usernameRegex.test(cleanUsername)) {
+    return res.status(400).json({
+      success: false,
+      error: "Registration Rejected: Username must be 3-15 characters long and contain only letters, numbers, and underscores (e.g. Jenish_NP)."
+    });
+  }
+
   const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
   if (!gmailRegex.test(cleanEmail)) {
     return res.status(400).json({ 
@@ -1430,6 +1439,20 @@ app.post("/api/auth/customer-register", (req, res) => {
     return res.status(400).json({ 
       success: false, 
       error: `The username "${cleanUsername}" is already taken. Please choose a different unique username.` 
+    });
+  }
+
+  // Validate Password Security
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
+    return res.status(400).json({
+      success: false,
+      error: "Registration Rejected: Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     });
   }
 
