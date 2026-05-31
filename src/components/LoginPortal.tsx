@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Shield, Sparkles, Lock, Mail, ArrowRight, CornerDownRight, CheckCircle2, User, KeyRound, Store, Bike, Eye, EyeOff } from "lucide-react";
 import { UserRole } from "../types";
 import { logAuthToGoogleSheets, sendGmailNotification } from "../utils/googleWorkspace";
@@ -87,8 +87,11 @@ export default function LoginPortal({
   const [altNewPassword, setAltNewPassword] = useState("");
   const [showAltNewPassword, setShowAltNewPassword] = useState(false);
 
+  const latestUsernameRef = useRef("");
+
   const checkRegUsername = async (val: string) => {
     const trimmed = val.trim();
+    latestUsernameRef.current = trimmed;
     if (!trimmed) {
       setRegUsernameError("");
       setRegUsernameSuccess(false);
@@ -101,6 +104,10 @@ export default function LoginPortal({
       const response = await fetch(`/api/auth/check-username?username=${encodeURIComponent(trimmed)}`);
       if (response.ok) {
         const data = await response.json();
+        // Shield against out-of-order race responses from keystrokes
+        if (latestUsernameRef.current !== trimmed) {
+          return;
+        }
         if (data.success) {
           if (!data.unique) {
             setRegUsernameError(`The username "${trimmed}" is already claimed! Please choose another unique handle.`);
@@ -114,7 +121,9 @@ export default function LoginPortal({
     } catch (err) {
       console.warn("Server duplicate username check skipped", err);
     } finally {
-      setRegCheckingUsername(false);
+      if (latestUsernameRef.current === trimmed) {
+        setRegCheckingUsername(false);
+      }
     }
   };
 
@@ -292,6 +301,26 @@ export default function LoginPortal({
       return;
     }
 
+    setUserLoading(true);
+    setErrorMessage("");
+
+    // Real-time pre-submit validation check to prevent bypassing duplicate checks
+    try {
+      const checkRes = await fetch(`/api/auth/check-username?username=${encodeURIComponent(trimmedUsername)}`);
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData.success && !checkData.unique) {
+          setRegUsernameError(`The username "${trimmedUsername}" is already claimed! Please choose another unique handle.`);
+          setRegUsernameSuccess(false);
+          setErrorMessage(`The username "${trimmedUsername}" is already claimed! Please choose another unique handle.`);
+          setUserLoading(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[Pre-Submit Validation Skipped]", err);
+    }
+
     // Check strength of Password
     const hasMinLength = regPassword.length >= 8;
     const hasUppercase = /[A-Z]/.test(regPassword);
@@ -301,11 +330,9 @@ export default function LoginPortal({
 
     if (!(hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecial)) {
       setErrorMessage("Password Security Validation Failed: Your password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      setUserLoading(false);
       return;
     }
-
-    setUserLoading(true);
-    setErrorMessage("");
 
     try {
       const response = await fetch("/api/auth/customer-register", {

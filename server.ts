@@ -26,6 +26,26 @@ try {
   console.warn("[Firestore] Lacks valid Google Application Credentials. Offline/Local memory mode enabled.", err);
 }
 
+async function loadUsersFromFirestore() {
+  if (!db) return;
+  try {
+    const snapshot = await db.collection("users").get();
+    const fetchedUsers: User[] = [];
+    snapshot.forEach((doc: any) => {
+      fetchedUsers.push(doc.data() as User);
+    });
+    if (fetchedUsers.length > 0) {
+      const userMap = new Map<string, User>();
+      users.forEach(u => userMap.set(u.id, u));
+      fetchedUsers.forEach(u => userMap.set(u.id, u));
+      users = Array.from(userMap.values());
+      console.log(`[Firestore] Successfully pre-loaded ${fetchedUsers.length} user records from remote DB. Integrated list contains ${users.length} entries.`);
+    }
+  } catch (error) {
+    console.warn("[Firestore] Failed to load remote users list on boot, working with memory registry.", error);
+  }
+}
+
 async function checkFirestoreAdminConnection() {
   if (!db) {
     isFirestoreWriteEnabled = false;
@@ -39,6 +59,7 @@ async function checkFirestoreAdminConnection() {
     });
     isFirestoreWriteEnabled = true;
     console.log("[Firestore] Admin Sync Connection Verified and Enabled.");
+    await loadUsersFromFirestore();
   } catch (err: any) {
     isFirestoreWriteEnabled = false;
     console.log("[Firestore] Admin Sync Disabled: Lacks valid cross-project GCP service account credentials or permissions. Running cleanly in memory.");
@@ -314,6 +335,71 @@ function isUsernameTaken(checkingName: string, excludeUserId?: string): boolean 
     const matchUser = u.username ? u.username.trim().toLowerCase() : "";
     return matchName === clean || matchUser === clean;
   });
+}
+
+async function isUsernameTakenLive(checkingUsername: string, excludeUserId?: string): Promise<boolean> {
+  if (!checkingUsername) return false;
+  const clean = checkingUsername.trim().toLowerCase();
+
+  // 1. Check in-memory list
+  const memoryTaken = users.some(u => {
+    if (u.id === excludeUserId) return false;
+    const matchUser = u.username ? u.username.trim().toLowerCase() : "";
+    const matchName = u.name ? u.name.trim().toLowerCase() : "";
+    return matchUser === clean || matchName === clean;
+  });
+  if (memoryTaken) return true;
+
+  // 2. Check Firestore "users" collection Live (if db/Firestore is connected)
+  if (db && isFirestoreWriteEnabled) {
+    try {
+      // Direct exact equality match first
+      const snapshot = await db.collection("users").where("username", "==", checkingUsername.trim()).get();
+      let firestoreTaken = false;
+      snapshot.forEach((doc: any) => {
+        const u = doc.data();
+        if (u && u.id !== excludeUserId) {
+          firestoreTaken = true;
+        }
+      });
+      if (firestoreTaken) return true;
+
+      // Scanning all registered records for safe case-insensitive verification
+      const snapshotAll = await db.collection("users").get();
+      let liveCheckResult = false;
+      snapshotAll.forEach((doc: any) => {
+        const u = doc.data();
+        if (u && u.id !== excludeUserId) {
+          const uName = (u.username || "").trim().toLowerCase();
+          const fName = (u.name || "").trim().toLowerCase();
+          if (uName === clean || fName === clean) {
+            liveCheckResult = true;
+          }
+        }
+      });
+      if (liveCheckResult) return true;
+    } catch (err) {
+      console.warn("[Firestore Live Duplicate Check Error]:", err);
+    }
+  }
+
+  // 3. Check Supabase users_credentials Live
+  try {
+    const { data, error } = await supabase
+      .from("users_credentials")
+      .select("id, username, name")
+      .or(`username.ilike."${checkingUsername.trim()}",name.ilike."${checkingUsername.trim()}"`);
+    if (!error && data && data.length > 0) {
+      const actualConflict = excludeUserId ? data.filter((u: any) => u.id !== excludeUserId) : data;
+      if (actualConflict.length > 0) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn("[Supabase Live Duplicate Check Error]:", err);
+  }
+
+  return false;
 }
 
 // Define static lists of Nepali standard ingredients for animations
@@ -1382,7 +1468,7 @@ app.post("/api/auth/google/verify-otp", (req, res) => {
 });
 
 // Resilient Google Account Direct Integration (No OTP verification code, zero external quota required)
-app.post("/api/auth/google-sandbox-login", (req, res) => {
+app.post("/api/auth/google-sandbox-login", async (req, res) => {
   const { email, name, avatar } = req.body;
   if (!email || !name) {
     return res.status(400).json({ success: false, error: "Both Google Gmail and Full Name are strictly required." });
@@ -1401,7 +1487,7 @@ app.post("/api/auth/google-sandbox-login", (req, res) => {
   let user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
   // If registering a NEW user with this email, make sure their input name doesn't collide with another user
-  if (isUsernameTaken(cleanName, user ? user.id : undefined)) {
+  if (await isUsernameTakenLive(cleanName, user ? user.id : undefined)) {
     return res.status(400).json({ success: false, error: `The username "${cleanName}" is already claimed by another customer. Please choose a different unique username to complete authorization.` });
   }
 
@@ -1498,19 +1584,7 @@ app.post("/api/auth/customer-register", async (req, res) => {
     });
   }
 
-  let taken = isUsernameTaken(cleanUsername);
-  try {
-    const { data, error } = await supabase
-      .from("users_credentials")
-      .select("id")
-      .eq("username", cleanUsername);
-    if (!error && data && data.length > 0) {
-      taken = true;
-    }
-  } catch (e) {
-    console.warn("[Supabase Registry Duplication Try Failed]", e);
-  }
-
+  const taken = await isUsernameTakenLive(cleanUsername);
   if (taken) {
     return res.status(400).json({ 
       success: false, 
@@ -2012,26 +2086,11 @@ app.get("/api/auth/check-username", async (req, res) => {
   }
   
   try {
-    let taken = isUsernameTaken(username, excludeId);
-    
-    // Check Supabase users_credentials table
-    const { data, error } = await supabase
-      .from("users_credentials")
-      .select("id")
-      .eq("username", username);
-      
-    if (!error && data && data.length > 0) {
-      const isExclude = excludeId && data.some(u => u.id === excludeId);
-      if (!isExclude) {
-        taken = true;
-      }
-    }
-    
+    const taken = await isUsernameTakenLive(username, excludeId);
     res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
   } catch (err) {
-    console.warn("[Supabase Check Username Error]:", err);
-    const taken = isUsernameTaken(username, excludeId);
-    res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
+    console.warn("[Check Username Error]:", err);
+    res.json({ success: false, unique: true, error: "Username validation failed. Please try again." });
   }
 });
 
@@ -2042,12 +2101,12 @@ app.post("/api/auth/update-role", (req, res) => {
   res.json({ success: true, user: currentUser });
 });
 
-app.post("/api/auth/update-profile", (req, res) => {
+app.post("/api/auth/update-profile", async (req, res) => {
   const { name, email, address, avatar, bio } = req.body;
   if (currentUser) {
     if (name !== undefined) {
       const cleanName = name.trim();
-      if (isUsernameTaken(cleanName, currentUser.id)) {
+      if (await isUsernameTakenLive(cleanName, currentUser.id)) {
         return res.status(400).json({ success: false, error: `The username "${cleanName}" is already claimed by another active citizen in Nepal market. Please specify a unique username.` });
       }
       currentUser.name = cleanName;
