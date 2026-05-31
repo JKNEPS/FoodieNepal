@@ -484,7 +484,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_1",
     name: "Momo House & Newari Delicacy",
-    logo: "/src/assets/images/logo_momo_house_1780217767987.png",
+    logo: "/src/assets/images/momo_house_logo_1780229256535.png",
     banner: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=1000",
     rating: 4.8,
     reviewsCount: 148,
@@ -502,7 +502,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_2",
     name: "Samay Baji Corner",
-    logo: "/src/assets/images/logo_samay_baji_1780217785276.png",
+    logo: "/src/assets/images/samay_baji_logo_1780229275996.png",
     banner: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=1000",
     rating: 4.6,
     reviewsCount: 92,
@@ -519,7 +519,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_3",
     name: "Thakali Bhanchha Ghar",
-    logo: "/src/assets/images/logo_thakali_ghar_1780217802059.png",
+    logo: "/src/assets/images/thakali_ghar_logo_1780229292606.png",
     banner: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1000",
     rating: 4.9,
     reviewsCount: 215,
@@ -536,7 +536,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_4",
     name: "Dal-Bhat Express",
-    logo: "/src/assets/images/logo_dalbhat_express_1780217817976.png",
+    logo: "/src/assets/images/dalbhat_express_logo_1780229308934.png",
     banner: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=1000",
     rating: 4.5,
     reviewsCount: 180,
@@ -553,7 +553,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_5",
     name: "Sweet & Selroti Ghar",
-    logo: "/src/assets/images/logo_selroti_ghar_1780217835944.png",
+    logo: "/src/assets/images/selroti_ghar_logo_1780229322408.png",
     banner: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1000",
     rating: 4.4,
     reviewsCount: 76,
@@ -570,7 +570,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_6",
     name: "Nepali Fast Food",
-    logo: "/src/assets/images/logo_nepali_fastfood_1780217853322.png",
+    logo: "/src/assets/images/nepali_fastfood_logo_1780229342468.png",
     banner: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=1000",
     rating: 4.2,
     reviewsCount: 64,
@@ -587,7 +587,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_7",
     name: "Foodie Tea & Tingmo",
-    logo: "/src/assets/images/logo_tea_tingmo_1780217870034.png",
+    logo: "/src/assets/images/tea_tingmo_logo_1780229359501.png",
     banner: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=1000",
     rating: 4.7,
     reviewsCount: 110,
@@ -604,7 +604,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_8",
     name: "Foodie Sekuwa Corner",
-    logo: "/src/assets/images/logo_sekuwa_corner_1780217886766.png",
+    logo: "/src/assets/images/sekuwa_corner_logo_1780229373635.png",
     banner: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1000",
     rating: 4.6,
     reviewsCount: 132,
@@ -621,7 +621,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_9",
     name: "Butter Tea House",
-    logo: "/src/assets/images/logo_butter_tea_1780217903706.png",
+    logo: "/src/assets/images/butter_tea_logo_1780229388073.png",
     banner: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=1000",
     rating: 4.8,
     reviewsCount: 156,
@@ -638,7 +638,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_10",
     name: "Lassi & Chatpat Corner",
-    logo: "/src/assets/images/logo_lassi_chatpat_1780217924717.png",
+    logo: "/src/assets/images/lassi_chatpat_logo_1780229402803.png",
     banner: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=1000",
     rating: 4.3,
     reviewsCount: 88,
