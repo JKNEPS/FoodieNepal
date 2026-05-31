@@ -139,3 +139,21 @@ export interface GroceryItem {
   countLeft: number;
   isVeg: boolean;
 }
+
+export interface Complaint {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  userPhone?: string;
+  orderId?: string;
+  restaurantName?: string;
+  issueType: string;
+  description: string;
+  urgency: "Low" | "Medium" | "High" | "Emergency";
+  status: "Submitted" | "Under Investigation" | "Resolved";
+  createdAt: string;
+  updatedAt?: string;
+  adminResponse?: string;
+  screenshot?: string;
+}

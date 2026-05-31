@@ -1,8 +1,52 @@
-import React, { useState } from "react";
-import { Shield, Users, UtensilsCrossed, Calendar, TicketPercent, Check, X, Plus, Trash2, TrendingUp, HandCoins } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Shield, Users, UtensilsCrossed, Calendar, TicketPercent, Check, X, Plus, Trash2, TrendingUp, HandCoins, MessageSquare, AlertTriangle, FileText, CheckCircle, Clock } from "lucide-react";
 import GoogleFormsHub from "./GoogleFormsHub";
 
 export default function AdminPortalPanel() {
+  // Complaints and resolution states
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [complaintsLoading, setComplaintsLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<"all" | "Submitted" | "Resolved">("all");
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolutionText, setResolutionText] = useState("");
+
+  const fetchComplaints = async () => {
+    try {
+      const res = await fetch("/api/complaints");
+      if (res.ok) {
+        const data = await res.json();
+        setComplaints(data);
+      }
+    } catch (err) {
+      console.warn("Failed to load complaints in admin", err);
+    } finally {
+      setComplaintsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const handleResolveComplaint = async (id: string) => {
+    if (!resolutionText.trim()) return;
+    try {
+      const res = await fetch(`/api/complaints/${id}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminResponse: resolutionText })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComplaints(prev => prev.map(c => c.id === id ? data.complaint : c));
+        setResolvingId(null);
+        setResolutionText("");
+      }
+    } catch (err) {
+      console.warn("Failed to resolve complaint", err);
+    }
+  };
+
   // Analytical stats
   const [stats, setStats] = useState({
     totalRevenue: 432300,
@@ -376,6 +420,173 @@ export default function AdminPortalPanel() {
 
         </div>
 
+      </div>
+
+      {/* 🚨 CUSTOMER COMPLAINTS AND DISPUTES INTERACTIVE MANAGEMENT HUB */}
+      <div className="mt-8 bg-white border border-gray-150 rounded-3xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
+          <div className="text-left">
+            <span className="text-xxs bg-red-50 border border-red-200 text-red-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider font-mono">
+              Sentinel Dispute Center
+            </span>
+            <h2 className="text-xl font-serif italic text-gray-950 font-bold mt-1">
+              Active Customer Complaints & Appeals
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">
+              Review and resolve platform disputes, rider delays, transaction problems, or partner kitchen issues live.
+            </p>
+          </div>
+
+          {/* Filtering controls */}
+          <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+            {(["all", "Submitted", "Resolved"] as const).map(tab => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setFilterStatus(tab)}
+                className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  filterStatus === tab ? "bg-white text-slate-900 shadow-sm" : "text-gray-500 hover:text-slate-800"
+                }`}
+              >
+                {tab === "all" ? "All Issues" : tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {complaintsLoading ? (
+          <div className="py-12 text-center text-xs text-gray-400 font-mono">
+            <Clock className="w-8 h-8 text-[#8B1A1A] animate-spin mx-auto mb-2" />
+            Loading live customer complaint records from remote database...
+          </div>
+        ) : complaints.length === 0 ? (
+          <div className="py-12 text-center text-xs text-gray-400 font-mono">
+            No customer complaints filed in the system database yet.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {complaints
+              .filter(c => filterStatus === "all" || c.status === filterStatus)
+              .map(comp => (
+                <div key={comp.id} className="border border-gray-150 rounded-2xl p-5 hover:bg-slate-50/50 transition-all text-left">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-black text-gray-900">#{comp.id}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${
+                          comp.urgency === "Emergency" ? "bg-red-100 text-red-800 border-red-200 animate-pulse border-2" :
+                          comp.urgency === "High" ? "bg-orange-100 text-orange-850 border-orange-200 font-extrabold" :
+                          comp.urgency === "Medium" ? "bg-amber-100 text-amber-850 border-amber-200" : "bg-slate-100 text-slate-700 border-slate-200"
+                        }`}>
+                          {comp.urgency}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${
+                          comp.status === "Resolved" ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-extrabold" : "bg-blue-50 text-blue-800 border-blue-200"
+                        }`}>
+                          {comp.status}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono mt-1">
+                        Submitted by: <strong className="text-gray-700">{comp.userName}</strong> ({comp.userEmail}) • Contact: {comp.userPhone || "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="text-right text-[10px] text-gray-400 font-mono">
+                      {new Date(comp.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold text-[#8B1A1A] bg-[#FFF8F0]/40 px-3 py-1.5 rounded-xl border border-orange-100/30">
+                      <span>Classification: <strong>{comp.issueType}</strong></span>
+                      {comp.orderId && <span>• Order ID: <strong>#{comp.orderId}</strong></span>}
+                      {comp.restaurantName && <span>• Restaurant Partner: <strong>{comp.restaurantName}</strong></span>}
+                    </div>
+
+                    <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">
+                      {comp.description}
+                    </p>
+
+                    {comp.screenshot && (
+                      <div className="pt-1">
+                        <span className="text-[9px] text-gray-400 font-bold block mb-1">Customer Screenshot / Receipt Evidence:</span>
+                        <a href={comp.screenshot} target="_blank" rel="noreferrer" className="inline-block border border-gray-200 rounded-lg overflow-hidden hover:opacity-90 max-w-[120px]">
+                          <img src={comp.screenshot} alt="Screenshot evidence" className="max-h-20 object-cover" />
+                        </a>
+                      </div>
+                    )}
+
+                    {comp.status === "Resolved" ? (
+                      <div className="bg-emerald-50/50 border border-emerald-250 p-4 rounded-xl space-y-1.5">
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-emerald-800 flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5" /> Resolution dispatch response
+                        </span>
+                        <p className="text-xs text-emerald-950 font-medium italic">
+                          "{comp.adminResponse}"
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl">
+                        {resolvingId === comp.id ? (
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-[#8B1A1A] uppercase tracking-wider block font-mono">
+                              Draft Custom Resolution Text & Compensation Actions
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={resolutionText}
+                              onChange={(e) => setResolutionText(e.target.value)}
+                              placeholder="Hajur! We are extremely sorry for the inconvenience... [Advise customer on points auto-credited safely]"
+                              className="w-full text-xs p-3 bg-white border border-gray-250 rounded-xl focus:outline-none"
+                            />
+                            <div className="flex justify-end gap-2.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setResolvingId(null);
+                                  setResolutionText("");
+                                }}
+                                className="px-3.5 py-1.5 border border-gray-200 text-slate-700 rounded-lg text-xxs font-bold hover:bg-slate-100 transition-all cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResolveComplaint(comp.id)}
+                                className="px-4 py-1.5 bg-[#2D6A4F] hover:bg-emerald-700 text-white rounded-lg text-xxs font-extrabold shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" /> Dispatch Resolution & Credit Points
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="text-[10px] text-slate-500 font-medium font-mono">
+                              Needs Human Customer Resolution Assistance
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResolvingId(comp.id);
+                                setResolutionText(
+                                  comp.urgency === "High" || comp.urgency === "Emergency"
+                                    ? "Hajur, we are deeply concerned about this incident context. A senior Support Sentinel has resolved your dispute, and Rs. 150 loyalty points have been auto-credited back to your FoodiePoints! Thank you."
+                                    : "Thank you for your valuable feedback. Our customer support sentinel has investigated and resolved the issue context successfully. Please let us know if anything remains!"
+                                );
+                              }}
+                              className="px-4.5 py-2 bg-slate-800 hover:bg-[#8B1A1A] border border-transparent rounded-xl text-xxs font-black uppercase text-white hover:text-white hover:shadow-md transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> Resolve Appeal
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Dynamic Google Workspace Forms Hub */}

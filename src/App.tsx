@@ -15,6 +15,7 @@ import { MenuItem, CartItem, Order, GroceryItem, User } from "./types";
 import LoginPortal from "./components/LoginPortal";
 import AdminPortalPanel from "./components/AdminPortalPanel";
 import GoogleFormsHub from "./components/GoogleFormsHub";
+import ComplaintsPortal from "./components/ComplaintsPortal";
 import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
@@ -56,7 +57,7 @@ export default function App() {
       setShowLogin(true);
     }
   }, []);
-  const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking" | "forms">("home");
+  const [currentView, setCurrentView] = useState<"home" | "restaurant" | "checkout" | "tracking" | "forms" | "complaints">("home");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("rest_1");
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -589,6 +590,7 @@ export default function App() {
         onOpenProfile={() => setShowUserProfile(true)}
         currentView={currentView}
         onNavigateForms={() => setCurrentView("forms")}
+        onNavigateComplaints={() => setCurrentView("complaints")}
       />
 
       <main className="flex-1 mt-6 overflow-x-hidden">
@@ -698,6 +700,16 @@ export default function App() {
               {currentView === "forms" && (
                 <div className="max-w-7xl mx-auto px-4 md:px-8 py-2">
                   <GoogleFormsHub />
+                </div>
+              )}
+
+              {currentView === "complaints" && (
+                <div className="max-w-7xl mx-auto px-4 md:px-8 py-2">
+                  <ComplaintsPortal 
+                    googleUser={googleUser}
+                    onBack={() => setCurrentView("home")}
+                    onOpenLogin={() => setShowLogin(true)}
+                  />
                 </div>
               )}
             </motion.div>

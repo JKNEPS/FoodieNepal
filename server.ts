@@ -5,7 +5,7 @@ import nodemailer from "nodemailer";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
-import { Restaurant, MenuItem, Order, ChatMessage, Review, User, GroceryItem } from "./src/types";
+import { Restaurant, MenuItem, Order, ChatMessage, Review, User, GroceryItem, Complaint } from "./src/types";
 
 // Initialize Firebase SDK on Server-Side to sync database collections
 // Initialize Firebase Admin SDK on Server-Side to bypass security rules and sync database collections
@@ -24,6 +24,68 @@ try {
   console.log("[Firestore] Firebase Admin SDK initialized successfully.");
 } catch (err) {
   console.warn("[Firestore] Lacks valid Google Application Credentials. Offline/Local memory mode enabled.", err);
+}
+
+let complaints: Complaint[] = [
+  {
+    id: "comp_1001",
+    userId: "usr_1",
+    userEmail: "jenishsapkota272@gmail.com",
+    userName: "Jenish Sapkota",
+    userPhone: "+977 98********",
+    orderId: "ord_2004",
+    restaurantName: "Momo House & Newari Delicacy",
+    issueType: "Order Delayed ⏳",
+    description: "The rider has not arrived yet and it has been over 50 minutes since I placed my food order. The momo is going to be cold!",
+    urgency: "High",
+    status: "Resolved",
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), // 2 hours ago
+    adminResponse: "We are deeply sorry for the delay due to heavy traffic on Kathmandu Ring Road. We have prioritized your delivery and credited Rs. 150 cashback points to your FoodiePoints! Welcome back!",
+    screenshot: ""
+  },
+  {
+    id: "comp_1002",
+    userId: "usr_1",
+    userEmail: "jenishsapkota272@gmail.com",
+    userName: "Jenish Sapkota",
+    userPhone: "+977 98********",
+    issueType: "App Bug / Technical Issue 💻",
+    description: "The payment verification page takes too long to load after I select Khalti. Please inspect the latency.",
+    urgency: "Medium",
+    status: "Under Investigation",
+    createdAt: new Date(Date.now() - 3600000 * 1).toISOString(), // 1 hour ago
+    screenshot: ""
+  }
+];
+
+async function syncComplaintToFirestore(complaint: Complaint) {
+  if (!db || !isFirestoreWriteEnabled) return;
+  try {
+    await db.collection("complaints").doc(complaint.id).set(complaint);
+    console.log(`[Firestore Sync] Complaint ${complaint.id} write successful.`);
+  } catch (err) {
+    console.warn(`[Firestore Sync] Target write for complaint ${complaint.id} failed:`, err);
+  }
+}
+
+async function loadComplaintsFromFirestore() {
+  if (!db) return;
+  try {
+    const snapshot = await db.collection("complaints").get();
+    const fetchedComplaints: Complaint[] = [];
+    snapshot.forEach((doc: any) => {
+      fetchedComplaints.push(doc.data() as Complaint);
+    });
+    if (fetchedComplaints.length > 0) {
+      const complaintMap = new Map<string, Complaint>();
+      complaints.forEach(c => complaintMap.set(c.id, c));
+      fetchedComplaints.forEach(c => complaintMap.set(c.id, c));
+      complaints = Array.from(complaintMap.values());
+      console.log(`[Firestore] Pre-loaded ${fetchedComplaints.length} complaints. Integrated registry has ${complaints.length} records.`);
+    }
+  } catch (err) {
+    console.warn("[Firestore] Failed to load complaints from Firestore, using memory:", err);
+  }
 }
 
 async function loadUsersFromFirestore() {
@@ -60,6 +122,7 @@ async function checkFirestoreAdminConnection() {
     isFirestoreWriteEnabled = true;
     console.log("[Firestore] Admin Sync Connection Verified and Enabled.");
     await loadUsersFromFirestore();
+    await loadComplaintsFromFirestore();
   } catch (err: any) {
     isFirestoreWriteEnabled = false;
     console.log("[Firestore] Admin Sync Disabled: Lacks valid cross-project GCP service account credentials or permissions. Running cleanly in memory.");
@@ -2352,6 +2415,140 @@ app.post("/api/orders/:id/cancel", (req, res) => {
   } else {
     res.status(400).json({ error: "Cannot cancel order in preparation" });
   }
+});
+
+// Complaints API Endpoints
+app.get("/api/complaints", (req, res) => {
+  const { userId } = req.query;
+  if (userId) {
+    const userComplaints = complaints.filter(c => c.userId === userId);
+    return res.json(userComplaints);
+  }
+  res.json(complaints);
+});
+
+app.post("/api/complaints", async (req, res) => {
+  const { userId, userEmail, userName, userPhone, orderId, restaurantName, issueType, description, urgency, screenshot } = req.body;
+  if (!userId || !issueType || !description) {
+    return res.status(400).json({ error: "User ID, issue type, and detailed description are required." });
+  }
+
+  const newComplaint: Complaint = {
+    id: `comp_${Math.floor(100000 + Math.random() * 900000)}`,
+    userId,
+    userEmail: userEmail || (currentUser ? currentUser.email : ""),
+    userName: userName || (currentUser ? currentUser.name : "Anonymous"),
+    userPhone: userPhone || (currentUser ? currentUser.phone : ""),
+    orderId,
+    restaurantName,
+    issueType,
+    description,
+    urgency,
+    status: "Submitted",
+    createdAt: new Date().toISOString(),
+    screenshot: screenshot || ""
+  };
+
+  complaints.unshift(newComplaint);
+  await syncComplaintToFirestore(newComplaint);
+
+  // Trigger Discord Notification for immediate Customer Resolver Service
+  const discordPayload = {
+    embeds: [
+      {
+        title: "🚨 New Customer Complaint Filed!",
+        description: `**Complaint ID:** \`${newComplaint.id}\`\n**Issue Type:** ${newComplaint.issueType}\n**Urgency:** **${newComplaint.urgency}**`,
+        color: 14101018, // #D7281A red-orange
+        fields: [
+          {
+            name: "👤 Customer Details",
+            value: `Name: **${newComplaint.userName}**\nEmail: \`${newComplaint.userEmail}\`\nPhone: \`${newComplaint.userPhone}\``,
+            inline: false
+          },
+          {
+            name: "📋 Issue Context",
+            value: `Order ID: \`${newComplaint.orderId || "N/A"}\`\nRestaurant: **${newComplaint.restaurantName || "N/A"}**`,
+            inline: true
+          },
+          {
+            name: "📝 Description",
+            value: newComplaint.description,
+            inline: false
+          }
+        ],
+        footer: {
+          text: "FoodieNepal Human Customer Resolution Center",
+          icon_url: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=50"
+        },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  sendDiscordNotification(discordPayload, "Support Sentinel");
+
+  res.json({ success: true, complaint: newComplaint });
+});
+
+app.post("/api/complaints/:id/resolve", async (req, res) => {
+  const { adminResponse } = req.body;
+  const complaintId = req.params.id;
+
+  const complaint = complaints.find(c => c.id === complaintId);
+  if (!complaint) {
+    return res.status(404).json({ error: "Complaint not found." });
+  }
+
+  complaint.status = "Resolved";
+  complaint.adminResponse = adminResponse || "Our customer support team has reviewed your dispute and resolved it. Thank you for your patience! We will continue delivering the highest standards.";
+  complaint.updatedAt = new Date().toISOString();
+
+  // If order was delayed, mock crediting points in memory user
+  if (complaint.issueType.includes("Delay") || complaint.urgency === "High" || complaint.urgency === "Emergency") {
+    // If we have users array, we can find the user and credit points
+    const userToAward = users.find(u => u.id === complaint.userId);
+    if (userToAward) {
+      userToAward.foodiePoints += 150;
+      if (currentUser && currentUser.id === userToAward.id) {
+        currentUser.foodiePoints = userToAward.foodiePoints;
+      }
+      console.log(`[Complaints Resolver] Awarded 150 loyalty points to ${userToAward.name} for resolving High/Emergency complaint.`);
+    }
+  }
+
+  await syncComplaintToFirestore(complaint);
+
+  // Trigger Discord notification for resolve state
+  const discordPayload = {
+    embeds: [
+      {
+        title: "✅ Complaint Resolved Successfully",
+        description: `**Complaint ID:** \`${complaint.id}\`\n**Issue Type:** ${complaint.issueType}`,
+        color: 3001923, // #2D6A4F green
+        fields: [
+          {
+            name: "👤 Customer Details",
+            value: `Name: **${complaint.userName}**\nEmail: \`${complaint.userEmail}\``,
+            inline: true
+          },
+          {
+            name: "💬 Resolution Response",
+            value: complaint.adminResponse,
+            inline: false
+          }
+        ],
+        footer: {
+          text: "FoodieNepal Human Customer Resolution Center",
+          icon_url: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=50"
+        },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  sendDiscordNotification(discordPayload, "Support Sentinel Resolved");
+
+  res.json({ success: true, complaint });
 });
 
 // AI Chatbot with Google Maps Grounding Routing

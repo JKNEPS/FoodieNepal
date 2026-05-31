@@ -1,4 +1,4 @@
-import { ShoppingCart, MapPin, User, Award, Shield, UtensilsCrossed, LogOut, HelpCircle, FileText } from "lucide-react";
+import { ShoppingCart, MapPin, User, Award, Shield, UtensilsCrossed, LogOut, HelpCircle, FileText, ShieldAlert } from "lucide-react";
 import { UserRole, User as UserType } from "../types";
 
 interface NavbarProps {
@@ -16,6 +16,7 @@ interface NavbarProps {
   onOpenProfile: () => void;
   currentView?: string;
   onNavigateForms?: () => void;
+  onNavigateComplaints?: () => void;
 }
 
 export default function Navbar({
@@ -32,7 +33,8 @@ export default function Navbar({
   onResetPortal,
   onOpenProfile,
   currentView,
-  onNavigateForms
+  onNavigateForms,
+  onNavigateComplaints
 }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#8B1A1A]/10 shadow-xs">
@@ -79,13 +81,29 @@ export default function Navbar({
                 onClick={onNavigateForms}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
                   currentView === "forms" 
-                    ? "bg-purple-50 border-purple-200 text-purple-700 font-extrabold" 
+                    ? "bg-purple-55 border-purple-200 text-purple-700 font-extrabold" 
                     : "text-slate-600 border-gray-200 hover:bg-[#FFF8F0]/30 hover:border-purple-200 hover:text-purple-700"
                 }`}
                 title="Google Forms Complaint Hub"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Support Forms</span>
+              </button>
+            )}
+
+            {/* Native Customer Complaints Portal Trigger */}
+            {portalLock === "customer" && onNavigateComplaints && (
+              <button
+                onClick={onNavigateComplaints}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  currentView === "complaints" 
+                    ? "bg-red-50 border-red-200 text-[#8B1A1A] font-extrabold" 
+                    : "text-slate-600 border-gray-200 hover:bg-[#FFF8F0]/30 hover:border-red-200 hover:text-[#8B1A1A]"
+                }`}
+                title="File a Dispute or Complaint"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B35]" />
+                <span className="hidden sm:inline">Lodge Complaint</span>
               </button>
             )}
 
