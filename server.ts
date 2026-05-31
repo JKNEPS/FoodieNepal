@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@supabase/supabase-js";
 import { Restaurant, MenuItem, Order, ChatMessage, Review, User, GroceryItem } from "./src/types";
 
 // Initialize Firebase SDK on Server-Side to sync database collections
@@ -12,14 +13,24 @@ import { initializeApp as initAdminApp } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import firebaseConfig from "./firebase-applet-config.json";
 
-const firebaseApp = initAdminApp({
-  projectId: firebaseConfig.projectId,
-});
-const db = getAdminFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
-
+let db: any = null;
 let isFirestoreWriteEnabled = false;
 
+try {
+  const firebaseApp = initAdminApp({
+    projectId: firebaseConfig.projectId,
+  });
+  db = getAdminFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+  console.log("[Firestore] Firebase Admin SDK initialized successfully.");
+} catch (err) {
+  console.warn("[Firestore] Lacks valid Google Application Credentials. Offline/Local memory mode enabled.", err);
+}
+
 async function checkFirestoreAdminConnection() {
+  if (!db) {
+    isFirestoreWriteEnabled = false;
+    return;
+  }
   try {
     // Attempt to test access to a system verification check document
     await db.collection("system_checks").doc("admin_connection_test").set({
@@ -142,6 +153,41 @@ async function sendDiscordNotification(payload: any, label = "Notification") {
 }
 
 dotenv.config();
+
+function getSupabaseUrl(): string {
+  const envUrl = process.env.VITE_SUPABASE_URL;
+  if (
+    typeof envUrl === "string" &&
+    envUrl.trim() !== "" &&
+    envUrl.trim().startsWith("http") &&
+    !envUrl.includes("PLACEHOLDER") &&
+    envUrl !== "undefined" &&
+    envUrl !== "null"
+  ) {
+    return envUrl.trim();
+  }
+  return "https://zzrvhdfbytyaaxulfjnm.supabase.co";
+}
+
+function getSupabaseAnonKey(): string {
+  const envKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (
+    typeof envKey === "string" &&
+    envKey.trim() !== "" &&
+    !envKey.includes("PLACEHOLDER") &&
+    envKey !== "undefined" &&
+    envKey !== "null"
+  ) {
+    return envKey.trim();
+  }
+  return "sb_publishable_BkSoJmoIeju843vzeDtyJQ_u8KZI2Cb";
+}
+
+const supabaseUrl = getSupabaseUrl();
+const supabaseAnonKey = getSupabaseAnonKey();
+
+// Initialize Supabase Server Client for Register/Login integrations
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Mapped Google User Verification Cache store
 const pendingGoogleVerifications = new Map<string, { user: User; otp: string; timestamp: number }>();
@@ -289,7 +335,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_1",
     name: "Momo House & Newari Delicacy",
-    logo: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=150",
+    logo: "/src/assets/images/logo_momo_house_1780217767987.png",
     banner: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=1000",
     rating: 4.8,
     reviewsCount: 148,
@@ -306,8 +352,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_2",
-    name: "Basantapur Samay Baji Corner",
-    logo: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=150",
+    name: "Samay Baji Corner",
+    logo: "/src/assets/images/logo_samay_baji_1780217785276.png",
     banner: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=1000",
     rating: 4.6,
     reviewsCount: 92,
@@ -324,7 +370,7 @@ const sampleRestaurants: Restaurant[] = [
   {
     id: "rest_3",
     name: "Thakali Bhanchha Ghar",
-    logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=150",
+    logo: "/src/assets/images/logo_thakali_ghar_1780217802059.png",
     banner: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1000",
     rating: 4.9,
     reviewsCount: 215,
@@ -340,8 +386,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_4",
-    name: "Dal-Bhat Kamalpokhari Express",
-    logo: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=150",
+    name: "Dal-Bhat Express",
+    logo: "/src/assets/images/logo_dalbhat_express_1780217817976.png",
     banner: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=1000",
     rating: 4.5,
     reviewsCount: 180,
@@ -357,8 +403,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_5",
-    name: "Basantapur Sweet & Selroti Pasal",
-    logo: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&q=80&w=150",
+    name: "Sweet & Selroti Ghar",
+    logo: "/src/assets/images/logo_selroti_ghar_1780217835944.png",
     banner: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1000",
     rating: 4.4,
     reviewsCount: 76,
@@ -374,8 +420,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_6",
-    name: "Lalitpur Chowmein & Nepali Fast Food",
-    logo: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=150",
+    name: "Nepali Fast Food",
+    logo: "/src/assets/images/logo_nepali_fastfood_1780217853322.png",
     banner: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=1000",
     rating: 4.2,
     reviewsCount: 64,
@@ -391,8 +437,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_7",
-    name: "Thamel Himalayan Tea & Tingmo",
-    logo: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=150",
+    name: "Foodie Tea & Tingmo",
+    logo: "/src/assets/images/logo_tea_tingmo_1780217870034.png",
     banner: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=1000",
     rating: 4.7,
     reviewsCount: 110,
@@ -408,8 +454,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_8",
-    name: "Tripureshwor Sekuwa Corner",
-    logo: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=150",
+    name: "Foodie Sekuwa Corner",
+    logo: "/src/assets/images/logo_sekuwa_corner_1780217886766.png",
     banner: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1000",
     rating: 4.6,
     reviewsCount: 132,
@@ -425,8 +471,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_9",
-    name: "Boudha Butter Tea House",
-    logo: "https://images.unsplash.com/photo-1545696913-b39cd158b68a?auto=format&fit=crop&q=80&w=150",
+    name: "Butter Tea House",
+    logo: "/src/assets/images/logo_butter_tea_1780217903706.png",
     banner: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=1000",
     rating: 4.8,
     reviewsCount: 156,
@@ -442,8 +488,8 @@ const sampleRestaurants: Restaurant[] = [
   },
   {
     id: "rest_10",
-    name: "Baneshwor Lassi & Chatpat Corner",
-    logo: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&q=80&w=150",
+    name: "Lassi & Chatpat Corner",
+    logo: "/src/assets/images/logo_lassi_chatpat_1780217924717.png",
     banner: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=1000",
     rating: 4.3,
     reviewsCount: 88,
@@ -915,13 +961,13 @@ function getLocalFallbackChatbotResponse(query: string): string {
     return `### 🥣 Authentic Thakali & Dal Bhat Sets!
       Nothing beats a warm Nepali meal!
       - **Special Thakali Khana Set ( चिकन / Chicken)** at **Thakali Bhanchha Ghar (Rs. 320)**: Complete with basmati premium rice, slow cooked black mountain lentils (Kalo Dal), Gundruk wild sour leaf pickle, spinach, hand-pressed cow ghee, and spicy potato.
-      - **Classic Veg Dal Bhat Thali** at **Dal-Bhat Kamalpokhari (Rs. 130)**: Highly nutritious and perfect for daily warm dining.
+      - **Classic Veg Dal Bhat Thali** at **Dal-Bhat Express (Rs. 130)**: Highly nutritious and perfect for daily warm dining.
       Would you like to try our special Thakali combo?`;
   }
   if (lowercase.includes("newari") || lowercase.includes("samay") || lowercase.includes("choila") || lowercase.includes("bara")) {
     return `### 🥩 Traditional Newari Samay Baji Feast!
       We have amazing local Newari joints:
-      - **Traditional Newari Samay Baji Set (Rs. 250)** from **Basantapur Samay Baji Corner**: IncludesTaichin beaten rice, chili-oil flame-broiled buffalo Chhoila, organic black-eyed bean (Bara), potatoes, soybeans and green mustard salad.
+      - **Traditional Newari Samay Baji Set (Rs. 250)** from **Samay Baji Corner**: IncludesTaichin beaten rice, chili-oil flame-broiled buffalo Chhoila, organic black-eyed bean (Bara), potatoes, soybeans and green mustard salad.
       - **Chatamari Supreme (Rs. 180)**: Famous thin rice flour crepe baked with egg and mince chicken top. 
       Perfect to order from Basantapur Durbar Squares!`;
   }
@@ -929,9 +975,9 @@ function getLocalFallbackChatbotResponse(query: string): string {
     return `### 🍽️ Yummy Traditional (Under Rs. 150) Nepali Meals!
       FoodieNepal helps you find incredible yummy local specialties. Here are our top hand-picked favorites under Rs. 150:
       1. **Spicy Basantapur Chatpat (Rs. 50)**: Mixed with raw mustard oil, crunchy puffed rice, and fresh lemon.
-      2. **Classic Veg Dal Bhat Thali (Rs. 130)** at Dal-Bhat Kamalpokhari.
+      2. **Classic Veg Dal Bhat Thali (Rs. 130)** at Dal-Bhat Express.
       3. **Golden Sweet Jerry (Rs. 60)**: Perfect warm breakfast.
-      4. **Classic Buff Chowmein (Rs. 110)** at Lalitpur Chowmein Corner.
+      4. **Classic Buff Chowmein (Rs. 110)** at Nepali Fast Food.
       All of these deliver high-quality, authentic scrumptious flavors right to your door!`;
   }
   if (lowercase.includes("status") || lowercase.includes("where") || lowercase.includes("order")) {
@@ -1422,7 +1468,7 @@ app.post("/api/auth/google-sandbox-login", (req, res) => {
   res.json({ success: true, user });
 });
 
-app.post("/api/auth/customer-register", (req, res) => {
+app.post("/api/auth/customer-register", async (req, res) => {
   const { name, username, password, phone, email, address, avatar, bio, dob, favoritePet } = req.body;
   if (!name || !username || !password || !phone || !email || !address || !dob || !favoritePet) {
     return res.status(400).json({ 
@@ -1452,7 +1498,20 @@ app.post("/api/auth/customer-register", (req, res) => {
     });
   }
 
-  if (isUsernameTaken(cleanUsername)) {
+  let taken = isUsernameTaken(cleanUsername);
+  try {
+    const { data, error } = await supabase
+      .from("users_credentials")
+      .select("id")
+      .eq("username", cleanUsername);
+    if (!error && data && data.length > 0) {
+      taken = true;
+    }
+  } catch (e) {
+    console.warn("[Supabase Registry Duplication Try Failed]", e);
+  }
+
+  if (taken) {
     return res.status(400).json({ 
       success: false, 
       error: `The username "${cleanUsername}" is already taken. Please choose a different unique username.` 
@@ -1493,6 +1552,28 @@ app.post("/api/auth/customer-register", (req, res) => {
   currentUser = newUser;
   syncUserToFirestore(newUser);
 
+  // Sync details to Supabase table users_credentials
+  try {
+    await supabase.from("users_credentials").insert([{
+      id: newUser.id,
+      name: newUser.name,
+      username: newUser.username,
+      password: newUser.password,
+      phone: newUser.phone,
+      email: newUser.email,
+      address: newUser.address,
+      role: newUser.role,
+      foodie_points: newUser.foodiePoints,
+      avatar: newUser.avatar,
+      bio: newUser.bio,
+      dob: newUser.dob,
+      favorite_pet: newUser.favoritePet
+    }]);
+    console.log("[Supabase] Successfully registered account into users_credentials table.");
+  } catch (err: any) {
+    console.error("[Supabase Write Exception]:", err.message || err);
+  }
+
   // Send a webhook notification
   const discordPayload = {
     username: "FoodieNepal Account Sentinel",
@@ -1518,7 +1599,7 @@ app.post("/api/auth/customer-register", (req, res) => {
   res.json({ success: true, user: newUser });
 });
 
-app.post("/api/auth/customer-login", (req, res) => {
+app.post("/api/auth/customer-login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ 
@@ -1529,12 +1610,52 @@ app.post("/api/auth/customer-login", (req, res) => {
 
   const cleanUsername = username.trim().toLowerCase();
 
-  // Find user based on username or email
-  let user = users.find(u => {
-    const matchUser = u.username ? u.username.toLowerCase() : "";
-    const matchEmail = u.email ? u.email.toLowerCase() : "";
-    return matchUser === cleanUsername || matchEmail === cleanUsername;
-  });
+  // Try to find user in Supabase users_credentials first
+  let user: User | null = null;
+  try {
+    const { data, error } = await supabase
+      .from("users_credentials")
+      .select("*")
+      .or(`username.ilike."${cleanUsername}",email.ilike."${cleanUsername}"`);
+      
+    if (!error && data && data.length > 0) {
+      const supaUser = data[0];
+      user = {
+        id: supaUser.id,
+        name: supaUser.name,
+        username: supaUser.username,
+        password: supaUser.password,
+        phone: supaUser.phone,
+        email: supaUser.email,
+        role: supaUser.role as any,
+        address: supaUser.address,
+        avatar: supaUser.avatar,
+        foodiePoints: supaUser.foodie_points || 0,
+        bio: supaUser.bio,
+        dob: supaUser.dob,
+        favoritePet: supaUser.favorite_pet
+      };
+      
+      // Store or update in global memory
+      const idx = users.findIndex(u => u.id === user?.id);
+      if (idx !== -1) {
+        users[idx] = user;
+      } else {
+        users.push(user);
+      }
+    }
+  } catch (supaErr) {
+    console.warn("[Supabase Login Query Failed, falling back to local users list]", supaErr);
+  }
+
+  // Fallback to local
+  if (!user) {
+    user = users.find(u => {
+      const matchUser = u.username ? u.username.toLowerCase() : "";
+      const matchEmail = u.email ? u.email.toLowerCase() : "";
+      return matchUser === cleanUsername || matchEmail === cleanUsername;
+    }) || null;
+  }
 
   // Self-Healing Auto-Registration Fallback for seamless demo use:
   if (!user) {
@@ -1561,11 +1682,43 @@ app.post("/api/auth/customer-login", (req, res) => {
     };
     users.push(user);
     syncUserToFirestore(user);
+    
+    // Auto sync self-healed user to Supabase as well
+    try {
+      await supabase.from("users_credentials").insert([{
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        password: user.password,
+        phone: user.phone,
+        email: user.email,
+        address: user.address,
+        role: user.role,
+        foodie_points: user.foodiePoints,
+        avatar: user.avatar,
+        bio: user.bio,
+        dob: user.dob,
+        favorite_pet: user.favoritePet
+      }]);
+    } catch (e) {
+      console.warn("[Supabase] Auto insertion of self-healed user failed:", e);
+    }
+    
     console.log(`[Self-Healing Auth] Auto-registered missing user: ${user.username}`);
   } else if (user.password !== password) {
-    // Self-healing credential sync to avoid lockout frustrations
+    // Sync password
     user.password = password;
     syncUserToFirestore(user);
+    
+    try {
+      await supabase
+        .from("users_credentials")
+        .update({ password: password })
+        .eq("id", user.id);
+    } catch (e) {
+      console.warn("[Supabase] Pass update sync failed on login:", e);
+    }
+    
     console.log(`[Self-Healing Auth] Synchronized/updated user password on active login: ${user.username}`);
   }
 
@@ -1851,14 +2004,35 @@ app.get("/api/auth/current", (req, res) => {
   res.json(currentUser);
 });
 
-app.get("/api/auth/check-username", (req, res) => {
+app.get("/api/auth/check-username", async (req, res) => {
   const username = (req.query.username as string || "").trim();
   const excludeId = (req.query.excludeId as string || "").trim();
   if (!username) {
     return res.json({ success: true, unique: true });
   }
-  const taken = isUsernameTaken(username, excludeId);
-  res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
+  
+  try {
+    let taken = isUsernameTaken(username, excludeId);
+    
+    // Check Supabase users_credentials table
+    const { data, error } = await supabase
+      .from("users_credentials")
+      .select("id")
+      .eq("username", username);
+      
+    if (!error && data && data.length > 0) {
+      const isExclude = excludeId && data.some(u => u.id === excludeId);
+      if (!isExclude) {
+        taken = true;
+      }
+    }
+    
+    res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
+  } catch (err) {
+    console.warn("[Supabase Check Username Error]:", err);
+    const taken = isUsernameTaken(username, excludeId);
+    res.json({ success: true, unique: !taken, error: taken ? `The username "${username}" is already connected to another account.` : null });
+  }
 });
 
 app.post("/api/auth/update-role", (req, res) => {

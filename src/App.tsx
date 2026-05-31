@@ -18,6 +18,7 @@ import GoogleFormsHub from "./components/GoogleFormsHub";
 import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
+import { insertOrderToSupabase } from "./utils/supabase";
 
 const LOYALTY_ITEM_POINTS: Record<string, number> = {
   loyalty_momo: 600,
@@ -424,6 +425,13 @@ export default function App() {
       if (data.success) {
         setActiveOrder(data.order);
         setCart([]); // Clear cart
+        
+        // Sync and save all order fields into Supabase
+        try {
+          await insertOrderToSupabase(data.order, googleUser);
+        } catch (supabaseError) {
+          console.error("[Supabase Sync Error]:", supabaseError);
+        }
         
         // Calculate points earned based on order total (50 pts per Rs. 500 block)
         const subtotal = cart.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);

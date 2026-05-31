@@ -128,7 +128,7 @@ const ALL_MENU_ITEMS = [
     category: "Newari",
     image: samayBajiImg,
     restaurantId: "rest_2",
-    restaurantName: "Basantapur Samay Baji Corner"
+    restaurantName: "Samay Baji Corner"
   },
   {
     id: "item_202",
@@ -138,7 +138,7 @@ const ALL_MENU_ITEMS = [
     category: "Newari",
     image: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_2",
-    restaurantName: "Basantapur Samay Baji Corner"
+    restaurantName: "Samay Baji Corner"
   },
   {
     id: "item_203",
@@ -148,7 +148,7 @@ const ALL_MENU_ITEMS = [
     category: "Newari",
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_2",
-    restaurantName: "Basantapur Samay Baji Corner"
+    restaurantName: "Samay Baji Corner"
   },
   {
     id: "item_204",
@@ -158,7 +158,7 @@ const ALL_MENU_ITEMS = [
     category: "Newari",
     image: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_2",
-    restaurantName: "Basantapur Samay Baji Corner"
+    restaurantName: "Samay Baji Corner"
   },
   {
     id: "item_301",
@@ -198,7 +198,7 @@ const ALL_MENU_ITEMS = [
     category: "Traditional",
     image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_4",
-    restaurantName: "Dal-Bhat Kamalpokhari Express"
+    restaurantName: "Dal-Bhat Express"
   },
   {
     id: "item_402",
@@ -208,7 +208,7 @@ const ALL_MENU_ITEMS = [
     category: "Traditional",
     image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_4",
-    restaurantName: "Dal-Bhat Kamalpokhari Express"
+    restaurantName: "Dal-Bhat Express"
   },
   {
     id: "item_501",
@@ -218,7 +218,7 @@ const ALL_MENU_ITEMS = [
     category: "Street Food",
     image: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_5",
-    restaurantName: "Basantapur Sweet & Selroti Pasal"
+    restaurantName: "Sweet & Selroti Ghar"
   },
   {
     id: "item_502",
@@ -228,7 +228,7 @@ const ALL_MENU_ITEMS = [
     category: "Traditional",
     image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_5",
-    restaurantName: "Basantapur Sweet & Selroti Pasal"
+    restaurantName: "Sweet & Selroti Ghar"
   },
   {
     id: "item_601",
@@ -238,7 +238,7 @@ const ALL_MENU_ITEMS = [
     category: "Chowmein",
     image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_6",
-    restaurantName: "Lalitpur Chowmein & Nepali Fast Food"
+    restaurantName: "Nepali Fast Food"
   },
   {
     id: "item_602",
@@ -248,7 +248,7 @@ const ALL_MENU_ITEMS = [
     category: "Chowmein",
     image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_6",
-    restaurantName: "Lalitpur Chowmein & Nepali Fast Food"
+    restaurantName: "Nepali Fast Food"
   },
   {
     id: "item_701",
@@ -258,7 +258,7 @@ const ALL_MENU_ITEMS = [
     category: "Traditional",
     image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_7",
-    restaurantName: "Thamel Himalayan Tea & Tingmo"
+    restaurantName: "Foodie Tea & Tingmo"
   },
   {
     id: "item_801",
@@ -268,7 +268,7 @@ const ALL_MENU_ITEMS = [
     category: "Street Food",
     image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_8",
-    restaurantName: "Tripureshwor Sekuwa Corner"
+    restaurantName: "Foodie Sekuwa Corner"
   },
   {
     id: "item_901",
@@ -278,7 +278,7 @@ const ALL_MENU_ITEMS = [
     category: "Street Food",
     image: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_9",
-    restaurantName: "Boudha Butter Tea House"
+    restaurantName: "Butter Tea House"
   },
   {
     id: "item_1001",
@@ -288,7 +288,7 @@ const ALL_MENU_ITEMS = [
     category: "Street Food",
     image: nepaliChatpateImg,
     restaurantId: "rest_10",
-    restaurantName: "Baneshwor Lassi & Chatpat Corner"
+    restaurantName: "Lassi & Chatpat Corner"
   },
   // Bakery Delicacies
   {
@@ -299,7 +299,7 @@ const ALL_MENU_ITEMS = [
     category: "Bakery",
     image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_5",
-    restaurantName: "Basantapur Sweet & Selroti Pasal"
+    restaurantName: "Sweet & Selroti Ghar"
   },
   {
     id: "item_bak_2",
@@ -309,7 +309,7 @@ const ALL_MENU_ITEMS = [
     category: "Bakery",
     image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_5",
-    restaurantName: "Basantapur Sweet & Selroti Pasal"
+    restaurantName: "Sweet & Selroti Ghar"
   },
   {
     id: "item_bak_3",
@@ -319,7 +319,7 @@ const ALL_MENU_ITEMS = [
     category: "Bakery",
     image: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&q=80&w=400",
     restaurantId: "rest_5",
-    restaurantName: "Basantapur Sweet & Selroti Pasal"
+    restaurantName: "Sweet & Selroti Ghar"
   }
 ];
 
@@ -520,7 +520,7 @@ export default function Home({
     },
     {
       restaurantId: "rest_4",
-      restaurantName: "Dal-Bhat Kamalpokhari Express",
+      restaurantName: "Dal-Bhat Express",
       item: {
         id: "item_401",
         name: "Classic Veg Dal Bhat Thali",
@@ -535,7 +535,7 @@ export default function Home({
     },
     {
       restaurantId: "rest_5",
-      restaurantName: "Basantapur Sweet & Selroti Pasal",
+      restaurantName: "Sweet & Selroti Ghar",
       item: {
         id: "item_502",
         name: "Piped Sel Roti with Alu Achar",
@@ -550,7 +550,7 @@ export default function Home({
     },
     {
       restaurantId: "rest_6",
-      restaurantName: "Lalitpur Chowmein",
+      restaurantName: "Nepali Fast Food",
       item: {
         id: "item_601",
         name: "Classic Buff Chowmein",
