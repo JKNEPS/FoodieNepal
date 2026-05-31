@@ -102,31 +102,45 @@ export default function Restaurant({
       </button>
 
       {/* Styled Large banner block with restaurant metrics */}
-      <div className="relative rounded-3xl overflow-hidden h-64 md:h-85 bg-[#FFF8F0] mb-8 border border-[#8B1A1A]/10 shadow-sm">
-        <img
-          src={restaurant.banner}
-          alt={restaurant.name}
-          className="w-full h-full object-cover"
+      <div className="relative rounded-3xl overflow-hidden h-72 md:h-85 bg-[#1C0D0D] mb-8 border border-[#8B1A1A]/15 shadow-md flex items-end p-6 md:p-8">
+        {/* Soft atmospheric blurred background reflection of the logo */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-35 scale-125 pointer-events-none"
+          style={{ backgroundImage: `url('${restaurant.logo}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        {/* Dark overlay for text contrast and premium look */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#120505]/95 via-[#120505]/70 to-[#120505]/40" />
 
-        <div className="absolute bottom-6 left-6 right-6 text-white flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-[#2D6A4F] text-white text-[9px] font-bold tracking-widest uppercase px-2.5 py-1 rounded border border-[#2D6A4F]/25">
-                ★ CERTIFIED PARTNER
-              </span>
-              <span className="text-xs text-orange-200 font-bold flex items-center gap-1 font-sans">
-                <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                {restaurant.address}
-              </span>
+        <div className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
+            {/* Logo Container */}
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white shadow-xl border border-white/10 flex items-center justify-center p-2 shrink-0">
+              <img 
+                src={restaurant.logo} 
+                alt={`${restaurant.name} Logo`} 
+                className="object-contain w-full h-full rounded-xl" 
+                referrerPolicy="no-referrer" 
+              />
             </div>
+            
+            {/* Restaurant Meta */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="bg-[#2D6A4F] text-white text-[9px] font-bold tracking-widest uppercase px-2.5 py-1 rounded border border-[#2D6A4F]/25">
+                  ★ CERTIFIED PARTNER
+                </span>
+                <span className="text-xs text-orange-200 font-bold flex items-center gap-1 font-sans">
+                  <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                  {restaurant.address}
+                </span>
+              </div>
 
-            <h1 className="text-3xl sm:text-4xl font-serif italic font-bold text-[#FFF8F0] leading-tight">{restaurant.name}</h1>
-            <p className="text-[#FFF8F0]/85 text-xs font-semibold mt-1 font-mono uppercase tracking-wider">Operational Hours: {restaurant.operatingHours}</p>
+              <h1 className="text-2xl sm:text-4xl font-serif italic font-bold text-[#FFF8F0] leading-tight">{restaurant.name}</h1>
+              <p className="text-[#FFF8F0]/85 text-xs font-semibold mt-1.5 font-mono uppercase tracking-wider">Operational Hours: {restaurant.operatingHours}</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => onToggleFavorite(restaurant.id)}
               className="p-3 bg-white/10 backdrop-blur rounded-2xl hover:bg-white/20 text-white hover:scale-105 active:scale-95 transition-all"

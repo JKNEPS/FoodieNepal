@@ -346,6 +346,8 @@ OTP CODE: ${otpCode}
 
 const app = express();
 app.use(express.json());
+app.use('/src/assets', express.static(path.join(process.cwd(), 'src/assets')));
+app.use('/src/assets/images', express.static(path.join(process.cwd(), 'src/assets/images')));
 
 const PORT = 3000;
 
