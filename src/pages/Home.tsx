@@ -912,23 +912,9 @@ export default function Home({
                     className="editorial-card group text-left cursor-pointer flex flex-col justify-between overflow-hidden"
                   >
                     <div>
-                      {/* Banner Wrapper / Premium Centered Logo */}
-                      <div className="relative h-44 bg-gradient-to-br from-[#FFF8F0] to-[#FFE8D6] flex items-center justify-center p-4 overflow-hidden border-b border-[#8B1A1A]/5">
-                        {/* Soft atmospheric blurred background reflection of the logo */}
-                        <div 
-                          className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-15 scale-110 pointer-events-none"
-                          style={{ backgroundImage: `url(${rest.logo})` }}
-                        />
-                        
-                        {/* Crisp Centered Premium Brand Logo */}
-                        <div className="relative z-10 w-28 h-28 rounded-2xl bg-white shadow-md border border-gray-100/80 flex items-center justify-center p-1.5 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg">
-                          <img 
-                            src={rest.logo} 
-                            alt={`${rest.name} Logo`} 
-                            className="object-contain w-full h-full rounded-xl" 
-                            referrerPolicy="no-referrer" 
-                          />
-                        </div>
+                      {/* Banner Wrapper */}
+                      <div className="relative h-44 bg-gray-100">
+                        <img src={rest.banner} alt={rest.name} className="object-cover w-full h-full group-hover:scale-101 transition-all" referrerPolicy="no-referrer" />
                         
                         {/* Favorite Heart toggle */}
                         <button
