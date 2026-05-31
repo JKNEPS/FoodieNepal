@@ -2,8 +2,11 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from "f
 import { auth } from "../firebase";
 
 const provider = new GoogleAuthProvider();
-// Request Workspace forms scope 
+// Request Workspace scopes 
 provider.addScope("https://www.googleapis.com/auth/forms");
+provider.addScope("https://www.googleapis.com/auth/drive.file");
+provider.addScope("https://www.googleapis.com/auth/spreadsheets");
+provider.addScope("https://www.googleapis.com/auth/gmail.send");
 
 // In-memory token cache (Do not persist in localStorage as per Workspace security guidelines)
 let cachedAccessToken: string | null = null;

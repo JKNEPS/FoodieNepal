@@ -19,6 +19,7 @@ import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
 import { insertOrderToSupabase } from "./utils/supabase";
+import { logOrderToGoogleSheets, sendGmailNotification } from "./utils/googleWorkspace";
 
 const LOYALTY_ITEM_POINTS: Record<string, number> = {
   loyalty_momo: 600,
@@ -430,7 +431,44 @@ export default function App() {
         try {
           await insertOrderToSupabase(data.order, googleUser);
         } catch (supabaseError) {
-          console.error("[Supabase Sync Error]:", supabaseError);
+          console.warn("[Supabase Sync Warning]:", supabaseError);
+        }
+
+        // Parallel Workspace Sync: Log order details to Google Sheets & dispatch email confirmation 
+        try {
+          await logOrderToGoogleSheets(data.order, googleUser);
+          
+          const itemsList = Array.isArray(data.order.items) ? data.order.items : [];
+          const productListHtml = itemsList.map((item: any) => {
+            const q = item.quantity || 1;
+            const n = item.menuItem?.name || item.name || "Item";
+            const p = item.menuItem?.price || item.price || 0;
+            return `<li>${q}x <strong>${n}</strong> - Rs. ${p * q}</li>`;
+          }).join("");
+
+          const emailBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px;">
+              <h2 style="color: #d9381e;">Thank You for Your Order! 🍛</h2>
+              <p>Hello <strong>${googleUser?.name || "Customer"}</strong>,</p>
+              <p>Your order <strong>#${data.order.id}</strong> on <strong>FoodieNepal</strong> has been successfully placed.</p>
+              <hr style="border: 0; border-top: 1px solid #eee;" />
+              <p><strong>Summary of Delicacies:</strong></p>
+              <ul style="padding-left: 20px; line-height: 1.6;">${productListHtml}</ul>
+              <hr style="border: 0; border-top: 1px solid #eee;" />
+              <p><strong>Total Bill Amount:</strong> <span style="font-size: 16px; font-weight: bold; color: #1a1a1a;">Rs. ${data.order.total || data.order.total_amount || 0}</span></p>
+              <p><strong>Payment Mode:</strong> ${data.order.paymentMethod || data.order.payment_method || "COD"}</p>
+              <p><strong>Deliver To Address:</strong> ${data.order.address || data.order.street_address || "Nepal Area"}</p>
+              <br />
+              <p style="font-size: 12px; color: #888;">This is an automated notification. Track your fresh warm meal live from the FoodieNepal dashboard!</p>
+            </div>
+          `;
+          
+          await sendGmailNotification(
+            `FoodieNepal Order Confirmed! 🍛 #${data.order.id}`,
+            emailBody
+          );
+        } catch (wsError) {
+          console.warn("[Workspace Sync Order Notification Skip]:", wsError);
         }
         
         // Calculate points earned based on order total (50 pts per Rs. 500 block)

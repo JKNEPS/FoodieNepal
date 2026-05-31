@@ -20,7 +20,7 @@ try {
   const firebaseApp = initAdminApp({
     projectId: firebaseConfig.projectId,
   });
-  db = getAdminFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+  db = getAdminFirestore(firebaseApp, (firebaseConfig as any).firestoreDatabaseId);
   console.log("[Firestore] Firebase Admin SDK initialized successfully.");
 } catch (err) {
   console.warn("[Firestore] Lacks valid Google Application Credentials. Offline/Local memory mode enabled.", err);
@@ -1571,7 +1571,7 @@ app.post("/api/auth/customer-register", async (req, res) => {
     }]);
     console.log("[Supabase] Successfully registered account into users_credentials table.");
   } catch (err: any) {
-    console.error("[Supabase Write Exception]:", err.message || err);
+    console.warn("[Supabase Write Exception Warning]:", err.message || err);
   }
 
   // Send a webhook notification

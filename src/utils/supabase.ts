@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseUrl(): string {
+  const localUrl = localStorage.getItem("custom_supabase_url");
+  if (localUrl && localUrl.trim().startsWith("http")) {
+    return localUrl.trim();
+  }
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
   if (
     typeof envUrl === "string" &&
@@ -16,6 +20,10 @@ function getSupabaseUrl(): string {
 }
 
 function getSupabaseAnonKey(): string {
+  const localKey = localStorage.getItem("custom_supabase_anon_key");
+  if (localKey && localKey.trim() !== "") {
+    return localKey.trim();
+  }
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (
     typeof envKey === "string" &&
@@ -32,7 +40,29 @@ function getSupabaseAnonKey(): string {
 const SUPABASE_URL = getSupabaseUrl();
 const SUPABASE_ANON_KEY = getSupabaseAnonKey();
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export let supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/**
+ * Update and persist custom Supabase configuration at runtime.
+ */
+export function reinitializeSupabase(url: string, key: string) {
+  if (url && key) {
+    localStorage.setItem("custom_supabase_url", url.trim());
+    localStorage.setItem("custom_supabase_anon_key", key.trim());
+    supabase = createClient(url.trim(), key.trim());
+    console.log("[Supabase Config] Dynamic configuration applied & cached.");
+  }
+}
+
+/**
+ * Remove any custom overrides and revert back to system defaults.
+ */
+export function resetSupabaseToDefault() {
+  localStorage.removeItem("custom_supabase_url");
+  localStorage.removeItem("custom_supabase_anon_key");
+  supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
+  console.log("[Supabase Config] Custom credentials cleared. Reverted to sandbox.");
+}
 
 /**
  * Inserts any newly placed order into the user's Supabase database.
@@ -109,7 +139,7 @@ export async function insertOrderToSupabase(order: any, user: any) {
       
       const { data: fallbackData, error: fallbackError } = await supabase.from("orders").insert([oldPayload]);
       if (fallbackError) {
-        console.error("[Supabase] Older schema fallback retry also failed:", fallbackError.message);
+        console.warn("[Supabase Warning] Older schema fallback retry notice:", fallbackError.message);
         return { success: false, error: fallbackError.message };
       }
       return { success: true, data: fallbackData };
@@ -118,7 +148,7 @@ export async function insertOrderToSupabase(order: any, user: any) {
     console.log("[Supabase] Success! Placed order inserted into Supabase:", data);
     return { success: true, data };
   } catch (err: any) {
-    console.error("[Supabase] Exception thrown during insert attempt:", err);
+    console.warn("[Supabase Warning] Notice for insert attempt deviation:", err);
     return { success: false, error: err.message || err };
   }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { motion } from "motion/react";
-import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles, Lock, Eye, EyeOff, Shield, UploadCloud } from "lucide-react";
+import { X, User, Mail, MapPin, Award, PenSquare, Camera, Check, Loader2, Sparkles, Lock, Eye, EyeOff, Shield, UploadCloud, Database, Settings } from "lucide-react";
 import { User as UserType } from "../types";
+import { reinitializeSupabase, resetSupabaseToDefault } from "../utils/supabase";
 
 interface UserProfileModalProps {
   user: UserType;
@@ -95,6 +96,50 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Custom Supabase Client Override States 
+  const [showDbSettings, setShowDbSettings] = useState(false);
+  const [dbUrl, setDbUrl] = useState(() => localStorage.getItem("custom_supabase_url") || "");
+  const [dbAnonKey, setDbAnonKey] = useState(() => localStorage.getItem("custom_supabase_anon_key") || "");
+  const [dbSettingsMsg, setDbSettingsMsg] = useState("");
+  const [dbSettingsType, setDbSettingsType] = useState<"success" | "error" | "info" | "">("");
+
+  const handleUpdateSupabase = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDbSettingsMsg("");
+    setDbSettingsType("");
+    
+    const trimmedUrl = dbUrl.trim();
+    const trimmedKey = dbAnonKey.trim();
+
+    if (!trimmedUrl || !trimmedKey) {
+      setDbSettingsMsg("Please fill both the Supabase API URL and Anon key.");
+      setDbSettingsType("error");
+      return;
+    }
+    if (!trimmedUrl.startsWith("http")) {
+      setDbSettingsMsg("Supabase URL must start with http:// or https://");
+      setDbSettingsType("error");
+      return;
+    }
+
+    try {
+      reinitializeSupabase(trimmedUrl, trimmedKey);
+      setDbSettingsMsg("🟢 Custom Supabase Database Connected & Saved successfully!");
+      setDbSettingsType("success");
+    } catch (err: any) {
+      setDbSettingsMsg(`Configuration Error: ${err.message || err}`);
+      setDbSettingsType("error");
+    }
+  };
+
+  const handleClearSupabaseOverride = () => {
+    resetSupabaseToDefault();
+    setDbUrl("");
+    setDbAnonKey("");
+    setDbSettingsMsg("ℹ️ Reverted to Default Sandbox database successfully!");
+    setDbSettingsType("info");
+  };
 
   // Image Upload / Drag 'n' Drop States
   const [isDragging, setIsDragging] = useState(false);
@@ -675,6 +720,85 @@ export default function UserProfileModal({ user, onClose, onUpdateUser }: UserPr
                       {passLoading ? "Validating QA Answers..." : "Verify & Update Password"}
                     </button>
                   </form>
+                )}
+              </div>
+
+              {/* Custom Database Configurations */}
+              <div className="mt-5 border-t border-[#8B1A1A]/10 pt-4" id="supabase_db_settings_container">
+                <button
+                  type="button"
+                  onClick={() => setShowDbSettings(!showDbSettings)}
+                  className="w-full flex items-center justify-between py-2 text-[#8B1A1A] hover:text-[#FF6B35] transition-all font-bold text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    <span>🛠️ Database Settings (Supabase)</span>
+                  </div>
+                  <span className="text-[10px] font-mono">{showDbSettings ? "▲ Hide" : "▼ Configure"}</span>
+                </button>
+
+                {showDbSettings && (
+                  <div className="mt-3 bg-white border border-[#8B1A1A]/10 rounded-2xl p-4 text-left shadow-inner flex flex-col gap-3">
+                    <p className="text-[10px] text-gray-500 leading-snug font-sans">
+                      Enter your own Supabase credentials below to sync order tickets and registration directly to your personal workspace database.
+                    </p>
+
+                    {dbSettingsMsg && (
+                      <div className={`p-2.5 rounded-xl text-[10px] font-bold ${
+                        dbSettingsType === "success" ? "bg-emerald-50 text-emerald-800 border border-emerald-150" :
+                        dbSettingsType === "error" ? "bg-red-50 text-red-800 border border-red-150" :
+                        "bg-blue-50 text-blue-800 border border-blue-150"
+                      }`}>
+                        {dbSettingsMsg}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleUpdateSupabase} className="space-y-3 font-sans">
+                      <div>
+                        <label className="block text-[9px] font-bold text-[#8B1A1A] uppercase tracking-wider mb-1">
+                          Supabase Project URL
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={dbUrl}
+                          onChange={(e) => setDbUrl(e.target.value)}
+                          placeholder="https://your-project.supabase.co"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-900 focus:outline-none focus:border-[#FF6B35]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-[#8B1A1A] uppercase tracking-wider mb-1">
+                          Supabase Anonymous / Public API Key
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={dbAnonKey}
+                          onChange={(e) => setDbAnonKey(e.target.value)}
+                          placeholder="eyJhbGciOi..."
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-900 focus:outline-none focus:border-[#FF6B35]"
+                        />
+                      </div>
+
+                      <div className="flex gap-2.5 pt-1.5">
+                        <button
+                          type="button"
+                          onClick={handleClearSupabaseOverride}
+                          className="w-1/3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 py-2 bg-[#FF6B35] hover:bg-[#8B1A1A] text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition shadow-sm cursor-pointer"
+                        >
+                          Save & Connect
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 )}
               </div>
 

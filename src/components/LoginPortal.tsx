@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Sparkles, Lock, Mail, ArrowRight, CornerDownRight, CheckCircle2, User, KeyRound, Store, Bike, Eye, EyeOff } from "lucide-react";
 import { UserRole } from "../types";
+import { logAuthToGoogleSheets, sendGmailNotification } from "../utils/googleWorkspace";
 
 interface LoginPortalProps {
   onLoginSuccess: (role: UserRole) => void;
@@ -153,6 +154,23 @@ export default function LoginPortal({
     localStorage.setItem("foodienepal_current_user", JSON.stringify(targetUser));
     localStorage.setItem("foodienepal_google_user", JSON.stringify(targetUser));
 
+    // Async Workspace Sync: Log security authentication and send alert details
+    logAuthToGoogleSheets("Login", targetUser.name, targetUser.username, targetUser.email, targetUser.phone, targetUser.role);
+    sendGmailNotification(
+      "FoodieNepal Security Alert: Successful Google Sign-In 🔒",
+      `<div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; max-width: 500px;">
+         <h3 style="color: #4f46e5; margin-top: 0;">Successful Google login Alert 🔒</h3>
+         <p>Dear <strong>${targetUser.name}</strong>,</p>
+         <p>A new sign-in was successfully recorded on your account using Google Authentication.</p>
+         <p><strong>Username:</strong> ${targetUser.username}</p>
+         <p><strong>Associated Email:</strong> ${targetUser.email}</p>
+         <p><strong>Region Scope:</strong> Nepalese Local Market</p>
+         <p><strong>Security System status:</strong> SECURE</p>
+         <br />
+         <p style="font-size: 11px; color: #888; margin-bottom: 0;">If you initiated this session, no further action is necessary.</p>
+       </div>`
+    );
+
     setUserLoading(true);
     setErrorMessage("");
     if (onGoogleSuccess) {
@@ -185,6 +203,23 @@ export default function LoginPortal({
         if (onGoogleSuccess) {
           onGoogleSuccess(data.user);
         }
+
+        // Async Workspace Sync: Log login events to Google Sheets and send email alert
+        logAuthToGoogleSheets("Login", data.user.name, data.user.username, data.user.email, data.user.phone, data.user.role);
+        sendGmailNotification(
+          "Welcome Back to FoodieNepal! 🍲 Successful Sign-in Alert",
+          `<div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; max-width: 500px;">
+             <h3 style="color: #d9381e; margin-top: 0;">Successful login Alert 🍲</h3>
+             <p>Hello <strong>${data.user.name}</strong>,</p>
+             <p>Welcome back! You have successfully signed into your FoodieNepal customer account.</p>
+             <p><strong>Username:</strong> ${data.user.username}</p>
+             <p><strong>Associated Email:</strong> ${data.user.email}</p>
+             <p><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+             <br />
+             <p style="font-size: 11px; color: #888; margin-bottom: 0;">Enjoy your favorite delicacies ordered right to your door step!</p>
+           </div>`
+        );
+
         setSuccessAnimRole("customer");
         setTimeout(() => {
           onLoginSuccess("customer");
@@ -293,6 +328,29 @@ export default function LoginPortal({
         if (onGoogleSuccess) {
           onGoogleSuccess(data.user);
         }
+
+        // Async Workspace Sync: Log registration entry to Google Sheet and dispatch personalized Gmail Welcome Email
+        logAuthToGoogleSheets("Register", data.user.name, data.user.username, data.user.email, data.user.phone, data.user.role);
+        sendGmailNotification(
+          "Welcome to FoodieNepal! 🍲 Registered Successfully",
+          `<div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; max-width: 500px;">
+             <h2 style="color: #d9381e; margin-top: 0;">Welcome to FoodieNepal! 🍲</h2>
+             <p>Hello <strong>${data.user.name}</strong>,</p>
+             <p>Thank you for registering on <strong>FoodieNepal</strong>. Your customer portal profile has been created successfully!</p>
+             <hr style="border: 0; border-top: 1px solid #eee;" />
+             <p><strong>Your Profile Highlights:</strong></p>
+             <ul style="padding-left: 20px; line-height: 1.6;">
+               <li><strong>Unique Handle:</strong> ${data.user.username}</li>
+               <li><strong>Registered Email:</strong> ${data.user.email}</li>
+               <li><strong>Primary Contact:</strong> ${data.user.phone || "Not Provided"}</li>
+               <li><strong>Delivery Address:</strong> ${data.user.address || "Not Provided"}</li>
+             </ul>
+             <hr style="border: 0; border-top: 1px solid #eee;" />
+             <p>As a warm greeting, we've loaded your loyalty ledger with starter points!</p>
+             <p style="font-size: 11px; color: #888; margin-bottom: 0;">Explore traditional cuisines, set up interactive support form channels, and trace riders live!</p>
+           </div>`
+        );
+
         setSuccessAnimRole("customer");
         setTimeout(() => {
           onLoginSuccess("customer");
