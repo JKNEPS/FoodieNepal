@@ -591,6 +591,37 @@ export default function App() {
         currentView={currentView}
         onNavigateForms={() => setCurrentView("forms")}
         onNavigateComplaints={() => setCurrentView("complaints")}
+        onNavigateHome={() => {
+          setCurrentView("home");
+          setUserRole("customer");
+        }}
+        onOpenAR={() => {
+          setActiveARItem({
+            id: "item_101",
+            name: "Buff Steamed MoMo (Juicy Dumplings with Spicy Sesame Dip)",
+            price: 130,
+            description: "Nepali style dumplings stuffed with spiced minced buffalo meat, steamed to perfection.",
+            category: "Momo",
+            image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=400",
+            spiceLevel: "Medium",
+            isVeg: false,
+            ingredients: []
+          });
+        }}
+        onOpenCookGame={() => {
+          setActiveCookItem({
+            id: "item_302",
+            name: "Lete Buckwheat Dhido (Nutritional Himalayan Hot Grain Mash cooking Platter)",
+            price: 290,
+            description: "Himalayan nutritional powerhouse: buckwheat porridge served with clarifying ghee, Gundruk and local stew.",
+            category: "Traditional",
+            image: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=400",
+            spiceLevel: "Medium",
+            isVeg: true,
+            ingredients: ["buckwheat raw flour", "pure yak ghee", "gundruk fermented leaf", "local mountain spices", "himalayan rock salt"]
+          });
+        }}
+        onToggleCyberHub={() => setShowCyberHub(!showCyberHub)}
       />
 
       <main className="flex-1 mt-6 overflow-x-hidden">

@@ -16,19 +16,20 @@ const IMAGES = {
   dhido: "/src/assets/images/buckwheat_dhido_1780141002501.png",
   sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
   dalbhatVeg: "/src/assets/images/classic_dal_bhat_1780558896540.png",
-  dalbhatMutton: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
+  dalbhatMutton: "/src/assets/images/khasi_dal_bhat_1780561507317.png",
   jerry: "/src/assets/images/jalebi_sweet_1780558932164.png",
   selroti: "/src/assets/images/piped_sel_roti_1780558913963.png",
   chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600",
   chowmeinVeg: "/src/assets/images/veg_chowmein_spicy_1780559843872.png",
   buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",
-  sekuwa: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600",
-  lassi: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=600",
+  sekuwa: "/src/assets/images/chicken_sekuwa_1780561526724.png",
+  sekuwaBuff: "/src/assets/images/buff_sekuwa_1780561541112.png",
+  lassi: "/src/assets/images/yogurt_lassi_1780561556134.png",
   chatpat: "/src/assets/images/nepali_chatpate_1780141021967.png"
 };
 
 // --- In-Memory Fallback Databases ---
-const fallbackRestaurants: Restaurant[] = [
+export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_1",
     name: "Momo House & Newari Delicacy",
@@ -447,14 +448,36 @@ const fallbackMenuItems: Record<string, MenuItem[]> = {
       spiceLevel: "Spicy",
       isVeg: false,
       ingredients: []
+    },
+    {
+      id: "item_802",
+      name: "Chicken Sekuwa",
+      price: 180,
+      description: "Skewered and coal-roasted spicy chicken skewers seasoned with local Himalayan spices, served with side salad and lemon.",
+      category: "Traditional",
+      image: IMAGES.sekuwa, // This maps to chicken_sekuwa_1780561526724.png
+      spiceLevel: "Medium",
+      isVeg: false,
+      ingredients: []
+    },
+    {
+      id: "item_803",
+      name: "Buff Sekuwa",
+      price: 190,
+      description: "Authentic coal-roasted spiced buffalo meat chunks served on a sizzling platter with red onions and spicy dipping sauce.",
+      category: "Traditional",
+      image: IMAGES.sekuwaBuff,
+      spiceLevel: "Spicy",
+      isVeg: false,
+      ingredients: []
     }
   ],
   "rest_9": [
     {
       id: "item_901",
-      name: "Sweet Lapsi Yogurt Lassi (Creamy Shaken Curd Infused with Wild Plum Pulp)",
+      name: "Yogurt Lassi (Creamy Thick Sweet Shaken Curd with Pistachios)",
       price: 110,
-      description: "Rich curd blended with wild sweet-sour Nepalese Hog Plum fruit pulp and toasted almonds.",
+      description: "Traditional thick, sweet Nepalese Yogurt Lassi served cold, sprinkled with ground pistachios, cardamom powder, and fresh mint.",
       category: "Street Food",
       image: IMAGES.lassi,
       spiceLevel: "Mild",

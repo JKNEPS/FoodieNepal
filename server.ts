@@ -818,7 +818,7 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
       price: 360,
       description: "Premium thali with slow-simmered Nepali mountain goat (mutton) curry, cooked in a heavy brass pot with spices, ghee, basmati rice, lentils, and salad.",
       category: "Nepali",
-      image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
+      image: "/src/assets/images/khasi_dal_bhat_1780561507317.png",
       spiceLevel: "Medium",
       isVeg: false,
       ingredients: [ingRice, ingDal, ingMeat, ingButter, ingSpinach, ingSpices]
@@ -895,20 +895,42 @@ const sampleMenuItems: Record<string, MenuItem[]> = {
       price: 210,
       description: "Tender chunks of pork marinated in special Dharane-style mountain herbs, skewers-grilled over open natural charcoal, served with crispy baji.",
       category: "Traditional",
-      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400",
+      image: "/src/assets/images/chicken_sekuwa_1780561526724.png",
       spiceLevel: "Spicy",
       isVeg: false,
       ingredients: [ingMeat, ingMustard, ingRice, ingSpices, ingOnion, ingCoriander]
+    },
+    {
+      id: "item_802",
+      name: "Chicken Sekuwa",
+      price: 180,
+      description: "Skewered and coal-roasted spicy chicken skewers seasoned with local Himalayan spices, served with side salad and lemon.",
+      category: "Traditional",
+      image: "/src/assets/images/chicken_sekuwa_1780561526724.png",
+      spiceLevel: "Medium",
+      isVeg: false,
+      ingredients: [ingMeat, ingMustard, ingSpices, ingOnion, ingCoriander]
+    },
+    {
+      id: "item_803",
+      name: "Buff Sekuwa",
+      price: 190,
+      description: "Authentic coal-roasted spiced buffalo meat chunks served on a sizzling platter with red onions and spicy dipping sauce.",
+      category: "Traditional",
+      image: "/src/assets/images/buff_sekuwa_1780561541112.png",
+      spiceLevel: "Spicy",
+      isVeg: false,
+      ingredients: [ingMeat, ingMustard, ingSpices, ingOnion, ingCoriander]
     }
   ],
   "rest_9": [
     {
       id: "item_901",
-      name: "Sweet Lapsi Yogurt Lassi (Creamy Shaken Curd Infused with Wild Plum Pulp)",
+      name: "Yogurt Lassi (Creamy Thick Sweet Shaken Curd with Pistachios)",
       price: 110,
-      description: "Rich curd blended with wild sweet-sour Nepalese Hog Plum fruit pulp and toasted almonds.",
+      description: "Traditional thick, sweet Nepalese Yogurt Lassi served cold, sprinkled with ground pistachios, cardamom powder, and fresh mint.",
       category: "Street Food",
-      image: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=400",
+      image: "/src/assets/images/yogurt_lassi_1780561556134.png",
       spiceLevel: "Mild",
       isVeg: true,
       ingredients: [ingButter, ingPotato, ingSpices]

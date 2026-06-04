@@ -3,6 +3,7 @@ import { Star, MapPin, Bike, Heart, Sparkles, Flame, Store, Plus, Clock, Compass
 import { motion, AnimatePresence } from "motion/react";
 import HeroBanner from "../components/HeroBanner";
 import { Restaurant, MenuItem, GroceryItem, Order, CartItem } from "../types";
+import { fallbackRestaurants } from "../utils/apiFallback";
 
 // Import custom high-resolution food assets
 import chickenBurgerImg from "../assets/images/chicken_burger_1780140936309.png";
@@ -19,6 +20,10 @@ import buffJholMomoImg from "../assets/images/buff_jhol_momo_1780559796465.png";
 import yakCheeseVegMomoImg from "../assets/images/yak_cheese_veg_momo_1780559811981.png";
 import thakaliChickenThaliImg from "../assets/images/thakali_chicken_thali_1780559828216.png";
 import vegChowmeinSpicyImg from "../assets/images/veg_chowmein_spicy_1780559843872.png";
+import khasiDalBhatImg from "../assets/images/khasi_dal_bhat_1780561507317.png";
+import chickenSekuwaImg from "../assets/images/chicken_sekuwa_1780561526724.png";
+import buffSekuwaImg from "../assets/images/buff_sekuwa_1780561541112.png";
+import yogurtLassiImg from "../assets/images/yogurt_lassi_1780561556134.png";
 
 interface HomeProps {
   onSelectRestaurant: (id: string) => void;
@@ -214,7 +219,7 @@ const ALL_MENU_ITEMS = [
     price: 360,
     description: "Premium thali with slow-simmered local mountain mutton (goat) curry cooked in traditional heavy brass pots.",
     category: "Traditional",
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400",
+    image: khasiDalBhatImg,
     restaurantId: "rest_4",
     restaurantName: "Dal-Bhat Express"
   },
@@ -274,17 +279,37 @@ const ALL_MENU_ITEMS = [
     price: 210,
     description: "Tender chunks of pork marinated in Dharane-style mountain herbs, skewers-grilled over open natural charcoal.",
     category: "Street Food",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400",
+    image: chickenSekuwaImg,
+    restaurantId: "rest_8",
+    restaurantName: "Foodie Sekuwa Corner"
+  },
+  {
+    id: "item_802",
+    name: "Chicken Sekuwa",
+    price: 180,
+    description: "Traditional coal-roasted spicy chicken skewers served with sliced red onions, fresh lime, and spicy chutney.",
+    category: "Traditional",
+    image: chickenSekuwaImg,
+    restaurantId: "rest_8",
+    restaurantName: "Foodie Sekuwa Corner"
+  },
+  {
+    id: "item_803",
+    name: "Buff Sekuwa",
+    price: 190,
+    description: "Authentic coal-roasted spiced buffalo meat chunks served with red onions and spicy tomato chutney.",
+    category: "Traditional",
+    image: buffSekuwaImg,
     restaurantId: "rest_8",
     restaurantName: "Foodie Sekuwa Corner"
   },
   {
     id: "item_901",
-    name: "Sweet Lapsi Yogurt Lassi (Creamy Shaken Curd Infused with Wild Plum Pulp)",
+    name: "Yogurt Lassi (Creamy Thick Sweet Shaken Curd with Pistachios)",
     price: 110,
-    description: "Rich curd blended with wild sweet-sour Nepalese Hog Plum fruit pulp and toasted almonds.",
+    description: "Traditional thick, sweet Nepalese Yogurt Lassi served cold, sprinkled with ground pistachios and cardamom.",
     category: "Street Food",
-    image: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=400",
+    image: yogurtLassiImg,
     restaurantId: "rest_9",
     restaurantName: "Butter Tea House"
   },
@@ -345,7 +370,7 @@ export default function Home({
   onTrackOrder,
   cartItems
 }: HomeProps) {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(fallbackRestaurants);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"food" | "history">("food");
@@ -354,6 +379,27 @@ export default function Home({
   const [redeemError, setRedeemError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
+  const [showAllLeaderboard, setShowAllLeaderboard] = useState(false);
+  const [mapRadius, setMapRadius] = useState(10.0);
+  const [selectedMapDish, setSelectedMapDish] = useState<string | null>("item_101");
+
+  // Geolocation Coordinate Parser for Google Maps proximity calculators
+  const gpsMatch = customerAddress.match(/GPS:\s*([\d.-]+)[°N\s]*,?\s*([\d.-]+)[°E\s]*/i);
+  const userLat = gpsMatch ? parseFloat(gpsMatch[1]) : 27.70076;
+  const userLng = gpsMatch ? parseFloat(gpsMatch[2]) : 85.30014;
+
+  // Haversine geodesic distance calculation helper
+  const getGeodesicDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
 
   // Controlled address bar input state resolver
   const [localAddress, setLocalAddress] = useState(customerAddress);
@@ -471,8 +517,17 @@ export default function Home({
   useEffect(() => {
     fetch("/api/restaurants")
       .then((res) => res.json())
-      .then((data) => setRestaurants(data))
-      .catch((err) => console.error(err));
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setRestaurants(data);
+        } else {
+          setRestaurants(fallbackRestaurants);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setRestaurants(fallbackRestaurants);
+      });
 
     fetchOrderHistory();
     const interval = setInterval(fetchOrderHistory, 6000);
@@ -509,8 +564,8 @@ export default function Home({
     return matchesSearch && matchesCategory && matchesRating;
   });
 
-  // Extract sasto budget dishes under Rs. 150
-  const sampleSastoItems = [
+  // Extract popular best seller dishes under Rs. 150
+  const samplePopularItems = [
     {
       restaurantId: "rest_1",
       restaurantName: "Momo House & Newari Delicacy",
@@ -672,86 +727,461 @@ export default function Home({
       {/* UNIFIED FOOD FEED & REAL-TIME DISPATCH LOGS LAYOUT */}
       <div className="space-y-12">
         <div className="space-y-12">
-          {/* POINTS EXCHANGES MINI BANNER HUD */}
-          <div className="bg-[#121620] p-6 sm:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-left text-white mb-8">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-3xl" />
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          {/* LOYALTY REWARDS & LEADERBOARD GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 text-left">
+            {/* POINTS EXCHANGES MINI BANNER HUD */}
+            <div id="loyalty-bazaar" className="lg:col-span-2 bg-[#121620] p-6 sm:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-3xl" />
+              
               <div>
-                <div className="flex items-center gap-2 text-[#FF6B35] font-black text-[10px] uppercase tracking-widest bg-[#FF6B35]/10 px-3 py-1 rounded-full border border-[#FF6B35]/20 w-max">
-                  💸 Loyalty Reward Hub
-                </div>
-                <h3 className="text-2xl font-serif italic text-white mt-2 font-bold flex items-center gap-2">
-                  <span>🎁 Points Food Exchange Bazaar</span>
-                </h3>
-                <p className="text-xs text-gray-400 max-w-xl leading-relaxed mt-0.5">
-                  Redeem accumulated foodie loyalty points here instantly for zero-price gourmet delicacies! Points are credited automatically on checkout: placing an order of more than <b>Rs. 500</b> secures <b>50 pts</b> (worth Rs. 5), placing an order of more than <b>Rs. 1000</b> secures <b>100 pts</b> (worth Rs. 10), and so on (50 PTS = Rs. 5, 1 PTS = Rs. 0.1 ratio)!
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-r from-orange-500/20 to-[#8B1A1A]/30 px-5 py-3 rounded-2xl border border-orange-500/30 flex items-center gap-3.5 shadow-lg animate-fadeIn">
-                <span className="text-2xl animate-spin-slow">🌟</span>
-                <div>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#FFF8F0]/65 block font-bold">Your Available Points</span>
-                  <div className="flex flex-col">
-                    <span className="text-xl font-black text-amber-300 font-mono">{loyaltyPoints} pts</span>
-                    <span className="text-[10px] text-orange-200/90 font-mono font-bold mt-0.5">≈ Rs. {(loyaltyPoints * 0.1).toFixed(2)} Value</span>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 text-[#FF6B35] font-black text-[10px] uppercase tracking-widest bg-[#FF6B35]/10 px-3 py-1 rounded-full border border-[#FF6B35]/20 w-max">
+                      💸 Loyalty Reward Hub
+                    </div>
+                    <h3 className="text-2xl font-serif italic text-white mt-2 font-bold flex items-center gap-2">
+                      <span>🎁 Points Food Exchange Bazaar</span>
+                    </h3>
+                    <p className="text-xs text-gray-400 max-w-xl leading-relaxed mt-0.5">
+                      Redeem accumulated foodie loyalty points here instantly for zero-price gourmet delicacies! Points are credited automatically on checkout: placing an order of more than <b>Rs. 500</b> secures <b>50 pts</b> (worth Rs. 5), placing an order of more than <b>Rs. 1000</b> secures <b>100 pts</b> (worth Rs. 10), and so on (50 PTS = Rs. 5, 1 PTS = Rs. 0.1 ratio)!
+                    </p>
                   </div>
+
+                  <div className="bg-gradient-to-r from-orange-500/20 to-[#8B1A1A]/30 px-5 py-3 rounded-2xl border border-orange-500/30 flex items-center gap-3.5 shadow-lg animate-fadeIn flex-shrink-0">
+                    <span className="text-2xl animate-spin-slow">🌟</span>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-[#FFF8F0]/65 block font-bold">Your Available Points</span>
+                      <div className="flex flex-col">
+                        <span className="text-xl font-black text-amber-300 font-mono">{loyaltyPoints} pts</span>
+                        <span className="text-[10px] text-orange-200/90 font-mono font-bold mt-0.5">≈ Rs. {(loyaltyPoints * 0.1).toFixed(2)} Value</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {redeemError && (
+                  <div className="bg-rose-950/40 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-shake flex items-center gap-2">
+                    <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                    <span>{redeemError}</span>
+                  </div>
+                )}
+
+                {redeemSuccess && (
+                  <div className="bg-[#2D6A4F]/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-fadeIn flex items-center gap-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                    <span>{redeemSuccess}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5">
+                  {LOYALTY_EXCHANGE_ITEMS.map((item) => {
+                    const countNeeded = item.pointsRequired;
+                    const hasEnough = loyaltyPoints >= countNeeded;
+                    return (
+                      <div key={item.id} className="bg-gray-950/60 rounded-2xl border border-gray-800 p-3.5 flex flex-col justify-between hover:border-[#FF6B35]/30 transition-all">
+                        <div className="relative rounded-xl overflow-hidden mb-3 aspect-video">
+                          <img src={item.image} alt={item.name} className="object-cover w-full h-full filter brightness-90 hover:scale-101 transition-all" referrerPolicy="no-referrer" />
+                          <span className="absolute bottom-2 right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-gray-950 font-black text-[10px] px-2.5 py-1 rounded-lg leading-none shadow-md">
+                            Cost: {countNeeded} pts
+                          </span>
+                        </div>
+
+                        <div className="text-left flex-1 flex flex-col justify-between">
+                          <div>
+                            <h4 className="font-extrabold text-[#FFF8F0] text-xs leading-tight">{item.name.replace("🎁 Points ", "")}</h4>
+                            <p className="text-[10px] text-gray-400 leading-snug font-medium mt-1 pr-1">{item.description}</p>
+                          </div>
+
+                          <button
+                            disabled={!hasEnough}
+                            onClick={() => handleRedeemLoyaltyItem(item)}
+                            className={`mt-4 py-2 px-3 text-xs font-bold text-center rounded-xl transition-all w-full ${
+                              hasEnough
+                                ? "bg-gradient-to-r from-[#FF6B35] to-orange-600 hover:from-emerald-600 hover:to-emerald-700 text-white cursor-pointer shadow-md"
+                                : "bg-gray-800 text-gray-500 border border-gray-700/60 cursor-not-allowed"
+                            }`}
+                          >
+                            {hasEnough ? "🎁 Redeem for Free!" : `Locked (Need ${countNeeded} pts)`}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {redeemError && (
-              <div className="bg-rose-950/40 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-shake flex items-center gap-2">
-                <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-                <span>{redeemError}</span>
+            {/* TOP FOODIES LEADERBOARD */}
+            <div id="loyalty-leaderboard" className="bg-[#121620] p-6 sm:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white flex flex-col justify-between h-full">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl" />
+              
+              <div>
+                <div className="flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 w-max">
+                  🏆 Live Rankings
+                </div>
+                <h3 className="text-xl font-serif italic text-white mt-2 font-bold flex items-center gap-2">
+                  <span>🏅 Top Foodies Leaderboard</span>
+                </h3>
+                <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                  Compete with local food lovers! High ranks secure priority express delivery and exclusive prize catalogs.
+                </p>
               </div>
-            )}
 
-            {redeemSuccess && (
-              <div className="bg-[#2D6A4F]/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-2xl text-xs font-bold font-mono tracking-wide mb-4 animate-fadeIn flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                <span>{redeemSuccess}</span>
+              <div className={`space-y-2.5 mt-5 flex-1 ${showAllLeaderboard ? "max-h-[440px]" : "max-h-[310px]"} overflow-y-auto pr-1 transition-all duration-300`}>
+                {[
+                  { name: "Jenish Sapkota (You)", points: 1500 + loyaltyPoints, avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100", title: "Kathmandu Emperor 🏆", badge: "Food Sovereign", isCurrentUser: true },
+                  { name: "Nilam karki", points: 1280, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100", title: "Gourmet Scholar 🥇", badge: "Momo Legend" },
+                  { name: "Obir Thapa", points: 1150, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100", title: "Thakali Guru 🥈", badge: "Dhido Expert" },
+                  { name: "Bibash Dhungana", points: 1020, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100", title: "Sekuwa Sizzler 🥉", badge: "Coal Roast Master" },
+                  { name: "Dikshya Poudel", points: 890, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100", title: "Lassi Scholar 🥤", badge: "Sweet Velvet" },
+                  { name: "Kristina Shrestha", points: 760, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100", title: "Newari Princess 🥩", badge: "Samay Baji Royalty" },
+                  { name: "Rhythm Adhikari", points: 660, avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100", title: "Chowmein King 🍝", badge: "Wok Whisperer" },
+                  { name: "Aaditya Acharya", points: 580, avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100", title: "Jerry Connoisseur 🍩", badge: "Sugar Rush" },
+                  { name: "Sabin Bhandari", points: 510, avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=100", title: "Sukuti Fighter 🌶️", badge: "Spicy Jerky" },
+                  { name: "Sujan Khanal", points: 440, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100", title: "Bara Connoisseur 🥞", badge: "Lentil Flip" },
+                  { name: "Udaya Adhikari", points: 370, avatar: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&q=80&w=100", title: "Chatpate Guru 🍋", badge: "Puffed Rice Boss" },
+                  { name: "Asim Paudel", points: 310, avatar: "https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?auto=format&fit=crop&q=80&w=100", title: "Sel Roti Artisan 🥯", badge: "Ghee Ring" },
+                  { name: "Rijan Tamang", points: 240, avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100", title: "Tingmo Devotee 🍞", badge: "Fluffy Flower" },
+                  { name: "Sachin Dhakal", points: 180, avatar: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=100", title: "Fledgling Foodie 🌱", badge: "Apprentice" }
+                ]
+                  .slice(0, showAllLeaderboard ? 14 : 5)
+                  .map((user, index) => {
+                    const medals = ["🥇", "🥈", "🥉"];
+                    const isTopThree = index < 3;
+                    return (
+                      <motion.div
+                        key={user.name}
+                        layout
+                        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                          user.isCurrentUser
+                            ? "bg-gradient-to-r from-orange-500/20 to-orange-500/5 border-[#FF6B35]/40 shadow-xs"
+                            : "bg-gray-950/45 border-gray-800/80 hover:border-gray-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-gray-900 border border-gray-800 text-xs font-black flex-shrink-0">
+                            {isTopThree ? medals[index] : index + 1}
+                          </div>
+                          
+                          <div className="text-left min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className={`text-xs font-extrabold ${user.isCurrentUser ? "text-[#FF6B35]" : "text-gray-100"}`}>
+                                {user.name}
+                              </h4>
+                              <span className="text-[7.5px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1 py-0.5 rounded leading-none uppercase font-mono tracking-wide flex-shrink-0">
+                                {user.badge}
+                              </span>
+                            </div>
+                            <p className="text-[9px] text-gray-500 font-mono tracking-wide truncate mt-0.5">
+                              {user.title}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex-shrink-0 pl-1">
+                          <span className="text-xs font-black font-mono text-amber-300">
+                            {user.points} pts
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
               </div>
-            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {LOYALTY_EXCHANGE_ITEMS.map((item) => {
-                const countNeeded = item.pointsRequired;
-                const hasEnough = loyaltyPoints >= countNeeded;
-                return (
-                  <div key={item.id} className="bg-gray-950/60 rounded-2xl border border-gray-800 p-3.5 flex flex-col justify-between hover:border-[#FF6B35]/30 transition-all">
-                    <div className="relative rounded-xl overflow-hidden mb-3 aspect-video">
-                      <img src={item.image} alt={item.name} className="object-cover w-full h-full filter brightness-90 hover:scale-101 transition-all" referrerPolicy="no-referrer" />
-                      <span className="absolute bottom-2 right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-gray-950 font-black text-[10px] px-2.5 py-1 rounded-lg leading-none shadow-md">
-                        Cost: {countNeeded} pts
-                      </span>
-                    </div>
+              <div className="mt-3.5 border-t border-gray-800/60 pt-3 flex items-center justify-center">
+                <button
+                  onClick={() => setShowAllLeaderboard(!showAllLeaderboard)}
+                  className="w-full py-2 bg-gray-950 hover:bg-gray-900 border border-gray-850 hover:border-gray-800 text-[#FF6B35] font-black text-[10px] tracking-wider uppercase rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                >
+                  {showAllLeaderboard ? "👆 Show Top 5 Standings" : "👇 View Full Standings (14 Foodies)"}
+                </button>
+              </div>
+            </div>
+          </div>
 
-                    <div className="text-left">
-                      <h4 className="font-extrabold text-[#FFF8F0] text-xs leading-tight">{item.name.replace("🎁 Points ", "")}</h4>
-                      <p className="text-[10px] text-gray-400 leading-snug font-medium mt-1 pr-1">{item.description}</p>
-                    </div>
-
-                    <button
-                      disabled={!hasEnough}
-                      onClick={() => handleRedeemLoyaltyItem(item)}
-                      className={`mt-4 py-2 px-3 text-xs font-bold text-center rounded-xl transition-all ${
-                        hasEnough
-                          ? "bg-gradient-to-r from-[#FF6B35] to-orange-600 hover:from-emerald-600 hover:to-emerald-700 text-white cursor-pointer shadow-md"
-                          : "bg-gray-800 text-gray-500 border border-gray-700/60 cursor-not-allowed"
-                      }`}
-                    >
-                      {hasEnough ? "🎁 Redeem for Free!" : `Locked (Need ${countNeeded} pts)`}
-                    </button>
+          {/* DYNAMIC TRENDING DISHES GOOGLE MAPS INTEGRATION SECTION */}
+          <div id="trending-dishes-section" className="bg-gradient-to-br from-slate-900 via-[#161a29] to-[#0d0f18] text-white p-6 sm:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden mb-12 animate-fadeIn text-left">
+            {/* Visual ambient glows */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF6B35]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col lg:flex-row gap-8 items-stretch">
+              
+              {/* Left Column: Traditional Cards & Radius Filter */}
+              <div className="flex-1 flex flex-col justify-between space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 text-[#FF6B35] font-black text-[10px] uppercase tracking-widest bg-[#FF6B35]/15 px-3 py-1 rounded-full border border-[#FF6B35]/30 w-max">
+                    <Flame className="w-3.5 h-3.5 animate-bounce" />
+                    <span>Google Maps GPS Grounded</span>
                   </div>
-                );
-              })}
+                  <h2 className="text-3xl font-serif italic text-white mt-1.5 font-bold">Trending Dishes Near You</h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Popular delicacies matched with live coordinate telemetry. Use the geofence slider to inspect nearby neighborhood kitchens.
+                  </p>
+                </div>
+
+                {/* Radius controller tool */}
+                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-300">⚡ Search Geofence Radius:</span>
+                    <span className="text-xs font-mono font-black text-[#FF6B35] bg-[#FF6B35]/10 px-2.5 py-0.5 rounded-lg border border-[#FF6B35]/20">
+                      {mapRadius.toFixed(1)} km
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="15.0"
+                    step="0.5"
+                    value={mapRadius}
+                    onChange={(e) => setMapRadius(parseFloat(e.target.value))}
+                    className="w-full accent-[#FF6B35] h-1.5 bg-gray-800 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 font-mono font-bold">
+                    <span>1.0 km (Immediate Block)</span>
+                    <span>15.0 km (City-wide Express)</span>
+                  </div>
+                </div>
+
+                {/* Dishes list */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      id: "item_101",
+                      name: "Buff Steamed MoMo (Juicy)",
+                      price: 130,
+                      description: "Juicy minced buffalo street dumplings, secret sesame tomato dip.",
+                      category: "Momo",
+                      image: steamBuffMomoImg,
+                      restaurantId: "rest_1",
+                      restaurantName: "Momo House & Newari Delicacy",
+                      latOffset: 0.008, 
+                      lngOffset: 0.009, 
+                    },
+                    {
+                      id: "item_301",
+                      name: "Thakali Chicken Thali Set",
+                      price: 320,
+                      description: "Flavor-rich basmati rice, organic chicken curry, mountain lentils, radish pickles.",
+                      category: "Thakali",
+                      image: thakaliChickenThaliImg,
+                      restaurantId: "rest_3",
+                      restaurantName: "Thakali Bhanchha Ghar",
+                      latOffset: -0.015, 
+                      lngOffset: -0.012,
+                    },
+                    {
+                      id: "item_502",
+                      name: "Traditional Ring Sel Roti",
+                      price: 90,
+                      description: "Crispy sweet ring-shaped rice donut bread, handmade and deep-fried.",
+                      category: "Traditional",
+                      image: pipedSelRotiImg,
+                      restaurantId: "rest_5",
+                      restaurantName: "Sweet & Selroti Ghar",
+                      latOffset: -0.002, 
+                      lngOffset: 0.018,
+                    },
+                    {
+                      id: "item_802",
+                      name: "Himalayan Chicken Sekuwa",
+                      price: 180,
+                      description: "Spicy coal-roasted chicken skewered chops served with spiced pickles.",
+                      category: "Traditional",
+                      image: chickenSekuwaImg,
+                      restaurantId: "rest_8",
+                      restaurantName: "Foodie Sekuwa Corner",
+                      latOffset: 0.022, 
+                      lngOffset: 0.035,
+                    }
+                  ].map((dish) => {
+                    // Coordinate adaptors dynamically matching Kathmandu / Pokhara simulation centers
+                    const isPokhara = userLat > 28.0;
+                    const baseLat = isPokhara ? 28.2096 : 27.70076;
+                    const baseLng = isPokhara ? 83.9584 : 85.30014;
+                    const areaName = isPokhara 
+                      ? (dish.id === "item_101" ? "Lakeside Ward 6" : dish.id === "item_301" ? "Sarangkot Foothills" : dish.id === "item_502" ? "Phewa Tal Bank" : "Prithvi Chowk Hub")
+                      : (dish.id === "item_101" ? "Thamel Bazaar" : dish.id === "item_301" ? "Jhamsikhel Lalitpur" : dish.id === "item_502" ? "New Baneshwor" : "Boudha Outer Ring");
+
+                    const dishLat = baseLat + dish.latOffset;
+                    const dishLng = baseLng + dish.lngOffset;
+
+                    const computedDist = getGeodesicDistance(userLat, userLng, dishLat, dishLng);
+                    const isWithinRadius = computedDist <= mapRadius;
+                    const isFocused = selectedMapDish === dish.id;
+
+                    return (
+                      <div
+                        key={dish.id}
+                        onClick={() => setSelectedMapDish(dish.id)}
+                        className={`group bg-white/5 border rounded-2xl p-3.5 flex flex-col justify-between text-left transition-all duration-300 cursor-pointer ${
+                          isFocused 
+                            ? "border-[#FF6B35] bg-gradient-to-br from-[#FF6B35]/15 to-red-950/20 shadow-xl ring-2 ring-[#FF6B35]/45 -translate-y-1" 
+                            : isWithinRadius ? "border-white/10 hover:border-white/25 hover:bg-white/10 hover:-translate-y-0.5" : "border-white/5 opacity-35 hover:opacity-55"
+                        }`}
+                        id={`trending-card-${dish.id}`}
+                      >
+                        <div>
+                          {/* Card Image */}
+                          <div className="relative rounded-xl overflow-hidden mb-2.5 aspect-video bg-black/40">
+                            <img
+                              src={dish.image}
+                              alt={dish.name}
+                              className="object-cover w-full h-full filter brightness-90 group-hover:scale-105 transition-transform duration-500"
+                              referrerPolicy="no-referrer"
+                            />
+                            
+                            {/* Glowing 'Popular Now' Badge */}
+                            <span className="absolute top-2 left-2 bg-gradient-to-r from-red-600 via-red-550 to-[#FF6B35] text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 border border-white/20 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              Popular Now
+                            </span>
+
+                            {/* Distance indicator */}
+                            <span className="absolute bottom-2 right-2 bg-slate-900/90 backdrop-blur-xs text-amber-300 font-mono text-[10px] font-black px-2 py-0.5 rounded-lg border border-white/10">
+                              📍 {computedDist.toFixed(1)} km
+                            </span>
+                          </div>
+
+                          <div className="flex items-start justify-between gap-1.5">
+                            <h4 className="font-extrabold text-xs text-white group-hover:text-[#FF6B35] transition leading-snug">{dish.name}</h4>
+                            <span className="text-amber-400 font-bold font-mono text-xs block whitespace-nowrap">Rs.{dish.price}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-[9px] text-gray-400 mt-1 font-semibold truncate">
+                            <span className="text-[#FF6B35] truncate max-w-[100px]">🏪 {dish.restaurantName}</span>
+                            <span>•</span>
+                            <span className="text-emerald-400">{areaName}</span>
+                          </div>
+
+                          <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed line-clamp-2">{dish.description}</p>
+                        </div>
+
+                        {/* Interactive button choices */}
+                        <div className="grid grid-cols-3 gap-1 mt-3 pt-3 border-t border-white/5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onCookAnimation(dish as any); }}
+                            className="bg-white/5 hover:bg-[#FF6B35]/20 text-gray-300 hover:text-white border border-white/10 hover:border-[#FF6B35]/30 text-[9px] py-1.5 rounded-lg font-bold transition cursor-pointer text-center"
+                          >
+                            Cook
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onARPreview(dish as any); }}
+                            className="bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-white border border-white/10 hover:border-emerald-500/30 text-[9px] py-1.5 rounded-lg font-bold transition cursor-pointer text-center"
+                          >
+                            AR Live
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddToCartDirect(dish as any, dish.restaurantId, dish.restaurantName);
+                            }}
+                            className="bg-[#FF6B35] hover:bg-red-700 text-white text-[9px] py-1.5 rounded-lg font-black transition cursor-pointer shadow-lg hover:shadow-[#FF6B35]/25 text-center"
+                          >
+                            + Cart
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Column: High-fidelity Geographic Location RADAR HUD with Simulated Google API overlays */}
+              <div className="w-full lg:w-96 bg-[#0a0d15] rounded-3xl border border-gray-800 p-5 flex flex-col justify-between relative overflow-hidden shrink-0">
+                <div className="space-y-1 z-10 text-left">
+                  <span className="text-[8px] font-mono tracking-widest text-[#FF6B35] font-black uppercase">Google Maps Navigation Core</span>
+                  <h3 className="text-md font-extrabold text-white">Live Geolocation Radar</h3>
+                  <p className="text-[10px] text-gray-500 leading-snug">
+                    Tracking distance offset indices from base coordinate: <span className="font-mono text-amber-300 font-bold bg-white/5 px-1 rounded">{userLat.toFixed(4)}°N, {userLng.toFixed(4)}°E</span>
+                  </p>
+                </div>
+
+                {/* SVG Visual Radar Screen representation */}
+                <div className="my-5 aspect-square relative bg-[#0e121e]/85 rounded-2xl border border-gray-800/85 overflow-hidden flex items-center justify-center shadow-inner">
+                  {/* Radar rotating sweep sweep */}
+                  <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,107,53,0.06)_0%,transparent_50%)] animate-spin-slow origin-center pointer-events-none" />
+                  
+                  {/* Coordinate concentric reference rings */}
+                  <div className="absolute w-[80%] h-[80%] rounded-full border border-[#FF6B35]/15 border-dashed pointer-events-none" />
+                  <div className="absolute w-[50%] h-[50%] rounded-full border border-gray-800/50 pointer-events-none" />
+                  <div className="absolute w-[20%] h-[20%] rounded-full border border-gray-800/40 pointer-events-none" />
+                  
+                  {/* Vertical & Horizontal Crosshairs */}
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-gray-800/35 pointer-events-none" />
+                  <div className="absolute inset-x-0 top-1/2 h-px bg-gray-800/35 pointer-events-none" />
+
+                  {/* ACTIVE COMPASS BEACONS */}
+                  {/* YOU beacon at dead-center */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center pointer-events-none">
+                    <div className="w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg relative animate-pulse">
+                      <span className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    </div>
+                    <span className="text-[7px] font-sans font-black tracking-widest uppercase text-emerald-300 bg-slate-900/95 border border-emerald-500/25 px-1 py-0.2 rounded mt-1 shadow-md leading-none">
+                      YOU
+                    </span>
+                  </div>
+
+                  {/* RESTAURANTS COMPASS POINTS */}
+                  {[
+                    { id: "item_101", name: "MoMo House", top: "32%", left: "64%", color: "border-[#FF6B35]" },
+                    { id: "item_301", name: "Thakali Bhanchha", top: "66%", left: "36%", color: "border-red-400" },
+                    { id: "item_502", name: "Selroti Ghar", top: "54%", left: "74%", color: "border-amber-400" },
+                    { id: "item_802", name: "Sekuwa Corner", top: "20%", left: "80%", color: "border-purple-400" }
+                  ].map((pin) => {
+                    const isSelected = selectedMapDish === pin.id;
+                    return (
+                      <button
+                        key={pin.id}
+                        onClick={() => setSelectedMapDish(pin.id)}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group/pin z-10 transition-all active:scale-95 cursor-pointer"
+                        style={{ top: pin.top, left: pin.left }}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded-full bg-slate-900 border-2 ${pin.color} flex items-center justify-center transition-all ${
+                          isSelected ? "scale-125 ring-4 ring-[#FF6B35]/40" : "group-hover/pin:scale-110"
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-[#FF6B35] animate-ping" : "bg-white"}`} />
+                        </div>
+                        <span className={`text-[7px] font-mono whitespace-nowrap px-1 py-0.2 rounded mt-0.5 shadow-sm border transition-all ${
+                          isSelected 
+                            ? "bg-[#FF6B35] text-white border-[#FF6B35] font-black" 
+                            : "bg-slate-900/80 text-gray-400 border-white/5 group-hover/pin:text-white"
+                        }`}>
+                          {pin.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Satellite overlay stats indicators */}
+                <div className="bg-white/5 border border-white/5 p-3 rounded-xl space-y-2 text-left z-10 text-[9px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Selected Station:</span>
+                    <span className="font-mono text-white font-bold uppercase">
+                      {selectedMapDish === "item_101" ? "Momo House" : selectedMapDish === "item_301" ? "Thakali Bhanchha" : selectedMapDish === "item_502" ? "Selroti Ghar" : "Sekuwa Corner"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Precision GPS coordinates:</span>
+                    <span className="font-mono text-[#FF6B35]">
+                      {selectedMapDish === "item_101" ? "27.712°N, 85.313°E" : selectedMapDish === "item_301" ? "27.679°N, 85.313°E" : selectedMapDish === "item_502" ? "27.698°N, 85.321°E" : "27.721°N, 85.362°E"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Current Geofenced State:</span>
+                    <span className="text-emerald-400 font-bold font-mono">STANDBY / CONNECTED</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
           {/* Cuisines categories horizontally sliding */}
-          <div>
+          <div id="cuisine-bar">
             <h2 className="text-xl font-serif italic font-bold text-[#8B1A1A] text-left mb-4">Explore Local Nepali Cuisines</h2>
             <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
               <button
@@ -847,15 +1277,15 @@ export default function Home({
             </div>
           )}
 
-          {/* SABSE SASTO: BUDGET SECTION FOR FAMILIES! (Under Rs 150) */}
-          <div className="bg-gradient-to-r from-[#FFF8F0] to-[#FFE8D6] p-6 rounded-3xl border border-[#8B1A1A]/10 mb-12 shadow-xs">
+          {/* POPULAR DISHES AND LOCAL DELICACIES BEST SELLERS SECTION */}
+          <div id="popular-deals" className="bg-gradient-to-r from-[#FFF8F0] to-[#FFE8D6] p-6 rounded-3xl border border-[#8B1A1A]/10 mb-12 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 text-left">
               <div>
                 <div className="flex items-center gap-2 text-[#FF6B35] font-black text-xs uppercase tracking-wider bg-white px-2.5 py-1 rounded-full w-max border border-orange-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
                   Nepalese Local Delicacies
                 </div>
-                <h2 className="text-2xl font-serif italic text-[#8B1A1A] mt-1 font-bold">Popular Dishes (Under Rs. 150)</h2>
+                <h2 className="text-2xl font-serif italic text-[#8B1A1A] mt-1 font-bold">Popular Dishes</h2>
                 <p className="text-xs text-gray-550 font-medium font-serif italic">Delicious traditional dishes sourced from partner neighborhood kitchens.</p>
               </div>
               <span className="text-[10px] font-extrabold text-[#2D6A4F] font-mono tracking-widest uppercase bg-white px-3 py-1.5 rounded-xl border border-[#8B1A1A]/5">
@@ -864,27 +1294,27 @@ export default function Home({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {sampleSastoItems.map((sasto) => (
-                <div key={sasto.item.id} className="bg-white rounded-2xl border border-gray-105 shadow-sm p-3.5 hover:shadow-md transition-all flex flex-col justify-between text-left">
+              {samplePopularItems.map((popular) => (
+                <div key={popular.item.id} className="bg-white rounded-2xl border border-gray-105 shadow-sm p-3.5 hover:shadow-md transition-all flex flex-col justify-between text-left">
                   <div className="relative rounded-xl overflow-hidden mb-2.5 aspect-video bg-gray-50">
-                    <img src={sasto.item.image} alt={sasto.item.name} className="object-cover w-full h-full" referrerPolicy="no-referrer" />
+                    <img src={popular.item.image} alt={popular.item.name} className="object-cover w-full h-full" referrerPolicy="no-referrer" />
                     <span className="absolute bottom-1 right-1 bg-[#2D6A4F] text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded leading-none">
-                      Rs. {sasto.item.price}
+                      Rs. {popular.item.price}
                     </span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-xs text-gray-900 truncate leading-tight">{sasto.item.name}</h4>
-                    <span className="text-[9px] text-gray-400 font-bold block truncate mt-0.5">{sasto.restaurantName}</span>
+                    <h4 className="font-extrabold text-xs text-gray-900 truncate leading-tight">{popular.item.name}</h4>
+                    <span className="text-[9px] text-gray-400 font-bold block truncate mt-0.5">{popular.restaurantName}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 mt-3">
                     <button
-                      onClick={() => onCookAnimation(sasto.item as any)}
+                      onClick={() => onCookAnimation(popular.item as any)}
                       className="py-1 px-1 bg-gray-50 hover:bg-orange-50 text-[10px] text-center font-bold text-[#FF6B35] rounded-lg border border-gray-100 cursor-pointer"
                     >
                       Cook
                     </button>
                     <button
-                      onClick={() => onAddToCartDirect(sasto.item as any, sasto.restaurantId, sasto.restaurantName)}
+                      onClick={() => onAddToCartDirect(popular.item as any, popular.restaurantId, popular.restaurantName)}
                       className="py-1 px-1 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white text-[10px] text-center font-bold rounded-lg cursor-pointer animate-fadeIn"
                     >
                       + Add
@@ -896,7 +1326,7 @@ export default function Home({
           </div>
 
           {/* MAIN FEATURED RESTAURANTS SECTION */}
-          <div>
+          <div id="restaurant-cards">
             <div className="flex items-center justify-between mb-6 text-left">
               <div>
                 <h2 className="text-2xl font-serif italic text-[#8B1A1A] font-bold">Featured Local Restaurants</h2>
