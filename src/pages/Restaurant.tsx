@@ -102,15 +102,15 @@ export default function Restaurant({
       </button>
 
       {/* Styled Large banner block with restaurant metrics */}
-      <div className="relative rounded-3xl overflow-hidden h-64 md:h-85 bg-[#FFF8F0] mb-8 border border-[#8B1A1A]/10 shadow-sm">
+      <div className="relative rounded-3xl overflow-hidden h-64 md:h-85 bg-[#FCFAF7] mb-8 border border-[#8B1A1A]/10 shadow-sm flex items-center justify-center">
         <img
           src={restaurant.banner}
           alt={restaurant.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain p-8 md:p-12"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent pointer-events-none" />
 
-        <div className="absolute bottom-6 left-6 right-6 text-white flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="absolute bottom-4 left-4 right-4 bg-black/75 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/10 text-white flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-[#2D6A4F] text-white text-[9px] font-bold tracking-widest uppercase px-2.5 py-1 rounded border border-[#2D6A4F]/25">

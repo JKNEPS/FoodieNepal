@@ -913,8 +913,8 @@ export default function Home({
                   >
                     <div>
                       {/* Banner Wrapper */}
-                      <div className="relative h-44 bg-gray-100">
-                        <img src={rest.banner} alt={rest.name} className="object-cover w-full h-full group-hover:scale-101 transition-all" referrerPolicy="no-referrer" />
+                      <div className="relative h-44 bg-[#FCFAF7] border-b border-gray-100 flex items-center justify-center overflow-hidden">
+                        <img src={rest.banner} alt={rest.name} className="object-contain w-full h-full p-4 group-hover:scale-105 transition-all duration-300" referrerPolicy="no-referrer" />
                         
                         {/* Favorite Heart toggle */}
                         <button
