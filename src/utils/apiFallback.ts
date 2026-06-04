@@ -15,10 +15,10 @@ const IMAGES = {
   thakaliChicken: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=600",
   dhido: "/src/assets/images/buckwheat_dhido_1780141002501.png",
   sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
-  dalbhatVeg: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=600",
+  dalbhatVeg: "/src/assets/images/classic_dal_bhat_1780558896540.png",
   dalbhatMutton: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=600",
-  jerry: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=600",
-  selroti: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=600", // Traditional Nepali Ring Bread Sel Roti!
+  jerry: "/src/assets/images/jalebi_sweet_1780558932164.png",
+  selroti: "/src/assets/images/piped_sel_roti_1780558913963.png",
   chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600",
   chowmeinVeg: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=600",
   buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",

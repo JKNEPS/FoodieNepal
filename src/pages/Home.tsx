@@ -11,6 +11,9 @@ import samayBajiImg from "../assets/images/samay_baji_1780140980351.png";
 import buckwheatDhidoImg from "../assets/images/buckwheat_dhido_1780141002501.png";
 import nepaliChatpateImg from "../assets/images/nepali_chatpate_1780141021967.png";
 import buffChhoilaImg from "../assets/images/buff_chhoila_1780141044024.png";
+import classicDalBhatImg from "../assets/images/classic_dal_bhat_1780558896540.png";
+import pipedSelRotiImg from "../assets/images/piped_sel_roti_1780558913963.png";
+import jalebiSweetImg from "../assets/images/jalebi_sweet_1780558932164.png";
 
 interface HomeProps {
   onSelectRestaurant: (id: string) => void;
@@ -196,7 +199,7 @@ const ALL_MENU_ITEMS = [
     price: 130,
     description: "Simple household Nepali thali with yellow mountain lentils, mixed seasonal vegetables, and pickles.",
     category: "Traditional",
-    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=400",
+    image: classicDalBhatImg,
     restaurantId: "rest_4",
     restaurantName: "Dal-Bhat Express"
   },
@@ -216,7 +219,7 @@ const ALL_MENU_ITEMS = [
     price: 60,
     description: "Deep-fried fermented rice flour spiral shapes, soaked in aromatic sugar cardamom syrup.",
     category: "Street Food",
-    image: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&q=80&w=400",
+    image: jalebiSweetImg,
     restaurantId: "rest_5",
     restaurantName: "Sweet & Selroti Ghar"
   },
@@ -226,7 +229,7 @@ const ALL_MENU_ITEMS = [
     price: 90,
     description: "Traditional ring-shaped crispy sweet rice bread, deep-fried in ghee, served with sesame potato salad.",
     category: "Traditional",
-    image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400",
+    image: pipedSelRotiImg,
     restaurantId: "rest_5",
     restaurantName: "Sweet & Selroti Ghar"
   },
@@ -525,9 +528,9 @@ export default function Home({
         id: "item_401",
         name: "Classic Veg Dal Bhat Thali",
         price: 130,
-        description: "Delightful Nepali Dal Bhat. Daily hand-milled rice, yellow lenses, seasonal curry.",
+        description: "Delightful Nepali Dal Bhat. Daily hand-milled rice, yellow lentils, seasonal curry.",
         category: "Nepali",
-        image: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
+        image: classicDalBhatImg,
         spiceLevel: "Mild" as const,
         isVeg: true,
         ingredients: []
@@ -540,26 +543,26 @@ export default function Home({
         id: "item_502",
         name: "Piped Sel Roti with Alu Achar",
         price: 90,
-        description: "Traditional ring-shaped crispy sweet rice bread, deep-fried in ghee.",
+        description: "Traditional ring-shaped crispy sweet rice bread, deep-fried in ghee, served with alu achar.",
         category: "Traditional",
-        image: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&q=80&w=400", // Corrected Sel Roti Bread!
+        image: pipedSelRotiImg,
         spiceLevel: "Medium" as const,
         isVeg: true,
         ingredients: []
       }
     },
     {
-      restaurantId: "rest_6",
-      restaurantName: "Nepali Fast Food",
+      restaurantId: "rest_5",
+      restaurantName: "Sweet & Selroti Ghar",
       item: {
-        id: "item_601",
-        name: "Classic Buff Chowmein",
-        price: 110,
-        description: "Nepali wok-fired wheat noodles tossed with sautéed buffalo meat and dark soy.",
-        category: "Chowmein",
-        image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=400",
-        spiceLevel: "Medium" as const,
-        isVeg: false,
+        id: "item_501",
+        name: "Jalebi",
+        price: 60,
+        description: "Crispy sweet syrupy orange cardamom Jalebi spiral fritters.",
+        category: "Street Food",
+        image: jalebiSweetImg,
+        spiceLevel: "Mild" as const,
+        isVeg: true,
         ingredients: []
       }
     }
