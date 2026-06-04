@@ -14,6 +14,11 @@ import buffChhoilaImg from "../assets/images/buff_chhoila_1780141044024.png";
 import classicDalBhatImg from "../assets/images/classic_dal_bhat_1780558896540.png";
 import pipedSelRotiImg from "../assets/images/piped_sel_roti_1780558913963.png";
 import jalebiSweetImg from "../assets/images/jalebi_sweet_1780558932164.png";
+import steamBuffMomoImg from "../assets/images/steam_buff_momo_1780559779495.png";
+import buffJholMomoImg from "../assets/images/buff_jhol_momo_1780559796465.png";
+import yakCheeseVegMomoImg from "../assets/images/yak_cheese_veg_momo_1780559811981.png";
+import thakaliChickenThaliImg from "../assets/images/thakali_chicken_thali_1780559828216.png";
+import vegChowmeinSpicyImg from "../assets/images/veg_chowmein_spicy_1780559843872.png";
 
 interface HomeProps {
   onSelectRestaurant: (id: string) => void;
@@ -40,7 +45,7 @@ const LOYALTY_EXCHANGE_ITEMS = [
     price: 0,
     description: "Points Special: Authentic plate of 10 juicy chicken steamed dumplings seasoned to perfection.",
     category: "Momo",
-    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=600",
+    image: steamBuffMomoImg,
     spiceLevel: "Medium",
     isVeg: false,
     ingredients: []
@@ -79,7 +84,7 @@ const ALL_MENU_ITEMS = [
     price: 130,
     description: "Nepali style dumplings stuffed with spiced minced buffalo meat, steamed to perfection.",
     category: "Momo",
-    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400",
+    image: steamBuffMomoImg,
     restaurantId: "rest_1",
     restaurantName: "Momo House & Newari Delicacy"
   },
@@ -89,7 +94,7 @@ const ALL_MENU_ITEMS = [
     price: 160,
     description: "Momo drowned in a cold/warm tangy sesame-based light soup flavored with hog plum (lapsi).",
     category: "Momo",
-    image: "https://plus.unsplash.com/premium_photo-1669742928014-ba36511677c7?auto=format&fit=crop&q=80&w=400",
+    image: buffJholMomoImg,
     restaurantId: "rest_1",
     restaurantName: "Momo House & Newari Delicacy"
   },
@@ -99,7 +104,7 @@ const ALL_MENU_ITEMS = [
     price: 140,
     description: "Dumplings stuffed with mixed fresh vegetables, paneer, and local yak cheese. Incredibly rich.",
     category: "Momo",
-    image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
+    image: yakCheeseVegMomoImg,
     restaurantId: "rest_1",
     restaurantName: "Momo House & Newari Delicacy"
   },
@@ -169,7 +174,7 @@ const ALL_MENU_ITEMS = [
     price: 320,
     description: "Aromatic basmati rice, slow-cooked yellow and black lentils, organic chicken curry, pure Himalayan ghee, and pickles.",
     category: "Thakali",
-    image: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=400",
+    image: thakaliChickenThaliImg,
     restaurantId: "rest_3",
     restaurantName: "Thakali Bhanchha Ghar"
   },
@@ -249,7 +254,7 @@ const ALL_MENU_ITEMS = [
     price: 95,
     description: "Street-style hot chowmein loaded with shredded fresh local vegetables and extra green chilies.",
     category: "Chowmein",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=400",
+    image: vegChowmeinSpicyImg,
     restaurantId: "rest_6",
     restaurantName: "Nepali Fast Food"
   },
@@ -515,7 +520,7 @@ export default function Home({
         price: 130,
         description: "Nepali style dumplings stuffed with spiced minced buffalo meat.",
         category: "Momo",
-        image: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400",
+        image: steamBuffMomoImg,
         spiceLevel: "Medium" as const,
         isVeg: false,
         ingredients: []

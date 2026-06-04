@@ -3,16 +3,16 @@ import { notifyUserSession, notifyOrderPlacement } from "./discord";
 
 // --- Correct High-Resolution Images for Nepalese Delicacies ---
 const IMAGES = {
-  momoSteam: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=600",
-  momoJhol: "https://plus.unsplash.com/premium_photo-1669742928014-ba36511677c7?auto=format&fit=crop&q=80&w=600",
-  momoVeg: "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=600",
+  momoSteam: "/src/assets/images/steam_buff_momo_1780559779495.png",
+  momoJhol: "/src/assets/images/buff_jhol_momo_1780559796465.png",
+  momoVeg: "/src/assets/images/yak_cheese_veg_momo_1780559811981.png",
   momoFried: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=600",
   chhoila: "/src/assets/images/buff_chhoila_1780141044024.png",
   samaybaji: "/src/assets/images/samay_baji_1780140980351.png",
   bara: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=600",
   chatamari: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600",  // Traditional Nepalese Pizza Pizza layout!
   alubodi: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
-  thakaliChicken: "https://images.unsplash.com/photo-1615557960916-5f4791edd69a?auto=format&fit=crop&q=80&w=600",
+  thakaliChicken: "/src/assets/images/thakali_chicken_thali_1780559828216.png",
   dhido: "/src/assets/images/buckwheat_dhido_1780141002501.png",
   sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
   dalbhatVeg: "/src/assets/images/classic_dal_bhat_1780558896540.png",
@@ -20,7 +20,7 @@ const IMAGES = {
   jerry: "/src/assets/images/jalebi_sweet_1780558932164.png",
   selroti: "/src/assets/images/piped_sel_roti_1780558913963.png",
   chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600",
-  chowmeinVeg: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=600",
+  chowmeinVeg: "/src/assets/images/veg_chowmein_spicy_1780559843872.png",
   buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",
   sekuwa: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600",
   lassi: "https://images.unsplash.com/photo-1571115177098-24ec42ed635d?auto=format&fit=crop&q=80&w=600",
