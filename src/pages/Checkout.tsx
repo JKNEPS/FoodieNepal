@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShieldCheck, ArrowLeft, Trash2, ShoppingBag, Plus, Minus, Tag, MapPin, Ticket } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Trash2, ShoppingBag, Plus, Minus, Tag, MapPin, Ticket, Info } from "lucide-react";
 import { CartItem } from "../types";
 
 interface CheckoutProps {
@@ -11,7 +11,7 @@ interface CheckoutProps {
   onUpdateCartItemNote: (id: string, note: string) => void;
   customerAddress: string;
   onChangeAddress: (addr: string) => void;
-  onPlaceOrder: (paymentMethod: "cod" | "esewa" | "khalti" | "imepay", promoCode?: string, discountAmount?: number) => void;
+  onPlaceOrder: (paymentMethod: "cod" | "esewa" | "khalti" | "imepay", promoCode?: string, discountAmount?: number, notes?: string) => void;
   loyaltyPoints: number;
   cartPointsError?: string;
 }
@@ -35,6 +35,7 @@ export default function Checkout({
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [scheduling, setScheduling] = useState<"now" | "later">("now");
+  const [specialNotes, setSpecialNotes] = useState("");
 
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressInput, setAddressInput] = useState(customerAddress);
@@ -341,6 +342,49 @@ export default function Checkout({
               </button>
             </div>
           </div>
+
+          {/* New Custom Cooking & Preparation Instructions Block */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-3.5">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Preparation & Cooking Preferences</span>
+              <h3 className="text-[#8B1A1A] font-extrabold text-sm mt-0.5">Special Culinary Requests</h3>
+              <p className="text-[11px] text-gray-500">Need it extra spicy, less spicy, well done, or have specific instructions for the chef?</p>
+            </div>
+
+            <textarea
+              id="special-cooking-notes-textarea"
+              value={specialNotes}
+              onChange={(e) => setSpecialNotes(e.target.value)}
+              placeholder="E.g., Please make it medium spicy, include extra hot chutney, or pack curry separately..."
+              rows={3}
+              className="w-full bg-gray-50/70 border border-gray-150 rounded-xl p-3.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35] focus:bg-white transition-all resize-none"
+            />
+            
+            {/* Quick pre-set helper chips */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { label: "🌶️ Extra Spicy", text: "Please make it extra spicy." },
+                { label: "🍃 Less Spicy", text: "Please make it less spicy." },
+                { label: "🥣 Extra Sauce", text: "Please pack extra chutney/sauce." },
+                { label: "🧄 No Onions/Garlic", text: "Please prepare without onions or garlic." }
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    const separator = specialNotes.trim() ? " " : "";
+                    if (!specialNotes.includes(chip.text)) {
+                      setSpecialNotes((prev) => `${prev}${separator}${chip.text}`);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-[#FFF8F0] hover:bg-[#FF6B35]/15 border border-[#FF6B35]/25 text-[#8B1A1A] rounded-lg text-[10px] font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* Right Column: Billing & Mock Wallet payments (Takes 2/5 columns) */}
@@ -429,7 +473,18 @@ export default function Checkout({
                 <span className="text-gray-800">Rs. {subtotal}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Traditional Delivery Fee</span>
+                <div className="flex items-center gap-1.5">
+                  <span>Traditional Delivery Fee</span>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("foodienepal_show_delivery_charges"))}
+                    className="p-1 text-[#FF6B35] hover:text-[#8B1A1A] hover:bg-orange-50 rounded-full transition-all cursor-pointer inline-flex items-center justify-center"
+                    title="Click to view Delivery Charges Schedule Guide"
+                    id="checkout_delivery_guide_trigger"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <span className="text-gray-800">Rs. {deliveryFee}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -469,7 +524,7 @@ export default function Checkout({
 
             <button
               id="btn-place-order"
-              onClick={() => onPlaceOrder(paymentMethod, activePromo?.code, discountAmount)}
+              onClick={() => onPlaceOrder(paymentMethod, activePromo?.code, discountAmount, specialNotes)}
               className="w-full py-4 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white rounded-xl text-xs font-black transition-all shadow-lg hover:shadow-none flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-white" />

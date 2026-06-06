@@ -477,6 +477,13 @@ export default function OrderTracking({
               Live Preparation Timeline
             </h3>
 
+            {polledOrder.notes && (
+              <div className="bg-[#FFF8F0] border border-[#FF6B35]/20 p-3.5 rounded-xl text-left text-xs font-medium space-y-1 animate-fadeIn">
+                <span className="text-[9px] font-bold text-orange-700 block tracking-wide uppercase">📋 Preparation Guidelines</span>
+                <p className="text-gray-700 italic font-semibold">"{polledOrder.notes}"</p>
+              </div>
+            )}
+
             <div className="relative border-l-2 border-dashed border-gray-200 pl-6 space-y-6">
               {stages.map((stg, idx) => {
                 const isActive = idx === currentIdx;

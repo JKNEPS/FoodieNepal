@@ -1406,9 +1406,16 @@ export default function Home({
 
                     {/* Delivery metadata footer line */}
                     <div className="border-t border-[#8B1A1A]/10 px-5 py-3.5 bg-[#FFF8F0]/30 flex items-center justify-between text-xs text-gray-700 font-semibold font-sans">
-                      <div className="flex items-center gap-1.5">
-                        <Bike className="w-4 h-4 text-[#FF6B35]" />
-                        <span>Delivery Rs. {rest.deliveryFee}</span>
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.dispatchEvent(new CustomEvent("foodienepal_show_delivery_charges"));
+                        }}
+                        className="flex items-center gap-1.5 cursor-pointer text-[#FF6B35] hover:text-[#8B1A1A] transition-colors"
+                        title="Click to view Delivery Charges Tariff Guide"
+                      >
+                        <Bike className="w-4 h-4 hover:scale-110 transition-transform" />
+                        <span className="underline decoration-dotted cursor-pointer">Delivery Rs. {rest.deliveryFee}</span>
                       </div>
                       <span className="text-[#8B1A1A] font-extrabold">Min. order Rs. {rest.minOrder}</span>
                     </div>

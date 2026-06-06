@@ -2315,7 +2315,7 @@ app.get("/api/orders", (req, res) => {
 });
 
 app.post("/api/orders", (req, res) => {
-  const { restaurantId, restaurantName, items, total, address, paymentMethod } = req.body;
+  const { restaurantId, restaurantName, items, total, address, paymentMethod, notes } = req.body;
   
   const subtotal = req.body.subtotal || (items && items.reduce((acc: number, it: any) => acc + it.menuItem.price * it.quantity, 0)) || 0;
   const deliveryFee = req.body.deliveryFee !== undefined ? req.body.deliveryFee : 40;
@@ -2341,7 +2341,8 @@ app.post("/api/orders", (req, res) => {
     deliveryOtp: orderOtp,
     riderOtp: riderOtp,
     customerOtpVerified: false,
-    riderOtpVerified: false
+    riderOtpVerified: false,
+    notes
   };
   
   // Grant customer loyalty points with zero NaN protection (50 pts per Rs. 500 block) - skip if guest

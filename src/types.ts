@@ -103,6 +103,7 @@ export interface Order {
   customerOtpVerified?: boolean;
   riderOtpVerified?: boolean;
   feedbackSubmitted?: boolean;
+  notes?: string;
 }
 
 export interface ChatMessage {

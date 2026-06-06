@@ -183,6 +183,14 @@ export default function Navbar({
       action: "profile", 
       tags: ["profile", "settings", "username", "account", "address"], 
       description: "Edit your name, contact phone, default delivery address information." 
+    },
+    { 
+      id: "feat_delivery_charges",
+      name: "📋 Official Delivery Charges Guide", 
+      type: "action", 
+      action: "delivery-charges", 
+      tags: ["delivery", "charge", "fee", "cost", "distance", "rates", "tariffs"], 
+      description: "View full structural delivery rates for Fresh Mandi, Onemart, and restaurant zones." 
     }
   ];
 
@@ -236,6 +244,8 @@ export default function Navbar({
         onNavigateComplaints();
       } else if (feat.action === "profile") {
         onOpenProfile();
+      } else if (feat.action === "delivery-charges") {
+        window.dispatchEvent(new CustomEvent("foodienepal_show_delivery_charges"));
       }
     } 
     else if (feat.type === "role") {

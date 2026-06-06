@@ -19,6 +19,7 @@ import ComplaintsPortal from "./components/ComplaintsPortal";
 import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
+import DeliveryChargeModal from "./components/DeliveryChargeModal";
 import { insertOrderToSupabase } from "./utils/supabase";
 import { logOrderToGoogleSheets, sendGmailNotification } from "./utils/googleWorkspace";
 
@@ -44,6 +45,7 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [initialResetEmail, setInitialResetEmail] = useState("");
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showDeliveryCharges, setShowDeliveryCharges] = useState(false);
 
   // Parse URL query parameters for unique secure password reset keys
   useEffect(() => {
@@ -183,6 +185,12 @@ export default function App() {
         body: JSON.stringify({ user: googleUser })
       }).catch(e => console.warn(e));
     }
+  }, []);
+
+  useEffect(() => {
+    const handleShowCharges = () => setShowDeliveryCharges(true);
+    window.addEventListener("foodienepal_show_delivery_charges", handleShowCharges);
+    return () => window.removeEventListener("foodienepal_show_delivery_charges", handleShowCharges);
   }, []);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
@@ -466,7 +474,8 @@ export default function App() {
   const handlePlaceOrder = async (
     paymentMethod: "cod" | "esewa" | "khalti" | "imepay",
     promoCode?: string,
-    discountAmount?: number
+    discountAmount?: number,
+    notes?: string
   ) => {
     if (cart.length === 0) return;
 
@@ -487,7 +496,8 @@ export default function App() {
       subtotal,
       deliveryFee: 40,
       platformFee: 10,
-      tax: calculatedTax
+      tax: calculatedTax,
+      notes
     };
 
     try {
@@ -892,6 +902,11 @@ export default function App() {
           }}
         />
       )}
+
+      <DeliveryChargeModal 
+        isOpen={showDeliveryCharges} 
+        onClose={() => setShowDeliveryCharges(false)} 
+      />
 
       {showLogin && (
         <LoginPortal

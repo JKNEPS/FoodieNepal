@@ -1,4 +1,4 @@
-import { Heart, Compass, ShieldCheck, MapPin, Coffee, Globe } from "lucide-react";
+import { Heart, Compass, ShieldCheck, MapPin, Coffee, Globe, Bike } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Footer() {
@@ -53,6 +53,14 @@ export default function Footer() {
               <li className="flex items-center gap-1.5 hover:text-[#8B1A1A] transition-colors cursor-pointer">
                 <MapPin className="w-4 h-4 text-[#8B1A1A]/70" />
                 <span>Real-Time Rider GPS Tracking</span>
+              </li>
+              <li 
+                onClick={() => window.dispatchEvent(new CustomEvent("foodienepal_show_delivery_charges"))}
+                className="flex items-center gap-1.5 hover:text-[#8B1A1A] transition-all cursor-pointer font-bold text-[#FF6B35] group"
+                id="footer_delivery_charges_btn"
+              >
+                <Bike className="w-4 h-4 text-[#8B1A1A] group-hover:scale-110 transition-transform" />
+                <span className="underline decoration-[#FF6B35]/30 group-hover:decoration-current">Delivery Charges Guide</span>
               </li>
             </ul>
           </div>
