@@ -58,6 +58,10 @@ export default function FoodCard({
           src={item.image || "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400"}
           alt={item.name}
           className="object-cover w-full h-full transform group-hover:scale-103 transition-all duration-300"
+          onError={(e) => {
+            e.currentTarget.src = "https://images.unsplash.com/photo-1625220194771-7ebded01f059?auto=format&fit=crop&q=80&w=400";
+            e.currentTarget.onerror = null;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
       </div>

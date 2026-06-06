@@ -107,6 +107,10 @@ export default function Restaurant({
           src={restaurant.banner}
           alt={restaurant.name}
           className="w-full h-full object-contain p-8 md:p-12"
+          onError={(e) => {
+            e.currentTarget.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600";
+            e.currentTarget.onerror = null;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent pointer-events-none" />
 

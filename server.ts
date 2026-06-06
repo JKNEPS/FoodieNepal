@@ -2769,6 +2769,9 @@ async function startApp() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
+    // Statically serve the src/assets directory so dynamic image paths work under production
+    app.use("/src/assets", express.static(path.join(process.cwd(), "src/assets")));
+    
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
