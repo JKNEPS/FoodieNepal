@@ -16,6 +16,7 @@ export interface User {
   foodiePoints: number;
   dob?: string;
   favoritePet?: string;
+  isGuest?: boolean;
 }
 
 export interface Ingredient {
@@ -98,6 +99,9 @@ export interface Order {
   riderLat?: number;
   riderLng?: number;
   deliveryOtp?: string;
+  riderOtp?: string;
+  customerOtpVerified?: boolean;
+  riderOtpVerified?: boolean;
   feedbackSubmitted?: boolean;
 }
 

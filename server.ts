@@ -2323,6 +2323,7 @@ app.post("/api/orders", (req, res) => {
   const tax = req.body.tax !== undefined ? req.body.tax : Math.round(subtotal * 0.05);
 
   const orderOtp = Math.floor(1000 + Math.random() * 9000).toString();
+  const riderOtp = Math.floor(1000 + Math.random() * 9000).toString();
   const newOrder: Order = {
     id: `ord_${Math.floor(1000 + Math.random() * 9000)}`,
     restaurantId,
@@ -2337,12 +2338,15 @@ app.post("/api/orders", (req, res) => {
     paymentMethod,
     status: "placed",
     createdAt: new Date().toISOString(),
-    deliveryOtp: orderOtp
+    deliveryOtp: orderOtp,
+    riderOtp: riderOtp,
+    customerOtpVerified: false,
+    riderOtpVerified: false
   };
   
-  // Grant customer loyalty points with zero NaN protection (50 pts per Rs. 500 block)
+  // Grant customer loyalty points with zero NaN protection (50 pts per Rs. 500 block) - skip if guest
   const pointsToUpdate = subtotal >= 500 ? Math.floor(subtotal / 500) * 50 : 0;
-  if (!isNaN(pointsToUpdate) && pointsToUpdate > 0) {
+  if (!isNaN(pointsToUpdate) && pointsToUpdate > 0 && !(currentUser && (currentUser as any).isGuest)) {
     currentUser.foodiePoints += pointsToUpdate;
   }
   activeOrders.unshift(newOrder);
@@ -2414,18 +2418,53 @@ app.post("/api/orders", (req, res) => {
 });
 
 app.post("/api/orders/:id/verify-otp", (req, res) => {
-  const { otp } = req.body;
+  const { otp, role } = req.body;
   const order = activeOrders.find(o => o.id === req.params.id);
-  if (order && order.deliveryOtp === otp) {
+  if (!order) {
+    return res.status(404).json({ error: "Order lookup failed: record not found" });
+  }
+
+  // Ensure verification flags are initialized
+  if (order.customerOtpVerified === undefined) order.customerOtpVerified = false;
+  if (order.riderOtpVerified === undefined) order.riderOtpVerified = false;
+
+  let partyName = role === "rider" ? "Rider" : "Customer";
+
+  if (role === "rider") {
+    // Rider verifies customer with order.deliveryOtp
+    if (order.deliveryOtp === otp) {
+      order.customerOtpVerified = true;
+    } else {
+      return res.status(400).json({ error: "Incorrect Customer OTP. Code mismatch!" });
+    }
+  } else if (role === "customer") {
+    // Customer verifies rider with order.riderOtp
+    if (order.riderOtp === otp) {
+      order.riderOtpVerified = true;
+    } else {
+      return res.status(400).json({ error: "Incorrect Rider OTP. Code mismatch!" });
+    }
+  } else {
+    // Legacy support or fallback: check if matches client or rider
+    if (order.deliveryOtp === otp) {
+      order.customerOtpVerified = true;
+    } else if (order.riderOtp === otp) {
+      order.riderOtpVerified = true;
+    } else {
+      return res.status(400).json({ error: "Incorrect 4-digit code!" });
+    }
+  }
+
+  // Trigger full order completion if BOTH are verified
+  if (order.customerOtpVerified && order.riderOtpVerified) {
     order.status = "delivered";
     // Also update rider earnings
     riderDashboardEarnings.today += Math.floor(order.deliveryFee * 0.8) + 15;
     riderDashboardEarnings.deliveriesCount += 1;
-    syncOrderToFirestore(order);
-    res.json({ success: true, order });
-  } else {
-    res.status(400).json({ error: "Incorrect 4-digit verification code" });
   }
+
+  syncOrderToFirestore(order);
+  res.json({ success: true, order });
 });
 
 app.post("/api/orders/:id/cancel", (req, res) => {
@@ -2673,6 +2712,47 @@ app.post("/api/rider/status-advance", (req, res) => {
     res.json({ success: true, order });
   } else {
     res.status(404).json({ error: "Job not found" });
+  }
+});
+
+// Sync active user across client sessions
+app.post("/api/auth/set-current-user", (req, res) => {
+  const { user } = req.body;
+  if (user) {
+    currentUser = user;
+    res.json({ success: true, user: currentUser });
+  } else {
+    currentUser = {
+      id: "usr_guest",
+      name: "Anonymous Guest",
+      username: "guest_user",
+      phone: "+977 9841000000",
+      email: "guest@foodienepal.com",
+      dob: "2000-01-01",
+      favoritePet: "dog",
+      address: "Basantapur, Kathmandu",
+      bio: "Temporary guest checkout profile",
+      foodiePoints: 0,
+    } as any;
+    res.json({ success: true, user: currentUser });
+  }
+});
+
+// Secure Rider Claim Action
+app.post("/api/rider/claim", (req, res) => {
+  const { orderId, riderName, riderPhone } = req.body;
+  const order = activeOrders.find(o => o.id === orderId);
+  if (order) {
+    order.status = "picked_up";
+    order.riderId = "rider_1";
+    order.riderName = riderName || "Niranjan Shrestha";
+    order.riderPhone = riderPhone || "+977 9811223344";
+    order.riderLat = 27.6801;
+    order.riderLng = 85.3122;
+    syncOrderToFirestore(order);
+    res.json({ success: true, order });
+  } else {
+    res.status(404).json({ error: "Order not found" });
   }
 });
 

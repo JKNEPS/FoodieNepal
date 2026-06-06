@@ -116,13 +116,17 @@ interface OrderTrackingProps {
   onBack: () => void;
   onCancelOrder: (id: string) => void;
   onVerifyOtp: (id: string, otp: string) => void;
+  googleUser?: any;
+  onGuestSessionEnd?: () => void;
 }
 
 export default function OrderTracking({
   order,
   onBack,
   onCancelOrder,
-  onVerifyOtp
+  onVerifyOtp,
+  googleUser,
+  onGuestSessionEnd
 }: OrderTrackingProps) {
   const [typedOtp, setTypedOtp] = useState("");
   const [riderChatOpen, setRiderChatOpen] = useState(false);
@@ -175,6 +179,15 @@ export default function OrderTracking({
     return () => clearInterval(interval);
   }, [order, polledOrder?.id]);
 
+  useEffect(() => {
+    if (polledOrder?.status === "delivered" && googleUser?.isGuest && onGuestSessionEnd) {
+      const timer = setTimeout(() => {
+        onGuestSessionEnd();
+      }, 5500);
+      return () => clearTimeout(timer);
+    }
+  }, [polledOrder?.status, googleUser?.isGuest, onGuestSessionEnd]);
+
   if (!polledOrder) {
     return (
       <div className="text-center py-20 text-gray-500">
@@ -199,7 +212,7 @@ export default function OrderTracking({
       const res = await fetch(`/api/orders/${polledOrder.id}/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: typedOtp })
+        body: JSON.stringify({ otp: typedOtp, role: "customer" })
       });
       const data = await res.json();
       if (data.success) {
@@ -397,42 +410,64 @@ export default function OrderTracking({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Secure 4-Digit OTP Dropoff validation (Customer can submit themselves) */}
+          </div>          {/* Secure Two-Way Dynamic OTP Dropoff Validation */}
           {polledOrder.status !== "delivered" && polledOrder.status !== "cancelled" && (
-            <div className="bg-white border border-gray-100 p-5 rounded-2xl shadow-xs space-y-4">
+            <div className="bg-white border border-gray-100 p-5 rounded-3xl shadow-xs space-y-4">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
-                <h3 className="font-extrabold text-[#2D6A4F] text-xs uppercase tracking-wider">Secure OTP Dropoff Armed</h3>
-              </div>
-              
-              <div className="bg-[#FFF8F0]/50 p-3 rounded-lg border border-dashed border-[#FF6B35]/20 text-center">
-                <p className="text-[10px] text-gray-500 font-bold">YOUR UNIQUE 4-DIGIT CODE:</p>
-                <p className="text-2xl font-black tracking-widest text-[#8B1A1A] mt-1">{polledOrder.deliveryOtp || "4804"}</p>
-                <p className="text-[9px] text-gray-400 mt-1">Supply this code to the rider, or enter below for manual validation verification.</p>
+                <span className="w-2.5 h-2.5 bg-[#FF6B35] rounded-full animate-pulse" />
+                <h3 className="font-extrabold text-[#8B1A1A] text-xs uppercase tracking-wider">Dual OTP Verification Terminal</h3>
               </div>
 
-              <form onSubmit={handleVerifyOtpSubmit} className="flex gap-2">
-                <input
-                  id="delivery-otp-input"
-                  type="text"
-                  maxLength={4}
-                  value={typedOtp}
-                  onChange={(e) => setTypedOtp(e.target.value)}
-                  placeholder="Enter 4-Digit Code"
-                  className="flex-1 bg-gray-50 border border-gray-100 px-3 py-2 rounded-xl text-xs font-bold text-center tracking-widest"
-                />
-                <button
-                  type="submit"
-                  className="bg-[#2D6A4F] hover:bg-[#1a3d2e] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
-                >
-                  Confirm Dropoff
-                </button>
-              </form>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                For security, this order uses <b>mutual OTP verification</b> to guarantee correct handoff. Show your OTP to the rider, and ask the rider for their OTP to verify their identity.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 text-center flex flex-col justify-center">
+                  <p className="text-[9px] text-[#2D6A4F] font-black uppercase tracking-wider animate-pulse">Your OTP (Show to Rider)</p>
+                  <p className="text-3xl font-mono font-black tracking-widest text-[#2D6A4F] mt-1">{polledOrder.deliveryOtp || "4804"}</p>
+                  <span className="text-[10px] text-gray-400 font-bold mt-1.5 flex items-center justify-center gap-1.5">
+                    {polledOrder.customerOtpVerified ? (
+                      <span className="text-emerald-700 font-black">✓ Handshake confirmed</span>
+                    ) : (
+                      <span>○ Pending rider capture</span>
+                    )}
+                  </span>
+                </div>
+
+                <div className="bg-[#FFF8F0]/80 p-4 rounded-xl border border-[#FF6B35]/20 text-center flex flex-col justify-center">
+                  <p className="text-[9px] text-orange-700 font-black uppercase tracking-wider">Ask Rider for their Code</p>
+                  {polledOrder.riderOtpVerified ? (
+                    <div className="py-2.5 text-center">
+                      <p className="text-sm font-black text-emerald-700 flex items-center justify-center gap-1">✓ Rider Authenticated</p>
+                      <p className="text-[10px] text-gray-400 font-bold font-mono mt-1">Handoff confirmed</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleVerifyOtpSubmit} className="space-y-2 mt-1.5">
+                      <div className="flex gap-1.5">
+                        <input
+                          id="rider-otp-input"
+                          type="text"
+                          maxLength={4}
+                          value={typedOtp}
+                          onChange={(e) => setTypedOtp(e.target.value)}
+                          placeholder="Rider's Code"
+                          className="w-full bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-center tracking-widest focus:outline-[#FF6B35]"
+                        />
+                        <button
+                          type="submit"
+                          className="bg-[#FF6B35] hover:bg-[#8B1A1A] text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Verify
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
 
               {otpError && <p className="text-[10px] text-rose-500 font-bold">⚠️ {otpError}</p>}
-              {otpSuccess && <p className="text-[10px] text-emerald-600 font-bold">🎉 Dropoff successfully confirmed! Enjoy your Nepali food feast!</p>}
+              {otpSuccess && <p className="text-[10px] text-emerald-600 font-bold max-w-xs mx-auto">🎉 Rider verified! Waiting for rider to key in your code to complete delivery.</p>}
             </div>
           )}
 

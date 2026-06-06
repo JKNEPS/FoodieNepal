@@ -1,61 +1,31 @@
 import { Restaurant, MenuItem, Order, Review, User } from "../types";
 import { notifyUserSession, notifyOrderPlacement } from "./discord";
 
-// --- Import Food Assets ---
-import momoSteamImg from "../assets/images/steam_buff_momo_1780559779495.png";
-import momoJholImg from "../assets/images/buff_jhol_momo_1780559796465.png";
-import momoVegImg from "../assets/images/yak_cheese_veg_momo_1780559811981.png";
-import chhoilaImg from "../assets/images/buff_chhoila_1780141044024.png";
-import samaybajiImg from "../assets/images/samay_baji_1780140980351.png";
-import thakaliChickenImg from "../assets/images/thakali_chicken_thali_1780559828216.png";
-import dhidoImg from "../assets/images/buckwheat_dhido_1780141002501.png";
-import dalbhatVegImg from "../assets/images/classic_dal_bhat_1780558896540.png";
-import dalbhatMuttonImg from "../assets/images/khasi_dal_bhat_1780561507317.png";
-import jerryImg from "../assets/images/jalebi_sweet_1780558932164.png";
-import selrotiImg from "../assets/images/piped_sel_roti_1780558913963.png";
-import chowmeinVegImg from "../assets/images/veg_chowmein_spicy_1780559843872.png";
-import sekuwaImg from "../assets/images/chicken_sekuwa_1780561526724.png";
-import sekuwaBuffImg from "../assets/images/buff_sekuwa_1780561541112.png";
-import lassiImg from "../assets/images/yogurt_lassi_1780561556134.png";
-import chatpatImg from "../assets/images/nepali_chatpate_1780141021967.png";
-
-// --- Import Logos and Banners ---
-import momoHouseLogo from "../assets/images/momo_house_logo_1780229256535.png";
-import samayBajiLogo from "../assets/images/samay_baji_logo_1780229275996.png";
-import thakaliGharLogo from "../assets/images/thakali_ghar_logo_1780229292606.png";
-import dalbhatExpressLogo from "../assets/images/dalbhat_express_logo_1780229308934.png";
-import selrotiGharLogo from "../assets/images/selroti_ghar_logo_1780229322408.png";
-import nepaliFastfoodLogo from "../assets/images/nepali_fastfood_logo_1780229342468.png";
-import teaTingmoLogo from "../assets/images/tea_tingmo_logo_1780229359501.png";
-import sekuwaCornerLogo from "../assets/images/sekuwa_corner_logo_1780229373635.png";
-import butterTeaLogo from "../assets/images/butter_tea_logo_1780229388073.png";
-import lassiChatpatLogo from "../assets/images/lassi_chatpat_logo_1780229402803.png";
-
 // --- Correct High-Resolution Images for Nepalese Delicacies ---
 const IMAGES = {
-  momoSteam: momoSteamImg,
-  momoJhol: momoJholImg,
-  momoVeg: momoVegImg,
+  momoSteam: "/src/assets/images/steam_buff_momo_1780559779495.png",
+  momoJhol: "/src/assets/images/buff_jhol_momo_1780559796465.png",
+  momoVeg: "/src/assets/images/yak_cheese_veg_momo_1780559811981.png",
   momoFried: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=600",
-  chhoila: chhoilaImg,
-  samaybaji: samaybajiImg,
+  chhoila: "/src/assets/images/buff_chhoila_1780141044024.png",
+  samaybaji: "/src/assets/images/samay_baji_1780140980351.png",
   bara: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=600",
   chatamari: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600",  // Traditional Nepalese Pizza Pizza layout!
   alubodi: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&q=80&w=600",
-  thakaliChicken: thakaliChickenImg,
-  dhido: dhidoImg,
+  thakaliChicken: "/src/assets/images/thakali_chicken_thali_1780559828216.png",
+  dhido: "/src/assets/images/buckwheat_dhido_1780141002501.png",
   sukuti: "https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&q=80&w=600",
-  dalbhatVeg: dalbhatVegImg,
-  dalbhatMutton: dalbhatMuttonImg,
-  jerry: jerryImg,
-  selroti: selrotiImg,
+  dalbhatVeg: "/src/assets/images/classic_dal_bhat_1780558896540.png",
+  dalbhatMutton: "/src/assets/images/khasi_dal_bhat_1780561507317.png",
+  jerry: "/src/assets/images/jalebi_sweet_1780558932164.png",
+  selroti: "/src/assets/images/piped_sel_roti_1780558913963.png",
   chowmeinBuff: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600",
-  chowmeinVeg: chowmeinVegImg,
+  chowmeinVeg: "/src/assets/images/veg_chowmein_spicy_1780559843872.png",
   buttertea: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600",
-  sekuwa: sekuwaImg,
-  sekuwaBuff: sekuwaBuffImg,
-  lassi: lassiImg,
-  chatpat: chatpatImg
+  sekuwa: "/src/assets/images/chicken_sekuwa_1780561526724.png",
+  sekuwaBuff: "/src/assets/images/buff_sekuwa_1780561541112.png",
+  lassi: "/src/assets/images/yogurt_lassi_1780561556134.png",
+  chatpat: "/src/assets/images/nepali_chatpate_1780141021967.png"
 };
 
 // --- In-Memory Fallback Databases ---
@@ -63,8 +33,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_1",
     name: "Momo House & Newari Delicacy",
-    logo: momoHouseLogo,
-    banner: momoHouseLogo,
+    logo: "/src/assets/images/momo_house_logo_1780229256535.png",
+    banner: "/src/assets/images/momo_house_logo_1780229256535.png",
     rating: 4.8,
     reviewsCount: 148,
     deliveryTimeCode: "20-30 min",
@@ -81,8 +51,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_2",
     name: "Samay Baji Corner",
-    logo: samayBajiLogo,
-    banner: samayBajiLogo,
+    logo: "/src/assets/images/samay_baji_logo_1780229275996.png",
+    banner: "/src/assets/images/samay_baji_logo_1780229275996.png",
     rating: 4.6,
     reviewsCount: 92,
     deliveryTimeCode: "25-35 min",
@@ -98,8 +68,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_3",
     name: "Thakali Bhanchha Ghar",
-    logo: thakaliGharLogo,
-    banner: thakaliGharLogo,
+    logo: "/src/assets/images/thakali_ghar_logo_1780229292606.png",
+    banner: "/src/assets/images/thakali_ghar_logo_1780229292606.png",
     rating: 4.9,
     reviewsCount: 215,
     deliveryTimeCode: "30-45 min",
@@ -115,8 +85,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_4",
     name: "Dal-Bhat Express",
-    logo: dalbhatExpressLogo,
-    banner: dalbhatExpressLogo,
+    logo: "/src/assets/images/dalbhat_express_logo_1780229308934.png",
+    banner: "/src/assets/images/dalbhat_express_logo_1780229308934.png",
     rating: 4.5,
     reviewsCount: 180,
     deliveryTimeCode: "25-35 min",
@@ -132,8 +102,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_5",
     name: "Sweet & Selroti Ghar",
-    logo: selrotiGharLogo,
-    banner: selrotiGharLogo,
+    logo: "/src/assets/images/selroti_ghar_logo_1780229322408.png",
+    banner: "/src/assets/images/selroti_ghar_logo_1780229322408.png",
     rating: 4.4,
     reviewsCount: 76,
     deliveryTimeCode: "15-25 min",
@@ -149,8 +119,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_6",
     name: "Nepali Fast Food",
-    logo: nepaliFastfoodLogo,
-    banner: nepaliFastfoodLogo,
+    logo: "/src/assets/images/nepali_fastfood_logo_1780229342468.png",
+    banner: "/src/assets/images/nepali_fastfood_logo_1780229342468.png",
     rating: 4.2,
     reviewsCount: 64,
     deliveryTimeCode: "20-30 min",
@@ -166,8 +136,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_7",
     name: "Foodie Tea & Tingmo",
-    logo: teaTingmoLogo,
-    banner: teaTingmoLogo,
+    logo: "/src/assets/images/tea_tingmo_logo_1780229359501.png",
+    banner: "/src/assets/images/tea_tingmo_logo_1780229359501.png",
     rating: 4.7,
     reviewsCount: 110,
     deliveryTimeCode: "25-35 min",
@@ -183,8 +153,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_8",
     name: "Foodie Sekuwa Corner",
-    logo: sekuwaCornerLogo,
-    banner: sekuwaCornerLogo,
+    logo: "/src/assets/images/sekuwa_corner_logo_1780229373635.png",
+    banner: "/src/assets/images/sekuwa_corner_logo_1780229373635.png",
     rating: 4.6,
     reviewsCount: 132,
     deliveryTimeCode: "30-40 min",
@@ -200,8 +170,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_9",
     name: "Butter Tea House",
-    logo: butterTeaLogo,
-    banner: butterTeaLogo,
+    logo: "/src/assets/images/butter_tea_logo_1780229388073.png",
+    banner: "/src/assets/images/butter_tea_logo_1780229388073.png",
     rating: 4.8,
     reviewsCount: 156,
     deliveryTimeCode: "35-50 min",
@@ -217,8 +187,8 @@ export const fallbackRestaurants: Restaurant[] = [
   {
     id: "rest_10",
     name: "Lassi & Chatpat Corner",
-    logo: lassiChatpatLogo,
-    banner: lassiChatpatLogo,
+    logo: "/src/assets/images/lassi_chatpat_logo_1780229402803.png",
+    banner: "/src/assets/images/lassi_chatpat_logo_1780229402803.png",
     rating: 4.3,
     reviewsCount: 88,
     deliveryTimeCode: "15-25 min",

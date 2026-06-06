@@ -127,6 +127,41 @@ export default function LoginPortal({
     }
   };
 
+  const handleGuestAuthBypass = () => {
+    setUserLoading(true);
+    const tempId = `usr_guest_${Math.floor(100000 + Math.random() * 900000)}`;
+    const guestUser = {
+      id: tempId,
+      name: "Anonymous Guest",
+      username: `guest_${tempId.slice(-6)}`,
+      email: "",
+      phone: "",
+      role: "customer" as const,
+      address: "",
+      foodiePoints: 0,
+      isGuest: true,
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
+    };
+
+    if (onGoogleSuccess) {
+      onGoogleSuccess(guestUser);
+    }
+    
+    localStorage.setItem("foodienepal_google_user", JSON.stringify(guestUser));
+    
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: guestUser })
+    }).catch(e => console.warn(e));
+
+    setSuccessAnimRole("customer");
+    setTimeout(() => {
+      setUserLoading(false);
+      onLoginSuccess("customer");
+    }, 1200);
+  };
+
   const handleOfflineBypassLogin = () => {
     let targetUser: any = null;
     try {
@@ -1153,6 +1188,20 @@ export default function LoginPortal({
                     </button>
                   </form>
                 )}
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-gray-150"></div>
+                  <span className="flex-shrink mx-4 text-[9px] text-[#8B1A1A] font-black uppercase tracking-wider">Or Incognito Checkout</span>
+                  <div className="flex-grow border-t border-gray-150"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGuestAuthBypass}
+                  className="w-full py-3 bg-[#2D6A4F]/10 hover:bg-[#2D6A4F] text-[#2D6A4F] hover:text-white font-black text-xs uppercase rounded-xl transition-all border border-[#2D6A4F]/20 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                >
+                  👤 Place One-Time Order As Guest (Anonymous Mode)
+                </button>
               </div>
             )}
 

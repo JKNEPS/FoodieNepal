@@ -5,9 +5,10 @@ import { UserRole } from "../types";
 interface OnboardingWizardProps {
   onComplete: (chosenRole: "customer" | "admin") => void;
   onGoogleSignIn: () => void;
+  onGuestLogin?: () => void;
 }
 
-export default function OnboardingWizard({ onComplete, onGoogleSignIn }: OnboardingWizardProps) {
+export default function OnboardingWizard({ onComplete, onGoogleSignIn, onGuestLogin }: OnboardingWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [primaryGoal, setPrimaryGoal] = useState<"customer" | "admin" | null>(null);
   const [accessPreference, setAccessPreference] = useState<string | null>(null);
@@ -31,7 +32,11 @@ export default function OnboardingWizard({ onComplete, onGoogleSignIn }: Onboard
     setAccessPreference(preference);
     if (primaryGoal === "customer") {
       onComplete("customer");
-      if (preference === "google") {
+      if (preference === "guest") {
+        if (onGuestLogin) {
+          onGuestLogin();
+        }
+      } else if (preference === "google") {
         setTimeout(() => {
           onGoogleSignIn();
         }, 300);

@@ -92,13 +92,23 @@ export default function App() {
 
   const handleGoogleSuccess = (user: User) => {
     setGoogleUser(user);
-    setLoyaltyPoints(user.foodiePoints || 100);
+    setLoyaltyPoints(user.isGuest ? 0 : (user.foodiePoints || 100));
     localStorage.setItem("foodienepal_google_user", JSON.stringify(user));
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user })
+    }).catch(e => console.warn(e));
   };
 
   const handleGoogleSignOut = () => {
     setGoogleUser(null);
     localStorage.removeItem("foodienepal_google_user");
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: null })
+    }).catch(e => console.warn(e));
   };
 
   const handleResetPortal = () => {
@@ -106,11 +116,74 @@ export default function App() {
     setGoogleUser(null);
     localStorage.removeItem("foodienepal_portal_lock");
     localStorage.removeItem("foodienepal_google_user");
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: null })
+    }).catch(e => console.warn(e));
+  };
+
+  const handleGuestLogin = () => {
+    const tempId = `usr_guest_${Math.floor(100000 + Math.random() * 900000)}`;
+    const guestUser: User = {
+      id: tempId,
+      name: "Anonymous Guest",
+      username: `guest_${tempId.slice(-6)}`,
+      email: "",
+      phone: "",
+      role: "customer",
+      address: "",
+      isGuest: true,
+      foodiePoints: 0
+    };
+    
+    setGoogleUser(guestUser);
+    setLoyaltyPoints(0);
+    localStorage.setItem("foodienepal_google_user", JSON.stringify(guestUser));
+    
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: guestUser })
+    }).catch(e => console.warn(e));
+    
+    setCurrentView("home");
+  };
+
+  const handleGuestSessionEnd = () => {
+    setGoogleUser(null);
+    setLoyaltyPoints(120);
+    localStorage.removeItem("foodienepal_google_user");
+    localStorage.removeItem("foodienepal_cart");
+    setCart([]);
+    
+    setPortalLock(null);
+    setUserRole("customer");
+    localStorage.removeItem("foodienepal_portal_lock");
+    
+    fetch("/api/auth/set-current-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: null })
+    }).catch(e => console.warn(e));
+
+    setCurrentView("home");
+    setSwipeFeedback("🔒 Guest order complete! Session terminated and anonymous info securely deleted.");
   };
 
   useEffect(() => {
     localStorage.setItem("foodienepal_loyalty_points", loyaltyPoints.toString());
   }, [loyaltyPoints]);
+
+  useEffect(() => {
+    if (googleUser) {
+      fetch("/api/auth/set-current-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: googleUser })
+      }).catch(e => console.warn(e));
+    }
+  }, []);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(false);
 
@@ -534,6 +607,7 @@ export default function App() {
         <OnboardingWizard
           onComplete={handleOnboardingComplete}
           onGoogleSignIn={() => setShowLogin(true)}
+          onGuestLogin={handleGuestLogin}
         />
         {showLogin && (
           <LoginPortal
@@ -725,6 +799,8 @@ export default function App() {
                   onBack={() => setCurrentView("home")}
                   onCancelOrder={handleCancelOrder}
                   onVerifyOtp={handleVerifyOtp}
+                  googleUser={googleUser}
+                  onGuestSessionEnd={handleGuestSessionEnd}
                 />
               )}
 
@@ -857,6 +933,7 @@ export default function App() {
         <OnboardingWizard
           onComplete={handleOnboardingComplete}
           onGoogleSignIn={() => setShowLogin(true)}
+          onGuestLogin={handleGuestLogin}
         />
       )}
 
