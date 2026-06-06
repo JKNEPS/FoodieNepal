@@ -545,9 +545,9 @@ export default function App() {
           console.warn("[Workspace Sync Order Notification Skip]:", wsError);
         }
         
-        // Calculate points earned based on order total (50 pts per Rs. 500 block)
+        // Calculate points earned based on order total (10 pts per Rs. 100 block)
         const subtotal = cart.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
-        const earnedPoints = subtotal >= 500 ? Math.floor(subtotal / 500) * 50 : 0;
+        const earnedPoints = Math.floor(subtotal / 100) * 10;
         
         setLoyaltyPoints((pts) => pts + earnedPoints);
         setOrderPlacedSuccess(true);

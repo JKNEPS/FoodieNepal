@@ -595,15 +595,23 @@ export const initFetchInterceptor = () => {
     if (urlString.startsWith("/api/")) {
       const path = urlString.replace("/api/", "").split("?")[0];
       const method = init?.method?.toUpperCase() || "GET";
-      const bodyData = init?.body ? JSON.parse(init.body as string) : null;
+      let bodyData: any = null;
+      if (init?.body && typeof init.body === "string") {
+        try {
+          bodyData = JSON.parse(init.body);
+        } catch (e) {
+          // Ignore body parse errors for non-JSON payloads
+        }
+      }
 
       try {
         if (originalFetch) {
           // First try the real backend network request
           const realResponse = await originalFetch(input, init);
+          const contentType = realResponse.headers.get("content-type") || "";
           
-          // If it isn't 404, let the real server handle it
-          if (realResponse.status !== 404) {
+          // If it isn't 404, and hasn't fallen back to the HTML SPA index page, let the real server handle it
+          if (realResponse.status !== 404 && !contentType.includes("text/html")) {
             return realResponse;
           }
         }
