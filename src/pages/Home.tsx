@@ -829,7 +829,7 @@ export default function Home({
 
               <div className={`space-y-2.5 mt-5 flex-1 ${showAllLeaderboard ? "max-h-[440px]" : "max-h-[310px]"} overflow-y-auto pr-1 transition-all duration-300`}>
                 {[
-                  { name: "Jenish Sapkota (You)", points: 1500 + loyaltyPoints, avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100", title: "Kathmandu Emperor 🏆", badge: "Food Sovereign", isCurrentUser: true },
+                  { name: "Jenish Sapkota", points: 1500 + loyaltyPoints, avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100", title: "Kathmandu Emperor 🏆", badge: "Food Sovereign", isCurrentUser: true },
                   { name: "Nilam karki", points: 1280, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100", title: "Gourmet Scholar 🥇", badge: "Momo Legend" },
                   { name: "Obir Thapa", points: 1150, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100", title: "Thakali Guru 🥈", badge: "Dhido Expert" },
                   { name: "Bibash Dhungana", points: 1020, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100", title: "Sekuwa Sizzler 🥉", badge: "Coal Roast Master" },
