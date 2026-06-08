@@ -475,14 +475,16 @@ export default function App() {
     paymentMethod: "cod" | "esewa" | "khalti" | "imepay",
     promoCode?: string,
     discountAmount?: number,
-    notes?: string
+    notes?: string,
+    riderTip: number = 0,
+    companyTip: number = 0
   ) => {
     if (cart.length === 0) return;
 
     const firstItem = cart[0];
     const subtotal = cart.reduce((acc, it) => acc + it.menuItem.price * it.quantity, 0);
     const calculatedTax = Math.round(subtotal * 0.05);
-    const finalBill = Math.max(0, subtotal + 40 + 10 + calculatedTax - (discountAmount || 0));
+    const finalBill = Math.max(0, subtotal + 40 + 10 + calculatedTax - (discountAmount || 0) + riderTip + companyTip);
 
     const orderPayload = {
       items: cart,
@@ -497,7 +499,9 @@ export default function App() {
       deliveryFee: 40,
       platformFee: 10,
       tax: calculatedTax,
-      notes
+      notes,
+      riderTip,
+      companyTip
     };
 
     try {

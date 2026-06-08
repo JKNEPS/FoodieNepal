@@ -104,6 +104,8 @@ export interface Order {
   riderOtpVerified?: boolean;
   feedbackSubmitted?: boolean;
   notes?: string;
+  riderTip?: number;
+  companyTip?: number;
 }
 
 export interface ChatMessage {

@@ -11,7 +11,14 @@ interface CheckoutProps {
   onUpdateCartItemNote: (id: string, note: string) => void;
   customerAddress: string;
   onChangeAddress: (addr: string) => void;
-  onPlaceOrder: (paymentMethod: "cod" | "esewa" | "khalti" | "imepay", promoCode?: string, discountAmount?: number, notes?: string) => void;
+  onPlaceOrder: (
+    paymentMethod: "cod" | "esewa" | "khalti" | "imepay",
+    promoCode?: string,
+    discountAmount?: number,
+    notes?: string,
+    riderTip?: number,
+    companyTip?: number
+  ) => void;
   loyaltyPoints: number;
   cartPointsError?: string;
 }
@@ -36,6 +43,12 @@ export default function Checkout({
   const [promoSuccess, setPromoSuccess] = useState("");
   const [scheduling, setScheduling] = useState<"now" | "later">("now");
   const [specialNotes, setSpecialNotes] = useState("");
+  
+  // Rider and FoodieNepalNP Tip configuration states
+  const [riderTipType, setRiderTipType] = useState<"none" | "5%" | "10%" | "15%" | "custom">("none");
+  const [riderTipCustom, setRiderTipCustom] = useState<string>("");
+  const [companyTipType, setCompanyTipType] = useState<"none" | "5%" | "10%" | "15%" | "custom">("none");
+  const [companyTipCustom, setCompanyTipCustom] = useState<string>("");
 
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressInput, setAddressInput] = useState(customerAddress);
@@ -117,7 +130,26 @@ export default function Checkout({
     }
   }
 
-  const grandTotal = Math.max(0, subtotal + deliveryFee + platformFee + tax - discountAmount);
+  // Live tip calculations
+  let computedRiderTip = 0;
+  if (riderTipType === "5%") computedRiderTip = Math.round(subtotal * 0.05);
+  else if (riderTipType === "10%") computedRiderTip = Math.round(subtotal * 0.10);
+  else if (riderTipType === "15%") computedRiderTip = Math.round(subtotal * 0.15);
+  else if (riderTipType === "custom") {
+    const val = parseFloat(riderTipCustom);
+    computedRiderTip = !isNaN(val) && val > 0 ? Math.round(val) : 0;
+  }
+
+  let computedCompanyTip = 0;
+  if (companyTipType === "5%") computedCompanyTip = Math.round(subtotal * 0.05);
+  else if (companyTipType === "10%") computedCompanyTip = Math.round(subtotal * 0.10);
+  else if (companyTipType === "15%") computedCompanyTip = Math.round(subtotal * 0.15);
+  else if (companyTipType === "custom") {
+    const val = parseFloat(companyTipCustom);
+    computedCompanyTip = !isNaN(val) && val > 0 ? Math.round(val) : 0;
+  }
+
+  const grandTotal = Math.max(0, subtotal + deliveryFee + platformFee + tax - discountAmount + computedRiderTip + computedCompanyTip);
 
   // Calculate points to be earned based on the order total (10 pts per Rs. 100 block)
   const pointsToEarn = Math.floor(subtotal / 100) * 10;
@@ -385,6 +417,139 @@ export default function Checkout({
             </div>
           </div>
 
+          {/* Tipping & Support Section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-5 animate-fadeIn">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Gratitude & Community Support</span>
+              <h3 className="text-[#8B1A1A] font-extrabold text-sm mt-0.5">Appreciation & Contributions</h3>
+              <p className="text-[11px] text-gray-500">Show some extra love to our heroic delivery riders or support the ongoing local platform developments.</p>
+            </div>
+
+            {/* Rider Tip */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-extrabold text-gray-800 flex items-center gap-1.5">
+                  <span>🚴 Tip your rider</span>
+                  <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase font-sans">100% goes to rider</span>
+                </h4>
+                {computedRiderTip > 0 && (
+                  <span className="text-xs font-black text-orange-600 font-mono">Rs. {computedRiderTip} selected</span>
+                )}
+              </div>
+              <p className="text-[10.5px] text-gray-500 leading-normal">Help encourage our local delivery heroes navigate Kathmandu's streets safely.</p>
+              
+              <div className="grid grid-cols-5 gap-1.5">
+                {(["none", "5%", "10%", "15%", "custom"] as const).map((type) => {
+                  let label = "";
+                  if (type === "none") label = "None";
+                  else if (type === "custom") label = "Custom";
+                  else {
+                    const pct = type === "5%" ? 0.05 : type === "10%" ? 0.10 : 0.15;
+                    label = `${type} (Rs. ${Math.round(subtotal * pct)})`;
+                  }
+
+                  const isSelected = riderTipType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setRiderTipType(type)}
+                      className={`py-2 px-1 text-[10px] font-bold rounded-xl border transition-all text-center col-span-1 flex flex-col justify-center items-center cursor-pointer ${
+                        isSelected 
+                          ? "bg-orange-50/50 border-[#FF6B35] text-orange-700 font-black scale-[1.03] shadow-xs" 
+                          : "bg-white border-gray-150 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="capitalize">{type === "none" || type === "custom" ? label : type}</span>
+                      {!["none", "custom"].includes(type) && (
+                        <span className="block text-[8px] opacity-75 font-mono mt-0.5">Rs.{Math.round(subtotal * (type === "5%" ? 0.05 : type === "10%" ? 0.10 : 0.15))}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {riderTipType === "custom" && (
+                <div className="pt-1.5 animate-fadeIn">
+                  <div className="relative rounded-xl shadow-xs">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-gray-400 font-bold">Rs.</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={riderTipCustom}
+                      onChange={(e) => setRiderTipCustom(e.target.value)}
+                      placeholder="Enter custom tip amount (e.g., 50)"
+                      className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-[#FF6B35] focus:bg-white transition-all font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-100 my-1" />
+
+            {/* FoodieNepalNP Support Tip */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-extrabold text-gray-800 flex items-center gap-1.5">
+                  <span>🧡 Tip FoodieNepalNP</span>
+                  <span className="text-[9px] font-bold bg-orange-50 text-[#8B1A1A]/80 px-1.5 py-0.5 rounded uppercase font-sans">Support Platform</span>
+                </h4>
+                {computedCompanyTip > 0 && (
+                  <span className="text-xs font-black text-[#8B1A1A] font-mono">Rs. {computedCompanyTip} selected</span>
+                )}
+              </div>
+              <p className="text-[10.5px] text-gray-500 leading-normal">Support our local team in refining traditional taste maps, rider training, and service excellence.</p>
+              
+              <div className="grid grid-cols-5 gap-1.5">
+                {(["none", "5%", "10%", "15%", "custom"] as const).map((type) => {
+                  let label = "";
+                  if (type === "none") label = "None";
+                  else if (type === "custom") label = "Custom";
+                  else {
+                    const pct = type === "5%" ? 0.05 : type === "10%" ? 0.10 : 0.15;
+                    label = `${type} (Rs. ${Math.round(subtotal * pct)})`;
+                  }
+
+                  const isSelected = companyTipType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setCompanyTipType(type)}
+                      className={`py-2 px-1 text-[10px] font-bold rounded-xl border transition-all text-center col-span-1 flex flex-col justify-center items-center cursor-pointer ${
+                        isSelected 
+                          ? "bg-orange-50/50 border-[#8B1A1A] text-[#8B1A1A] font-black scale-[1.03] shadow-xs" 
+                          : "bg-white border-gray-150 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="capitalize">{type === "none" || type === "custom" ? label : type}</span>
+                      {!["none", "custom"].includes(type) && (
+                        <span className="block text-[8px] opacity-75 font-mono mt-0.5">Rs.{Math.round(subtotal * (type === "5%" ? 0.05 : type === "10%" ? 0.10 : 0.15))}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {companyTipType === "custom" && (
+                <div className="pt-1.5 animate-fadeIn">
+                  <div className="relative rounded-xl shadow-xs">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-gray-400 font-bold">Rs.</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={companyTipCustom}
+                      onChange={(e) => setCompanyTipCustom(e.target.value)}
+                      placeholder="Enter custom support amount (e.g., 50)"
+                      className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-[#8B1A1A] focus:bg-white transition-all font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* Right Column: Billing & Mock Wallet payments (Takes 2/5 columns) */}
@@ -503,6 +668,20 @@ export default function Checkout({
                 </div>
               )}
 
+              {computedRiderTip > 0 && (
+                <div className="flex items-center justify-between text-orange-600 font-bold animate-fadeIn">
+                  <span>Rider Tip (🚴)</span>
+                  <span>+ Rs. {computedRiderTip}</span>
+                </div>
+              )}
+
+              {computedCompanyTip > 0 && (
+                <div className="flex items-center justify-between text-[#8B1A1A] font-bold animate-fadeIn">
+                  <span>Tip FoodieNepalNP (🧡)</span>
+                  <span>+ Rs. {computedCompanyTip}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-[#8B1A1A] text-sm font-black border-t border-dashed border-gray-100 pt-3">
                 <span>Total Bill (NPR)</span>
                 <span>Rs. {grandTotal}</span>
@@ -524,7 +703,7 @@ export default function Checkout({
 
             <button
               id="btn-place-order"
-              onClick={() => onPlaceOrder(paymentMethod, activePromo?.code, discountAmount, specialNotes)}
+              onClick={() => onPlaceOrder(paymentMethod, activePromo?.code, discountAmount, specialNotes, computedRiderTip, computedCompanyTip)}
               className="w-full py-4 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white rounded-xl text-xs font-black transition-all shadow-lg hover:shadow-none flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-white" />
