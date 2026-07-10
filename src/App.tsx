@@ -524,7 +524,8 @@ export default function App() {
     const firstItem = cart[0];
     const subtotal = cart.reduce((acc, it) => acc + it.menuItem.price * it.quantity, 0);
     const calculatedTax = Math.round(subtotal * 0.05);
-    const finalBill = Math.max(0, subtotal + 40 + 10 + calculatedTax - (discountAmount || 0) + riderTip + companyTip);
+    const deliveryFee = promoCode === "FREEDEL" ? 0 : 40;
+    const finalBill = Math.max(0, subtotal + deliveryFee + 10 + calculatedTax - (discountAmount || 0) + riderTip + companyTip);
 
     const orderPayload = {
       items: cart,
@@ -536,7 +537,7 @@ export default function App() {
       promoCode,
       discountAmount,
       subtotal,
-      deliveryFee: 40,
+      deliveryFee,
       platformFee: 10,
       tax: calculatedTax,
       notes,

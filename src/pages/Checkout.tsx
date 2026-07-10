@@ -211,7 +211,7 @@ export default function Checkout({
 
   // Calculate bill totals
   const subtotal = cartItems.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
-  const deliveryFee = 40; // Flat-rate delivery fee for Kathmandu
+  const deliveryFee = activePromo?.code === "FREEDEL" ? 0 : 40; // Flat-rate delivery fee for Kathmandu (Free with FREEDEL)
   const platformFee = 10;
   const tax = Math.round(subtotal * 0.05); // 5% VAT tax
   
@@ -263,7 +263,11 @@ export default function Checkout({
       const data = await res.json();
       if (data.success) {
         setActivePromo(data.promo);
-        setPromoSuccess(`Promo Code "${data.promo.code}" applied! You saved Rs. ${data.promo.discountPercent ? `${data.promo.discountPercent}%` : `Rs. ${data.promo.discountValue}`}`);
+        if (data.promo.code === "FREEDEL") {
+          setPromoSuccess(`Promo Code "FREEDEL" applied! Free delivery activated (saved Rs. 40).`);
+        } else {
+          setPromoSuccess(`Promo Code "${data.promo.code}" applied! You saved Rs. ${data.promo.discountPercent ? `${data.promo.discountPercent}%` : `${data.promo.discountValue}`}`);
+        }
         setPromoInput("");
       } else {
         setPromoError(data.error || "Invalid coupon code");
@@ -743,7 +747,7 @@ export default function Checkout({
                 type="text"
                 value={promoInput}
                 onChange={(e) => setPromoInput(e.target.value)}
-                placeholder="Enter (FOODIE10, SABSE50)..."
+                placeholder="Enter (FOODIE10, FREEDEL)..."
                 className="flex-1 bg-gray-100 px-3 py-2 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
               />
               <button
@@ -828,7 +832,9 @@ export default function Checkout({
                     <Info className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <span className="text-gray-800">Rs. {deliveryFee}</span>
+                <span className={`font-bold ${deliveryFee === 0 ? "text-emerald-600 animate-pulse" : "text-gray-800"}`}>
+                  {deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee}`}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Platform Commission Fee</span>

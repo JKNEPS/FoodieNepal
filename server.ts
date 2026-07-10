@@ -999,7 +999,8 @@ let activeOrders: Order[] = [
 let promoCodes = [
   { code: "FOODIE10", discountPercent: 10, description: "Get 10% off of any traditional dishes" },
   { code: "LOCALFOOD", discountValue: 50, description: "Flat Rs. 50 off your basantapur culinary selections" },
-  { code: "SABSE50", discountValue: 30, description: "Flat Rs. 30 discount on orders above Rs. 150" }
+  { code: "SABSE50", discountValue: 30, description: "Flat Rs. 30 discount on orders above Rs. 150" },
+  { code: "FREEDEL", discountValue: 0, description: "Free delivery on your order" }
 ];
 
 // Sample Reviews
@@ -2437,43 +2438,17 @@ app.post("/api/orders/:id/verify-otp", (req, res) => {
     return res.status(404).json({ error: "Order lookup failed: record not found" });
   }
 
-  // Ensure verification flags are initialized
-  if (order.customerOtpVerified === undefined) order.customerOtpVerified = false;
-  if (order.riderOtpVerified === undefined) order.riderOtpVerified = false;
-
-  let partyName = role === "rider" ? "Rider" : "Customer";
-
-  if (role === "rider") {
-    // Rider verifies customer with order.deliveryOtp
-    if (order.deliveryOtp === otp) {
-      order.customerOtpVerified = true;
-    } else {
-      return res.status(400).json({ error: "Incorrect Customer OTP. Code mismatch!" });
-    }
-  } else if (role === "customer") {
-    // Customer verifies rider with order.riderOtp
-    if (order.riderOtp === otp) {
-      order.riderOtpVerified = true;
-    } else {
-      return res.status(400).json({ error: "Incorrect Rider OTP. Code mismatch!" });
-    }
-  } else {
-    // Legacy support or fallback: check if matches client or rider
-    if (order.deliveryOtp === otp) {
-      order.customerOtpVerified = true;
-    } else if (order.riderOtp === otp) {
-      order.riderOtpVerified = true;
-    } else {
-      return res.status(400).json({ error: "Incorrect 4-digit code!" });
-    }
-  }
-
-  // Trigger full order completion if BOTH are verified
-  if (order.customerOtpVerified && order.riderOtpVerified) {
+  // Verify the provided OTP against the order's deliveryOtp generated at the time of order placement
+  if (order.deliveryOtp === otp) {
+    order.customerOtpVerified = true;
+    order.riderOtpVerified = true; // Automatically mark both to confirm complete handoff
     order.status = "delivered";
-    // Also update rider earnings
+    
+    // Also update rider earnings upon successful delivery
     riderDashboardEarnings.today += Math.floor(order.deliveryFee * 0.8) + 15;
     riderDashboardEarnings.deliveriesCount += 1;
+  } else {
+    return res.status(400).json({ error: "Incorrect OTP. Code mismatch!" });
   }
 
   syncOrderToFirestore(order);

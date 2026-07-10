@@ -255,51 +255,40 @@ export default function RiderDashboard() {
             <div className="bg-white border border-gray-100 p-5 rounded-3xl shadow-xs space-y-4 text-xs">
               <div className="flex items-center gap-2 border-b border-gray-50 pb-3">
                 <ShieldCheck className="w-5 h-5 text-[#2D6A4F]" />
-                <h3 className="font-extrabold text-gray-900 tracking-tight text-sm">Dual OTP Handshake Terminal</h3>
+                <h3 className="font-extrabold text-gray-900 tracking-tight text-sm">Delivery Verification Terminal</h3>
               </div>
 
               <div className="bg-[#FFF8F0]/80 p-3.5 rounded-xl border border-dashed border-[#FF6B35]/20 text-center space-y-1">
-                <p className="text-[9px] text-[#8B1A1A] font-black uppercase tracking-wider">Your Rider ID Code (Show Customer)</p>
-                <p className="text-2xl font-mono font-black text-[#8B1A1A] tracking-widest">{activeDelivery.riderOtp || "5271"}</p>
-                <div className="text-[9.5px] text-gray-400 font-bold">
-                  {activeDelivery.riderOtpVerified ? (
-                    <span className="text-emerald-700">✓ Customer authenticated you</span>
-                  ) : (
-                    <span>○ Customer hasn't typed your code yet</span>
-                  )}
-                </div>
+                <p className="text-[10px] text-orange-800 font-black uppercase tracking-wider">Verification Steps</p>
+                <p className="text-[11px] text-gray-600 font-bold leading-normal">
+                  1. Ask the customer for their 4-digit OTP code.<br />
+                  2. Enter the code below to complete this delivery.
+                </p>
               </div>
 
               <p className="text-gray-500 font-medium leading-relaxed">
-                Ask the customer for their 4-digit OTP code to complete your half of the delivery handshake transaction.
+                The customer's OTP is generated in their app at the time the order was placed. Customers are requested to take a screenshot of this code to show you upon delivery.
               </p>
 
-              {activeDelivery.customerOtpVerified ? (
-                <div className="py-4 bg-emerald-50 text-center rounded-xl border border-emerald-100 space-y-1">
-                  <p className="text-xs font-black text-emerald-800">✓ Customer OTP Confirmed</p>
-                  <p className="text-[9.5px] text-emerald-600 font-bold">Waiting for customer to verify your rider code above.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitOtp} className="space-y-3 pt-1">
-                  <input
-                    id="rider-otp-verify-field"
-                    type="text"
-                    maxLength={4}
-                    value={typedOtp}
-                    onChange={(e) => setTypedOtp(e.target.value)}
-                    placeholder="Enter Customer's Code"
-                    className="w-full bg-gray-50 border border-gray-150 px-3 py-3 rounded-xl text-center text-lg font-black tracking-widest text-[#2D6A4F] focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
-                  />
+              <form onSubmit={handleSubmitOtp} className="space-y-3 pt-1">
+                <input
+                  id="rider-otp-verify-field"
+                  type="text"
+                  maxLength={4}
+                  value={typedOtp}
+                  onChange={(e) => setTypedOtp(e.target.value)}
+                  placeholder="Enter Customer's Code"
+                  className="w-full bg-gray-50 border border-gray-150 px-3 py-3 rounded-xl text-center text-lg font-black tracking-widest text-[#2D6A4F] focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+                />
 
-                  <button
-                    type="submit"
-                    disabled={!typedOtp || typedOtp.length < 4}
-                    className="w-full py-3.5 bg-[#2D6A4F] hover:bg-[#1a3d2e] disabled:bg-gray-150 disabled:text-gray-400 text-white font-black rounded-xl transition-all"
-                  >
-                    ✓ Verify Customer OTP
-                  </button>
-                </form>
-              )}
+                <button
+                  type="submit"
+                  disabled={!typedOtp || typedOtp.length < 4}
+                  className="w-full py-3.5 bg-[#2D6A4F] hover:bg-[#1a3d2e] disabled:bg-gray-150 disabled:text-gray-400 text-white font-black rounded-xl transition-all cursor-pointer"
+                >
+                  ✓ Confirm & Deliver Order
+                </button>
+              </form>
 
               {otpError && <p className="text-[10px] text-rose-600 font-bold text-center">⚠️ {otpError}</p>}
             </div>

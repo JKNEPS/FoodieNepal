@@ -410,64 +410,42 @@ export default function OrderTracking({
                 </div>
               </div>
             )}
-          </div>          {/* Secure Two-Way Dynamic OTP Dropoff Validation */}
+          </div>
+
+          {/* Secure Dynamic OTP Dropoff Validation */}
           {polledOrder.status !== "delivered" && polledOrder.status !== "cancelled" && (
             <div className="bg-white border border-gray-100 p-5 rounded-3xl shadow-xs space-y-4">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-[#FF6B35] rounded-full animate-pulse" />
-                <h3 className="font-extrabold text-[#8B1A1A] text-xs uppercase tracking-wider">Dual OTP Verification Terminal</h3>
+                <h3 className="font-extrabold text-[#8B1A1A] text-xs uppercase tracking-wider">Order Verification Terminal</h3>
               </div>
 
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                For security, this order uses <b>mutual OTP verification</b> to guarantee correct handoff. Show your OTP to the rider, and ask the rider for their OTP to verify their identity.
+                To complete your delivery securely, please provide the following 4-digit OTP code to the rider. 
+                The rider will enter this code in their terminal to confirm and finalize your order.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 text-center flex flex-col justify-center">
-                  <p className="text-[9px] text-[#2D6A4F] font-black uppercase tracking-wider animate-pulse">Your OTP (Show to Rider)</p>
-                  <p className="text-3xl font-mono font-black tracking-widest text-[#2D6A4F] mt-1">{polledOrder.deliveryOtp || "4804"}</p>
-                  <span className="text-[10px] text-gray-400 font-bold mt-1.5 flex items-center justify-center gap-1.5">
-                    {polledOrder.customerOtpVerified ? (
-                      <span className="text-emerald-700 font-black">✓ Handshake confirmed</span>
-                    ) : (
-                      <span>○ Pending rider capture</span>
-                    )}
-                  </span>
+              <div className="bg-[#FFF8F0] p-5 rounded-2xl border border-dashed border-orange-200 text-center space-y-3">
+                <div>
+                  <p className="text-[10px] text-orange-700 font-black uppercase tracking-widest animate-pulse">Your Delivery OTP Code</p>
+                  <p className="text-4xl font-mono font-black tracking-widest text-[#8B1A1A] mt-2 bg-white px-4 py-3 rounded-xl inline-block shadow-sm border border-gray-100 select-all">
+                    {polledOrder.deliveryOtp || "4804"}
+                  </p>
+                </div>
+                
+                <div className="bg-emerald-50 text-[#2D6A4F] px-4 py-3 rounded-xl text-left border border-emerald-100 flex items-center gap-3">
+                  <span className="text-xl shrink-0">📸</span>
+                  <div className="text-xs leading-normal font-semibold">
+                    <p className="font-black text-[11px] text-emerald-800">Rider Handshake Code</p>
+                    <p className="text-[10.5px] text-emerald-700">Please take a <b>screenshot of this OTP code</b> now. Show it to your rider upon delivery even if you are offline!</p>
+                  </div>
                 </div>
 
-                <div className="bg-[#FFF8F0]/80 p-4 rounded-xl border border-[#FF6B35]/20 text-center flex flex-col justify-center">
-                  <p className="text-[9px] text-orange-700 font-black uppercase tracking-wider">Ask Rider for their Code</p>
-                  {polledOrder.riderOtpVerified ? (
-                    <div className="py-2.5 text-center">
-                      <p className="text-sm font-black text-emerald-700 flex items-center justify-center gap-1">✓ Rider Authenticated</p>
-                      <p className="text-[10px] text-gray-400 font-bold font-mono mt-1">Handoff confirmed</p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleVerifyOtpSubmit} className="space-y-2 mt-1.5">
-                      <div className="flex gap-1.5">
-                        <input
-                          id="rider-otp-input"
-                          type="text"
-                          maxLength={4}
-                          value={typedOtp}
-                          onChange={(e) => setTypedOtp(e.target.value)}
-                          placeholder="Rider's Code"
-                          className="w-full bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-center tracking-widest focus:outline-[#FF6B35]"
-                        />
-                        <button
-                          type="submit"
-                          className="bg-[#FF6B35] hover:bg-[#8B1A1A] text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition-all"
-                        >
-                          Verify
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                <div className="text-[10px] text-gray-400 font-bold flex items-center justify-center gap-1.5 pt-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping" />
+                  <span>Rider will verify this code to complete delivery</span>
                 </div>
               </div>
-
-              {otpError && <p className="text-[10px] text-rose-500 font-bold">⚠️ {otpError}</p>}
-              {otpSuccess && <p className="text-[10px] text-emerald-600 font-bold max-w-xs mx-auto">🎉 Rider verified! Waiting for rider to key in your code to complete delivery.</p>}
             </div>
           )}
 
