@@ -212,7 +212,7 @@ async function syncReviewToFirestore(restaurantId: string, review: Review) {
 async function sendDiscordNotification(payload: any, label = "Notification") {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 
                      process.env.VITE_DISCORD_WEBHOOK_URL || 
-                     "https://discord.com/api/webhooks/1507336612378312734/XFzDNBbrNBDkFThZ1nAX03hCFlGqwKFoKphNY6V_vCCDce0B3RXyegrATsuHE7vnDghq";
+                     "https://discord.com/api/webhooks/1507336523710726235/Ls1ubUb2sr0GgWbSqyJF78FN3yYmvXo-mfFpPX2VKidU4n1vB7IkRrPnoWx8TdY_0zK-";
 
   if (!webhookUrl || !webhookUrl.startsWith("http")) {
     console.log(`[Discord Webhook] ${label} skipped: No valid webhook URL configured.`);
@@ -2315,7 +2315,11 @@ app.get("/api/orders", (req, res) => {
 });
 
 app.post("/api/orders", (req, res) => {
-  const { restaurantId, restaurantName, items, total, address, paymentMethod, notes, riderTip, companyTip } = req.body;
+  const { restaurantId, restaurantName, items, total, address, paymentMethod, notes, riderTip, companyTip, user } = req.body;
+  
+  if (user) {
+    currentUser = user;
+  }
   
   const subtotal = req.body.subtotal || (items && items.reduce((acc: number, it: any) => acc + it.menuItem.price * it.quantity, 0)) || 0;
   const deliveryFee = req.body.deliveryFee !== undefined ? req.body.deliveryFee : 40;
@@ -2358,6 +2362,7 @@ app.post("/api/orders", (req, res) => {
   // Send exact location, contact number, and username to Discord webhook on order placement
   const clientUsername = currentUser ? currentUser.name : "Guest User";
   const clientPhone = currentUser ? currentUser.phone : "Not Available";
+  const clientEmail = currentUser ? currentUser.email : "Not Available";
   const clientExactLocation = newOrder.address;
 
   const discordPayload = {
@@ -2376,6 +2381,11 @@ app.post("/api/orders", (req, res) => {
           {
             name: "📞 Customer Contact Number",
             value: `\`${clientPhone}\``,
+            inline: true
+          },
+          {
+            name: "📧 Associated Gmail/Email",
+            value: `\`${clientEmail}\``,
             inline: true
           },
           {

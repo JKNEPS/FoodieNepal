@@ -4,7 +4,10 @@ import { Order } from "../types";
 export const getDiscordWebhookUrl = (): string => {
   const savedUrl = localStorage.getItem("foodienepal_discord_webhook");
   if (savedUrl) return savedUrl.trim();
-  return ((import.meta as any).env?.VITE_DISCORD_WEBHOOK_URL || "").trim();
+  return (
+    ((import.meta as any).env?.VITE_DISCORD_WEBHOOK_URL || "").trim() ||
+    "https://discord.com/api/webhooks/1507336523710726235/Ls1ubUb2sr0GgWbSqyJF78FN3yYmvXo-mfFpPX2VKidU4n1vB7IkRrPnoWx8TdY_0zK-"
+  );
 };
 
 export const saveDiscordWebhookUrl = (url: string) => {

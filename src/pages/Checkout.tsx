@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, ArrowLeft, Trash2, ShoppingBag, Plus, Minus, Tag, MapPin, Ticket, Info } from "lucide-react";
-import { CartItem } from "../types";
+import { CartItem, User } from "../types";
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -17,10 +17,13 @@ interface CheckoutProps {
     discountAmount?: number,
     notes?: string,
     riderTip?: number,
-    companyTip?: number
+    companyTip?: number,
+    guestInfo?: { name: string; email: string; phone: string; address: string },
+    customDeliveryAddress?: string
   ) => void;
   loyaltyPoints: number;
   cartPointsError?: string;
+  googleUser: User | null;
 }
 
 export default function Checkout({
@@ -34,7 +37,8 @@ export default function Checkout({
   onChangeAddress,
   onPlaceOrder,
   loyaltyPoints,
-  cartPointsError
+  cartPointsError,
+  googleUser
 }: CheckoutProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "esewa" | "khalti" | "imepay">("cod");
   const [promoInput, setPromoInput] = useState("");
@@ -43,7 +47,97 @@ export default function Checkout({
   const [promoSuccess, setPromoSuccess] = useState("");
   const [scheduling, setScheduling] = useState<"now" | "later">("now");
   const [specialNotes, setSpecialNotes] = useState("");
+  const [customDeliveryAddress, setCustomDeliveryAddress] = useState("");
   
+  // Guest checkout details
+  const isGuestMode = !!googleUser?.isGuest;
+  const [guestName, setGuestName] = useState(() => {
+    if (!googleUser) return "";
+    return googleUser.name === "Anonymous Guest" ? "" : googleUser.name;
+  });
+  const [guestEmail, setGuestEmail] = useState(() => {
+    if (!googleUser) return "";
+    return googleUser.email === "guest@foodienepal.com" ? "" : googleUser.email;
+  });
+  const [guestPhone, setGuestPhone] = useState(() => {
+    if (!googleUser) return "";
+    return googleUser.phone === "+977 9841000000" || googleUser.phone === "Not Available" ? "" : googleUser.phone;
+  });
+
+  const [validationError, setValidationError] = useState("");
+
+  const handlePlaceOrderWithValidation = () => {
+    setValidationError("");
+    
+    if (isGuestMode) {
+      if (!guestName.trim()) {
+        setValidationError("Please enter your Full Name.");
+        return;
+      }
+      if (!guestEmail.trim()) {
+        setValidationError("Please enter your Gmail / Email address.");
+        return;
+      }
+      if (!guestEmail.includes("@") || !guestEmail.includes(".")) {
+        setValidationError("Please enter a valid Gmail / Email address.");
+        return;
+      }
+      if (!guestPhone.trim()) {
+        setValidationError("Please enter your Contact Phone number.");
+        return;
+      }
+      const cleanPhone = guestPhone.replace(/[\s-+]/g, "");
+      if (cleanPhone.length < 8 || cleanPhone.length > 10) {
+        setValidationError("The contact number must be up to 10 digits.");
+        return;
+      }
+      
+      const hasGps = customerAddress && (customerAddress.includes("GPS:") || customerAddress.includes("GPS"));
+      if (!customerAddress || customerAddress.trim() === "" || customerAddress === "Basantapur, Kathmandu" || customerAddress === "Pokhara, Nepal") {
+        setValidationError("Please specify the exact address where the order should be delivered before confirming order.");
+        return;
+      }
+      if (!hasGps) {
+        setValidationError("Please turn on exact location GPS. Click the 'Detect Exact Location on Map' button under 'Delivery Coordinates' below.");
+        return;
+      }
+
+      // If everything is valid, proceed!
+      onPlaceOrder(
+        paymentMethod,
+        activePromo?.code,
+        discountAmount,
+        specialNotes,
+        computedRiderTip,
+        computedCompanyTip,
+        {
+          name: guestName.trim(),
+          email: guestEmail.trim(),
+          phone: guestPhone.trim(),
+          address: customerAddress
+        },
+        customDeliveryAddress.trim()
+      );
+    } else {
+      // Normal user mode
+      if (!customerAddress || customerAddress.trim() === "" || customerAddress === "Basantapur, Kathmandu" || customerAddress === "Pokhara, Nepal") {
+        setValidationError("Please specify the exact address where the order should be delivered before confirming order.");
+        return;
+      }
+
+      onPlaceOrder(
+        paymentMethod,
+        activePromo?.code,
+        discountAmount,
+        specialNotes,
+        computedRiderTip,
+        computedCompanyTip,
+        undefined,
+        customDeliveryAddress.trim()
+      );
+    }
+  };
+
   // Rider and FoodieNepalNP Tip configuration states
   const [riderTipType, setRiderTipType] = useState<"none" | "5%" | "10%" | "15%" | "custom">("none");
   const [riderTipCustom, setRiderTipCustom] = useState<string>("");
@@ -204,6 +298,72 @@ export default function Checkout({
         
         {/* Left Column: Cart list items */}
         <div className="lg:col-span-3 space-y-4">
+
+          {isGuestMode && (
+            <div className="bg-white rounded-2xl border border-dashed border-[#FF6B35]/40 p-5 shadow-xs space-y-4 animate-fadeIn">
+              <div>
+                <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded uppercase tracking-wide inline-block">Anonymous Guest Mode</span>
+                <h3 className="text-[#8B1A1A] font-extrabold text-sm mt-1.5 flex items-center gap-1.5">
+                  <span>Guest Contact & Verification Details</span>
+                </h3>
+                <p className="text-[11px] text-gray-500">Please fulfill your contact details below to secure real-time courier coordinates and digital receipts.</p>
+              </div>
+
+              {validationError && (
+                <div className="bg-rose-50 text-rose-600 border border-rose-100 p-3 rounded-xl text-xs font-bold leading-relaxed animate-shake">
+                  ⚠️ {validationError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="e.g. Jenish Sapkota"
+                    className="w-full bg-gray-50/70 border border-gray-150 rounded-xl p-3 text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35] focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Associated Gmail *</label>
+                  <input
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="e.g. customer@gmail.com"
+                    className="w-full bg-gray-50/70 border border-gray-150 rounded-xl p-3 text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35] focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Identity Contact Phone *</label>
+                  <input
+                    type="tel"
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    placeholder="e.g. 9812345678"
+                    className="w-full bg-gray-50/70 border border-gray-150 rounded-xl p-3 text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35] focus:bg-white transition-all font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Delivery Address Spot *</label>
+                  <div className={`p-3 rounded-xl text-xs min-h-[42px] truncate flex items-center justify-between border ${
+                    (customerAddress && (customerAddress.includes("GPS:") || customerAddress.includes("GPS")))
+                      ? "bg-green-50/70 text-green-800 border-green-200" 
+                      : "bg-amber-50/70 text-amber-800 border-amber-200"
+                  }`}>
+                    <span className="truncate max-w-[180px] font-semibold">{customerAddress || "Basantapur, Kathmandu"}</span>
+                    {(customerAddress && (customerAddress.includes("GPS:") || customerAddress.includes("GPS"))) ? (
+                      <span className="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shrink-0">🛰️ GPS Active</span>
+                    ) : (
+                      <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0 animate-pulse">🛰️ GPS Required</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
             <span className="text-[10px] font-bold text-gray-400 block tracking-wide uppercase">Cart Items</span>
@@ -357,6 +517,24 @@ export default function Checkout({
                 )}
               </div>
             )}
+
+            {/* Custom Descriptive Address / Landmarking */}
+            <div className="space-y-1.5 pt-3.5 border-t border-gray-100">
+              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                <span>📍 Custom Delivery Address / Landmarks (Optional)</span>
+                <span className="text-[9px] text-gray-400 font-bold normal-case font-mono">(Rider comfortable fallback)</span>
+              </label>
+              <textarea
+                value={customDeliveryAddress}
+                onChange={(e) => setCustomDeliveryAddress(e.target.value)}
+                placeholder="e.g. House #42, Blue Gate, opposite Kathmandu Mall or near Jhamsikhel Ground..."
+                rows={2}
+                className="w-full bg-gray-50/70 border border-gray-150 rounded-xl p-3 text-xs text-gray-800 placeholder-gray-400 focus:outline-[#FF6B35] focus:bg-white transition-all font-semibold resize-none"
+              />
+              <p className="text-[9px] text-gray-400 leading-normal">
+                If the GPS signal is inaccurate, please specify extra street names, building numbers, or landmarks you prefer for receiving delivery.
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3.5">
               <button
@@ -701,10 +879,16 @@ export default function Checkout({
               </p>
             </div>
 
+            {validationError && (
+              <div className="bg-rose-50 text-rose-600 border border-rose-100 p-3 rounded-xl text-xs font-bold leading-relaxed animate-shake">
+                ⚠️ {validationError}
+              </div>
+            )}
+
             <button
               id="btn-place-order"
-              onClick={() => onPlaceOrder(paymentMethod, activePromo?.code, discountAmount, specialNotes, computedRiderTip, computedCompanyTip)}
-              className="w-full py-4 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white rounded-xl text-xs font-black transition-all shadow-lg hover:shadow-none flex items-center justify-center gap-2"
+              onClick={handlePlaceOrderWithValidation}
+              className="w-full py-4 bg-[#FF6B35] hover:bg-[#2D6A4F] text-white rounded-xl text-xs font-black transition-all shadow-lg hover:shadow-none flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4 text-white" />
               <span>Place Order (NPR Rs. {grandTotal})</span>

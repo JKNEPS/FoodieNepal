@@ -477,9 +477,48 @@ export default function App() {
     discountAmount?: number,
     notes?: string,
     riderTip: number = 0,
-    companyTip: number = 0
+    companyTip: number = 0,
+    guestInfo?: { name: string; email: string; phone: string; address: string },
+    customDeliveryAddress?: string
   ) => {
     if (cart.length === 0) return;
+
+    let updatedUser = googleUser;
+    let finalAddress = customerAddress;
+
+    if (customDeliveryAddress && customDeliveryAddress.trim()) {
+      finalAddress = `${customerAddress} (Descriptive Address: ${customDeliveryAddress.trim()})`;
+    }
+
+    if (guestInfo && googleUser?.isGuest) {
+      const guestBaseAddress = guestInfo.address;
+      const guestFinalAddress = customDeliveryAddress && customDeliveryAddress.trim()
+        ? `${guestBaseAddress} (Descriptive Address: ${customDeliveryAddress.trim()})`
+        : guestBaseAddress;
+
+      updatedUser = {
+        ...googleUser,
+        name: guestInfo.name,
+        email: guestInfo.email,
+        phone: guestInfo.phone,
+        address: guestFinalAddress
+      };
+      finalAddress = guestFinalAddress;
+      setGoogleUser(updatedUser);
+      setCustomerAddress(finalAddress);
+      localStorage.setItem("foodienepal_google_user", JSON.stringify(updatedUser));
+      
+      // Update session user in database / server state of our applet fast
+      try {
+        await fetch("/api/auth/set-current-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: updatedUser })
+        });
+      } catch (err) {
+        console.warn("Could not sync updated guest user back to server:", err);
+      }
+    }
 
     const firstItem = cart[0];
     const subtotal = cart.reduce((acc, it) => acc + it.menuItem.price * it.quantity, 0);
@@ -490,7 +529,7 @@ export default function App() {
       items: cart,
       restaurantId: firstItem.restaurantId,
       restaurantName: firstItem.restaurantName,
-      address: customerAddress,
+      address: finalAddress,
       total: finalBill,
       paymentMethod,
       promoCode,
@@ -501,7 +540,8 @@ export default function App() {
       tax: calculatedTax,
       notes,
       riderTip,
-      companyTip
+      companyTip,
+      user: updatedUser
     };
 
     try {
@@ -517,14 +557,14 @@ export default function App() {
         
         // Sync and save all order fields into Supabase
         try {
-          await insertOrderToSupabase(data.order, googleUser);
+          await insertOrderToSupabase(data.order, updatedUser);
         } catch (supabaseError) {
           console.warn("[Supabase Sync Warning]:", supabaseError);
         }
 
         // Parallel Workspace Sync: Log order details to Google Sheets & dispatch email confirmation 
         try {
-          await logOrderToGoogleSheets(data.order, googleUser);
+          await logOrderToGoogleSheets(data.order, updatedUser);
           
           const itemsList = Array.isArray(data.order.items) ? data.order.items : [];
           const productListHtml = itemsList.map((item: any) => {
@@ -537,7 +577,7 @@ export default function App() {
           const emailBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px;">
               <h2 style="color: #d9381e;">Thank You for Your Order! 🍛</h2>
-              <p>Hello <strong>${googleUser?.name || "Customer"}</strong>,</p>
+              <p>Hello <strong>${updatedUser?.name || "Customer"}</strong>,</p>
               <p>Your order <strong>#${data.order.id}</strong> on <strong>FoodieNepal</strong> has been successfully placed.</p>
               <hr style="border: 0; border-top: 1px solid #eee;" />
               <p><strong>Summary of Delicacies:</strong></p>
@@ -804,6 +844,7 @@ export default function App() {
                   onPlaceOrder={handlePlaceOrder}
                   loyaltyPoints={loyaltyPoints}
                   cartPointsError={cartPointsError}
+                  googleUser={googleUser}
                 />
               )}
 
