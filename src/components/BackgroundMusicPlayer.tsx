@@ -253,68 +253,17 @@ export default function BackgroundMusicPlayer() {
     }
   };
 
-  // Search API Call
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY || "";
-    
-    if (!apiKey) {
-      setErrorMsg("No YouTube API Key set. Playing Nepalese lofi presets instead!");
-      setSearchResults([]);
+  // Play YouTube Video from Link (URL) or Video ID
+  const handlePlayLink = (inputVal: string = searchQuery) => {
+    const trimmed = inputVal.trim();
+    if (!trimmed) {
+      setErrorMsg("Please enter a YouTube link or video ID.");
       return;
     }
 
-    setIsSearching(true);
-    setErrorMsg(null);
-    try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=8&q=${encodeURIComponent(
-        searchQuery + " lofi chill instrumental background music"
-      )}&type=video&key=${apiKey}`;
-      
-      const res = await fetch(url);
-      if (!res.ok) {
-        const errData = await res.json();
-        if (errData.error && errData.error.message) {
-          throw new Error(errData.error.message);
-        }
-        throw new Error(`HTTP error ${res.status}`);
-      }
+    let finalId = trimmed;
 
-      const data = await res.json();
-      if (!data.items || data.items.length === 0) {
-        setErrorMsg("No results found. Try alternative keywords.");
-        setSearchResults([]);
-      } else {
-        const formatted: VideoTrack[] = data.items.map((item: any) => ({
-          id: item.id.videoId,
-          title: item.snippet.title,
-          channel: item.snippet.channelTitle,
-          thumbnail:
-            item.snippet.thumbnails?.medium?.url ||
-            item.snippet.thumbnails?.default?.url ||
-            "https://images.unsplash.com/photo-1511193311914-0346f16efe90?q=80&w=300&auto=format&fit=crop"
-        }));
-        setSearchResults(formatted);
-      }
-    } catch (err: any) {
-      console.error("YouTube Search Error:", err);
-      if (err.message && err.message.toLowerCase().includes("quota")) {
-        setErrorMsg("YouTube API Key quota exceeded. Curating premium offline presets for you!");
-      } else {
-        setErrorMsg(`API Error: ${err.message || "Please check your network."}`);
-      }
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Support direct Video ID/URL pasting
-  const handleDirectPlay = () => {
-    if (!directVideoId.trim()) return;
-    let finalId = directVideoId.trim();
-
-    // If it's a full youtube URL, extract the ID
+    // If it's a full youtube URL or embed link, extract the ID
     try {
       if (finalId.includes("youtube.com/watch")) {
         const urlObj = new URL(finalId);
@@ -326,21 +275,34 @@ export default function BackgroundMusicPlayer() {
           const cleanSeg = segments[1].split("?")[0];
           finalId = cleanSeg;
         }
+      } else if (finalId.includes("youtube.com/embed/")) {
+        const segments = finalId.split("youtube.com/embed/");
+        if (segments[1]) {
+          const cleanSeg = segments[1].split("?")[0];
+          finalId = cleanSeg;
+        }
       }
     } catch (e) {
       console.warn("Failed to parse URL:", e);
     }
 
+    // A standard YouTube video ID is 11 alphanumeric characters (including underscores and hyphens)
+    const isValidId = /^[a-zA-Z0-9_-]{11}$/.test(finalId);
+    if (!isValidId) {
+      setErrorMsg("Invalid YouTube Link. Please paste a full YouTube URL or a valid 11-digit Video ID.");
+      return;
+    }
+
     const customTrack: VideoTrack = {
       id: finalId,
-      title: `Pasted Track [${finalId}]`,
-      channel: "Direct Playback",
-      thumbnail: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=300&auto=format&fit=crop"
+      title: `YouTube Track [${finalId}]`,
+      channel: "YouTube Playback",
+      thumbnail: `https://img.youtube.com/vi/${finalId}/hqdefault.jpg`
     };
 
+    setErrorMsg(null);
     playTrack(customTrack);
-    setDirectVideoId("");
-    setDirectInputOpen(false);
+    setSearchQuery(""); // Clear the input field after successful play
   };
 
   // Auto clean up player on unmount
@@ -521,64 +483,35 @@ export default function BackgroundMusicPlayer() {
                   </div>
                 )}
 
-                {/* Direct Pasting Block */}
-                {directInputOpen ? (
-                  <div className="p-3 bg-slate-850/40 rounded-2xl border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Paste Video ID or URL</span>
-                      <button onClick={() => setDirectInputOpen(false)} className="text-slate-400 hover:text-white text-[10px] underline">Cancel</button>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        placeholder="e.g. jfKfPfyJRdk"
-                        value={directVideoId}
-                        onChange={(e) => setDirectVideoId(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-750 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                      />
-                      <button
-                        onClick={handleDirectPlay}
-                        className="px-3 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-400 transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                      >
-                        <Link2 className="w-3 h-3" />
-                        <span>Load</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex justify-end px-1">
-                    <button
-                      onClick={() => setDirectInputOpen(true)}
-                      className="text-[9px] text-slate-400 hover:text-orange-400 flex items-center gap-1 transition-colors"
-                    >
-                      <Link2 className="w-2.5 h-2.5" />
-                      <span>Direct Video ID Paste Fallback</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* YouTube Search Box */}
-                <div className="space-y-1.5">
+                {/* YouTube Link Paste Input */}
+                <div className="space-y-2 p-3.5 bg-slate-850/50 rounded-2xl border border-slate-800">
+                  <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <Link2 className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                    <span>Paste YouTube Video Link</span>
+                  </label>
                   <div className="flex gap-1.5">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        placeholder="Search songs, lofi, relaxing beats..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                        className="w-full bg-slate-850 border border-slate-750 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-semibold"
-                      />
-                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="Paste link (e.g. https://youtu.be/...)"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setErrorMsg(null);
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handlePlayLink()}
+                      className="flex-1 bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-semibold"
+                    />
                     <button
-                      onClick={handleSearch}
-                      disabled={isSearching}
-                      className="px-3 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center shadow-lg hover:shadow-orange-500/20"
+                      onClick={() => handlePlayLink()}
+                      className="px-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-xs font-black hover:from-orange-400 hover:to-amber-400 transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-lg hover:shadow-orange-500/10 active:scale-95"
                     >
-                      {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
+                      <Play className="w-3 h-3 fill-current ml-0.5" />
+                      <span>Play</span>
                     </button>
                   </div>
+                  <p className="text-[9.5px] text-slate-400 leading-normal">
+                    📢 Paste any direct YouTube link (or 11-digit Video ID) above to play. Direct URL streaming is fast & reliable.
+                  </p>
                 </div>
 
                 {/* List Header */}
