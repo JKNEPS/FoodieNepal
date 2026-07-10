@@ -20,6 +20,7 @@ import Footer from "./components/Footer";
 import OnboardingWizard from "./components/OnboardingWizard";
 import UserProfileModal from "./components/UserProfileModal";
 import DeliveryChargeModal from "./components/DeliveryChargeModal";
+import BackgroundMusicPlayer from "./components/BackgroundMusicPlayer";
 import { insertOrderToSupabase } from "./utils/supabase";
 import { logOrderToGoogleSheets, sendGmailNotification } from "./utils/googleWorkspace";
 
@@ -1040,6 +1041,9 @@ export default function App() {
           <span>{swipeFeedback}</span>
         </div>
       )}
+
+      {/* Global Persistent Background Music Player */}
+      <BackgroundMusicPlayer />
     </div>
   );
 }
