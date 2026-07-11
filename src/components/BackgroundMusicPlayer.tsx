@@ -95,6 +95,14 @@ export default function BackgroundMusicPlayer() {
       return Promise.resolve(window.YT);
     }
     return new Promise<any>((resolve) => {
+      // Setup polling check as a fallback if the script is already loaded/loading
+      const checkInterval = setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(checkInterval);
+          resolve(window.YT);
+        }
+      }, 50);
+
       if (!document.getElementById("youtube-iframe-api-script")) {
         const tag = document.createElement("script");
         tag.id = "youtube-iframe-api-script";
@@ -110,6 +118,7 @@ export default function BackgroundMusicPlayer() {
       const previousCallback = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
         if (previousCallback) previousCallback();
+        clearInterval(checkInterval);
         resolve(window.YT);
       };
     });
